@@ -18,6 +18,7 @@ dependencies = [
     "tenacity>=8.0",
     "slowapi>=0.1",
     "upstash-ratelimit>=0.1",
+    "aiosqlite>=0.22.1",
 ]
 
 [tool.ruff]
