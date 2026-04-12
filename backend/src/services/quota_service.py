@@ -71,27 +71,36 @@ async def reset_if_needed(db: AsyncSession, usage: UserUsage) -> bool:
     Returns True if reset was performed.
     """
     now = datetime.now(timezone.utc)
-    if usage.reset_at and now >= usage.reset_at:
-        # Reset daily counters (but not document upload count)
-        reset_tomorrow = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
-        update_stmt = (
-            update(UserUsage)
-            .where(UserUsage.user_id == usage.user_id)
-            .values(
-                summaries_used=0,
-                quizzes_used=0,
-                practice_used=0,
-                reset_at=reset_tomorrow,
+    if usage.reset_at:
+        # Ensure reset_at is timezone-aware (UTC)
+        reset_at = usage.reset_at
+        if reset_at.tzinfo is None:
+            reset_at = reset_at.replace(tzinfo=timezone.utc)
+        else:
+            reset_at = reset_at.astimezone(timezone.utc)
+        if now >= reset_at:
+            # Reset daily counters (but not document upload count)
+            reset_tomorrow = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(
+                days=1
             )
-        )
-        await db.execute(update_stmt)
-        await db.commit()
-        logger.info(
-            "Reset daily quotas for user %s (new reset_at: %s)",
-            usage.user_id,
-            reset_tomorrow,
-        )
-        return True
+            update_stmt = (
+                update(UserUsage)
+                .where(UserUsage.user_id == usage.user_id)
+                .values(
+                    summaries_used=0,
+                    quizzes_used=0,
+                    practice_used=0,
+                    reset_at=reset_tomorrow,
+                )
+            )
+            await db.execute(update_stmt)
+            await db.commit()
+            logger.info(
+                "Reset daily quotas for user %s (new reset_at: %s)",
+                usage.user_id,
+                reset_tomorrow,
+            )
+            return True
     return False
 
 
