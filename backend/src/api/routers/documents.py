@@ -11,6 +11,7 @@ from sqlalchemy.dialects.postgresql import insert
 from src.db.session import get_db
 from src.db.models import Document, Job
 from src.api.deps import get_current_user
+from src.worker import get_arq_pool
 
 router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 
@@ -79,9 +80,9 @@ async def upload_document(
     # Commit both records
     await db.commit()
 
-    # TODO: Dispatch ARQ job (stub)
-    # from src.worker import process_document_upload
-    # await process_document_upload(str(job.id), str(document.id))
+    # Dispatch ARQ job
+    pool = await get_arq_pool()
+    await pool.enqueue_job("process_document", str(document.id), str(job.id))
 
     return {
         "document_id": str(document.id),
