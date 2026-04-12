@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate:openapi": "cd ../backend && uv run python scripts/generate_openapi.py"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
