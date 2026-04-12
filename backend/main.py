@@ -6,6 +6,8 @@ from src.core.config import settings
 from src.core.exceptions import QuotaExceededException, DocumentNotReadyException
 from src.api.routers.auth import router as auth_router
 from src.api.routers.jobs import router as jobs_router
+from src.api.routers.documents import router as documents_router
+from src.api.routers.summaries import router as summaries_router
 
 if settings.SENTRY_DSN:
     sentry_sdk.init(dsn=settings.SENTRY_DSN, traces_sample_rate=0.1)
@@ -56,8 +58,8 @@ async def doc_not_ready_handler(request: Request, exc: DocumentNotReadyException
 
 # Routers
 app.include_router(auth_router)
-# app.include_router(documents.router, prefix="/api/v1/documents", tags=["documents"])
-# app.include_router(summaries.router, prefix="/api/v1/summaries", tags=["summaries"])
+app.include_router(documents_router)
+app.include_router(summaries_router)
 # app.include_router(quizzes.router, prefix="/api/v1/quizzes", tags=["quizzes"])
 # app.include_router(practice.router, prefix="/api/v1/practice", tags=["practice"])
 # app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
