@@ -20,6 +20,8 @@ dependencies = [
     "upstash-ratelimit>=0.1",
     "aiosqlite>=0.22.1",
     "arq>=0.27",
+    "langchain>=0.3.0",
+    "langchain-google-genai>=0.0.14",
 ]
 
 [tool.ruff]
