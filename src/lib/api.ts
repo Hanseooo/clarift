@@ -1,7 +1,7 @@
 import createClient from "openapi-fetch";
+import type * as Schema from "./api-types";
 
-// Temporary empty paths type until backend schema is generated
-export type paths = {};
+type paths = Schema.paths;
 
 export const client = createClient<paths>({
   baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",

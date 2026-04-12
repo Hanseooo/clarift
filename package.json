@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "generate:openapi": "cd ../backend && uv run python scripts/generate_openapi.py"
+    "generate:openapi": "cd ../backend && uv run python scripts/generate_openapi.py",
+    "generate:api-types": "npx openapi-typescript ../backend/openapi.json -o src/lib/api-types.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
