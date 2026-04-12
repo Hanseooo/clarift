@@ -1,0 +1,381 @@
+"""
+SQLAlchemy models for Clarift database.
+
+Matches exactly the Drizzle schema in frontend/src/db/schema.ts.
+See docs/dev/drizzle-schema.md for the definitive reference.
+"""
+
+from sqlalchemy import (
+    Boolean,
+    ForeignKey,
+    Integer,
+    Numeric,
+    Text,
+    text,
+)
+from sqlalchemy.dialects.postgresql import (
+    ARRAY,
+    JSONB,
+    TIMESTAMP,
+    UUID,
+)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.sql import func
+
+
+class Base(DeclarativeBase):
+    """Base class for all SQLAlchemy models."""
+
+    pass
+
+
+# ─── Users ───────────────────────────────────────────────────────────────────
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    email: Mapped[str] = mapped_column(
+        Text,
+        unique=True,
+        nullable=False,
+    )
+    name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tier: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        server_default=text("'free'"),
+    )
+    created_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+
+# ─── User Preferences ────────────────────────────────────────────────────────
+
+
+class UserPreference(Base):
+    __tablename__ = "user_preferences"
+
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    output_format: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        server_default=text("'bullet'"),
+    )
+
+
+# ─── Documents ───────────────────────────────────────────────────────────────
+
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    r2_key: Mapped[str] = mapped_column(Text, nullable=False)
+    mime_type: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        server_default=text("'pending'"),
+    )
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+
+# ─── Summaries ───────────────────────────────────────────────────────────────
+
+
+class Summary(Base):
+    __tablename__ = "summaries"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    document_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    format: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    diagram_syntax: Mapped[str | None] = mapped_column(Text, nullable=True)
+    diagram_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    quiz_type_flags: Mapped[JSONB | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+
+# ─── Quizzes ─────────────────────────────────────────────────────────────────
+
+
+class Quiz(Base):
+    __tablename__ = "quizzes"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    document_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    questions: Mapped[JSONB] = mapped_column(JSONB, nullable=False)
+    question_types: Mapped[list[str]] = mapped_column(
+        ARRAY(Text),
+        nullable=False,
+    )
+    question_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    auto_mode: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default=text("true"),
+    )
+    created_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+
+# ─── Quiz Attempts ───────────────────────────────────────────────────────────
+
+
+class QuizAttempt(Base):
+    __tablename__ = "quiz_attempts"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    quiz_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("quizzes.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    answers: Mapped[JSONB] = mapped_column(JSONB, nullable=False)
+    score: Mapped[Numeric] = mapped_column(
+        Numeric(precision=5, scale=2),
+        nullable=False,
+    )
+    topics: Mapped[list[str]] = mapped_column(
+        ARRAY(Text),
+        nullable=False,
+    )
+    created_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+
+# ─── Topic Performance ───────────────────────────────────────────────────────
+
+
+class UserTopicPerformance(Base):
+    __tablename__ = "user_topic_performance"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    topic: Mapped[str] = mapped_column(Text, nullable=False)
+    attempts: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0"),
+    )
+    correct: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0"),
+    )
+    last_updated: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+
+# ─── Usage / Quota ───────────────────────────────────────────────────────────
+
+
+class UserUsage(Base):
+    __tablename__ = "user_usage"
+
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    summaries_used: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0"),
+    )
+    quizzes_used: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0"),
+    )
+    practice_used: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0"),
+    )
+    reset_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+    )
+
+
+# ─── Practice Sessions ───────────────────────────────────────────────────────
+
+
+class PracticeSession(Base):
+    __tablename__ = "practice_sessions"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    weak_topics: Mapped[list[str]] = mapped_column(
+        ARRAY(Text),
+        nullable=False,
+    )
+    drills: Mapped[JSONB] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+
+# ─── Jobs ────────────────────────────────────────────────────────────────────
+
+
+class Job(Base):
+    __tablename__ = "jobs"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    type: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        server_default=text("'pending'"),
+    )
+    result: Mapped[JSONB | None] = mapped_column(JSONB, nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+
+# ─── Vector Support (future chunks table) ────────────────────────────────────
+# Uncomment when pgvector extension is installed:
+#
+# from sqlalchemy.dialects.postgresql import vector
+#
+# class DocumentChunk(Base):
+#     __tablename__ = "document_chunks"
+#
+#     id: Mapped[UUID] = mapped_column(
+#         UUID(as_uuid=True),
+#         primary_key=True,
+#         server_default=text("gen_random_uuid()"),
+#     )
+#     document_id: Mapped[UUID] = mapped_column(
+#         UUID(as_uuid=True),
+#         ForeignKey("documents.id", ondelete="CASCADE"),
+#         nullable=False,
+#     )
+#     user_id: Mapped[UUID] = mapped_column(
+#         UUID(as_uuid=True),
+#         ForeignKey("users.id", ondelete="CASCADE"),
+#         nullable=False,
+#     )
+#     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
+#     content: Mapped[str] = mapped_column(Text, nullable=False)
+#     embedding: Mapped[vector] = mapped_column(vector(1536))  # Gemini embedding dimension
+#     created_at: Mapped[TIMESTAMP] = mapped_column(
+#         TIMESTAMP(timezone=True),
+#         nullable=False,
+#         server_default=func.now(),
+#     )
