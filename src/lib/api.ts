@@ -11,3 +11,25 @@ export const client = createClient<paths>({
 export function getClient() {
   return client;
 }
+
+export function createAuthenticatedClient(token: string) {
+  return createClient<paths>({
+    baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function uploadDocument(file: File, token?: string) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const clientToUse = token ? createAuthenticatedClient(token) : client;
+  const response = await clientToUse.POST("/api/v1/documents/upload", {
+    body: formData,
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response;
+}
