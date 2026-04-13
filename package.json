@@ -11,6 +11,7 @@
     "generate:api-types": "npx openapi-typescript ../backend/openapi.json -o src/lib/api-types.ts"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.0.12",
     "@neondatabase/serverless": "^1.0.2",
     "@tailwindcss/postcss": "^4.2.2",
     "class-variance-authority": "^0.7.1",

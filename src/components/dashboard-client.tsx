@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { UploadDropzone } from "./upload-dropzone";
 import { Button } from "@/components/ui/button";
 import { LogOut, RefreshCw, CheckCircle, XCircle, Clock } from "lucide-react";
-import { signOut } from "@/auth";
+import { useAuth } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 
 interface JobStatus {
@@ -21,6 +21,7 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ token, userEmail }: DashboardClientProps) {
+  const { signOut } = useAuth();
   const [jobs, setJobs] = useState<JobStatus[]>([]);
 
   const handleUploadSuccess = useCallback(
@@ -40,7 +41,7 @@ export function DashboardClient({ token, userEmail }: DashboardClientProps) {
   );
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/login" });
+    await signOut();
   };
 
   const refreshJobs = () => {
