@@ -4,13 +4,14 @@ Dependencies for FastAPI routes.
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import JWTError, jwt
+from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from src.core.config import settings
 from src.db.session import get_db
 from src.db.models import User
+from auth import verify_clerk_token
 
 security = HTTPBearer(auto_error=False)
 
@@ -32,18 +33,14 @@ async def get_current_user(
     token = credentials.credentials
 
     try:
-        payload = jwt.decode(
-            token,
-            settings.JWT_SECRET,
-            algorithms=["HS256"],
-        )
+        payload = verify_clerk_token(token)
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
+            detail="Invalid or expired Clerk token",
         )
 
-    # NextAuth JWT payload includes "sub" (user ID) and "email"
+    # Clerk JWT payload includes "sub" (user ID) and "email"
     email = payload.get("email")
     if not email:
         raise HTTPException(

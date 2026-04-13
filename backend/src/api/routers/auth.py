@@ -4,7 +4,7 @@ Auth router for user synchronization and profile.
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import JWTError, jwt
+from jose import JWTError
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -14,6 +14,7 @@ from src.core.config import settings
 from src.db.session import get_db
 from src.db.models import User, UserPreference, UserUsage
 from datetime import datetime, timezone
+from auth import verify_clerk_token
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -45,24 +46,20 @@ async def sync_user(
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
     """
-    Upsert user from NextAuth JWT token.
-    Called by frontend after successful OAuth login.
+    Upsert user from Clerk JWT token.
+    Called by frontend after successful Clerk login.
     """
     try:
-        payload = jwt.decode(
-            request.token,
-            settings.JWT_SECRET,
-            algorithms=["HS256"],
-        )
+        payload = verify_clerk_token(request.token)
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
+            detail="Invalid Clerk token",
         )
 
     email = payload.get("email")
     name = payload.get("name")
-    image = payload.get("picture")  # NextAuth uses "picture"
+    image = payload.get("picture")  # Clerk uses "picture"
     sub = payload.get("sub")  # subject (provider ID)
 
     if not email:
@@ -129,15 +126,11 @@ async def get_current_user_profile(
     token = credentials.credentials
 
     try:
-        payload = jwt.decode(
-            token,
-            settings.JWT_SECRET,
-            algorithms=["HS256"],
-        )
+        payload = verify_clerk_token(token)
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
+            detail="Invalid or expired Clerk token",
         )
 
     email = payload.get("email")
