@@ -26,7 +26,8 @@ export async function uploadDocument(file: File, token?: string) {
   formData.append("file", file);
   const clientToUse = token ? createAuthenticatedClient(token) : client;
   const response = await clientToUse.POST("/api/v1/documents/upload", {
-    body: formData,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    body: formData as any,
     headers: {
       "Content-Type": "multipart/form-data",
     },
