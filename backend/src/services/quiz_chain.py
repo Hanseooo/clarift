@@ -13,7 +13,7 @@ import uuid
 from typing import TypedDict, Optional, List, Dict, Any
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.schema import HumanMessage
+from langchain.messages import HumanMessage
 from pydantic import BaseModel
 
 from src.core.config import settings

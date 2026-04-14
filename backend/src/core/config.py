@@ -14,7 +14,6 @@ class Settings(BaseSettings):
     REDIS_URL: str
 
     # Auth
-    JWT_SECRET: str  # Must match NEXTAUTH_SECRET in frontend
     CLERK_SECRET_KEY: str
     CLERK_PUBLISHABLE_KEY: str
 

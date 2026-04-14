@@ -11,7 +11,7 @@ import logging
 from typing import TypedDict, Optional, List, Dict, Any
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.messages import HumanMessage, SystemMessage
 
 from src.core.config import settings
 

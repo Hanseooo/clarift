@@ -1,0 +1,20 @@
+# Monorepo local/build artifacts
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/tsconfig.tsbuildinfo
+
+backend/.env
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/test.db
+backend/uvicorn.log
+backend/test.txt
+
+*.pyc
+.ruff_cache/
+
+# Windows reserved-name artifact
+nul

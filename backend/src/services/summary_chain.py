@@ -14,7 +14,7 @@ import uuid
 from typing import TypedDict, Optional
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel
 
 from src.core.config import settings

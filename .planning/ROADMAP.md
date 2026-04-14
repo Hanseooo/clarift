@@ -30,5 +30,10 @@ This roadmap is based directly on the 3-week `implementation-plan.md`.
 - **Backend:** `summary_chain.py`, `summary_service.py`, `POST /summaries`, `GET /summaries/{document_id}`, `quota_service.py`.
 - **Frontend:** Wire upload to request summary.
 
+### Phase 1.5: Auth Migration
+**Goal:** Migrate from NextAuth v5 to Clerk authentication. Replace auth system with Clerk and update user sync endpoints.
+- **Backend:** Update `get_current_user` dependency to verify Clerk JWTs.
+- **Frontend:** Migrate NextAuth to Clerk UI components and middleware.
+
 ## Phase 2: Core Loop Completion
 ... (unchanged)

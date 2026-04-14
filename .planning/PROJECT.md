@@ -18,7 +18,7 @@ Unlike generic AI chatbots that answer from broad knowledge (and risk hallucinat
 
 ## 3. Business Model
 Freemium SaaS model via PayMongo (GCash + Credit Cards).
-- **Free:** 3 summaries/week, 3 quizzes/week, 1 targeted practice/day, chat resets every 5 hours, max 5 document uploads.
+- **Free:** 3 summaries/day, 3 quizzes/day, 1 targeted practice/day, chat resets every 5 hours, max 5 document uploads.
 - **Pro (₱149/month):** 10 summaries/day, 15 quizzes/day, 10 practice sessions/day, unlimited uploads.
 
 ## 4. Key Differentiators
