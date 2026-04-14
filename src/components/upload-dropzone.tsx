@@ -68,7 +68,8 @@ export function UploadDropzone({ token, onUploadSuccess, onUploadError }: Upload
       setUploadProgress(100);
 
       if (response.error) {
-        throw new Error(response.error.message || "Upload failed");
+        console.error("Upload error:", response.error);
+        throw new Error("Upload failed");
       }
 
       const data = response.data as { document_id: string; job_id: string; message: string };

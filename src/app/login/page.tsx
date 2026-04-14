@@ -1,4 +1,4 @@
-import { LoginButton } from "@/components/login-button";
+import { SignIn } from "@clerk/nextjs";
 import { BookOpen } from "lucide-react";
 
 export default function LoginPage() {
@@ -34,7 +34,16 @@ export default function LoginPage() {
             </div>
 
             <div className="pt-4">
-              <LoginButton />
+              <SignIn
+                fallbackRedirectUrl="/dashboard"
+                appearance={{
+                  elements: {
+                    card: "shadow-none border-0 p-0 bg-transparent",
+                    header: "hidden",
+                    footer: "hidden",
+                  },
+                }}
+              />
             </div>
 
             <div className="pt-6 border-t border-border">

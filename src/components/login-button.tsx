@@ -1,16 +1,27 @@
 "use client";
 
-import { SignInButton } from "@clerk/nextjs";
+import { useClerk } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
 
 export function LoginButton() {
+  const clerk = useClerk();
+
+  const handleSignIn = () => {
+    clerk.redirectToSignIn({
+      redirectUrl: "/dashboard",
+    });
+  };
+
   return (
-      <SignInButton>
-      <Button variant="default" size="lg" className="gap-2">
-        <LogIn className="size-4" />
-        Sign in with Google
-      </Button>
-    </SignInButton>
+    <Button
+      variant="default"
+      size="lg"
+      className="gap-2"
+      onClick={handleSignIn}
+    >
+      <LogIn className="size-4" />
+      Sign in with Google
+    </Button>
   );
 }
