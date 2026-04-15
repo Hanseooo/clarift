@@ -70,7 +70,7 @@
 
 **Why:** Manual type wrappers drift silently. When a FastAPI response shape changes, the next `npm run generate:api` produces a type error everywhere the changed field is used. This is caught at build time, not at runtime in production.
 
-**Rule:** Never manually edit `src/types/api.ts`. It is a generated file. Run `npm run generate:api` after any backend route change.
+**Rule:** Never manually edit `src/types/api.ts`. It is a generated file. Run `pnpm run generate:api` after any backend route change.
 
 ---
 

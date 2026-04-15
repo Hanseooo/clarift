@@ -296,4 +296,4 @@ Keep it tight. Each session:
 2. What am I building today?
 3. Any blockers?
 
-The API contract (`/openapi.json`) is the coordination point between Hans and the team. If Hans adds or changes an endpoint, run `npm run generate:api` in frontend and communicate the change.
+The API contract (`/openapi.json`) is the coordination point between Hans and the team. If Hans adds or changes an endpoint, run `pnpm run generate:api` in frontend and communicate the change.
