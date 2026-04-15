@@ -1,4 +1,9 @@
 # Monorepo local/build artifacts
+# Environment files (keep examples tracked)
+**/.env
+**/.env.*
+!**/.env.example
+
 frontend/node_modules/
 frontend/.next/
 frontend/.env.local
