@@ -42,7 +42,7 @@ Read these in order before starting any task:
 
 **Frontend:** Next.js 15 (App Router) + TypeScript + Tailwind 4 + shadcn/ui  
 **Frontend DB:** Drizzle ORM → Neon PostgreSQL (CRUD only, no AI logic)  
-**Frontend Auth:** NextAuth v5 (Google OAuth)  
+**Frontend Auth:** Clerk (Google OAuth)  
 **Backend:** FastAPI (async) + Python  
 **Backend DB:** SQLAlchemy async + Alembic → Neon PostgreSQL (AI writes)  
 **AI:** LangChain + Gemini 2.5 Flash (chains), Gemini Flash Lite (chat)  

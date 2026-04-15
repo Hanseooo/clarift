@@ -46,19 +46,17 @@
 ## Authentication & Identity
 
 **Auth Provider:**
-- Google OAuth via NextAuth v5 — Primary authentication method
-  - Implementation: NextAuth handles OAuth flow, FastAPI verifies JWT on every request
-  - Credentials: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (frontend env)
-  - Shared secret: `NEXTAUTH_SECRET` (frontend) = `JWT_SECRET` (backend) — must be identical
-  - JWT algorithm: HS256
+- Google OAuth via Clerk — Primary authentication method
+  - Implementation: Clerk handles OAuth flow and session management; FastAPI verifies Clerk JWT on every request
+  - Credentials: Clerk dashboard provider setup + Clerk API keys in env
+  - JWT verification: Clerk JWKS (RS256)
 
 **JWT Flow:**
-1. NextAuth signs in via Google OAuth
-2. NextAuth callback POSTs to `POST /api/v1/auth/sync` (FastAPI) to upsert user
-3. FastAPI returns internal `user_id`
-4. NextAuth stores `{ userId, email, name, tier }` in signed JWT (httpOnly cookie)
-5. All subsequent requests attach JWT as `Authorization: Bearer <token>`
-6. FastAPI verifies JWT using `python-jose`, extracts `user_id`, scopes all queries
+1. User signs in via Clerk (Google OAuth configured in Clerk dashboard)
+2. Frontend obtains Clerk token and calls `POST /api/v1/auth/sync` (FastAPI) to upsert user
+3. Clerk session continues on frontend
+4. Protected API calls attach JWT as `Authorization: Bearer <token>`
+5. FastAPI verifies JWT using Clerk JWKS via `python-jose`, extracts claims, scopes all queries
 
 ## Monitoring & Observability
 
@@ -88,11 +86,9 @@
 
 | Variable | Service | Purpose |
 |----------|---------|---------|
-| `NEXTAUTH_SECRET` | Frontend | JWT signing (must match JWT_SECRET) |
-| `JWT_SECRET` | Backend | JWT verification (must match NEXTAUTH_SECRET) |
-| `NEXTAUTH_URL` | Frontend | NextAuth base URL |
-| `GOOGLE_CLIENT_ID` | Frontend | Google OAuth client ID |
-| `GOOGLE_CLIENT_SECRET` | Frontend | Google OAuth client secret |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Frontend | Clerk publishable key |
+| `CLERK_SECRET_KEY` | Frontend/Backend | Clerk secret key |
+| `CLERK_PUBLISHABLE_KEY` | Backend | Clerk publishable key for audience validation |
 | `DATABASE_URL` | Both | Neon PostgreSQL connection (asyncpg format for backend, standard for frontend) |
 | `NEXT_PUBLIC_API_URL` | Frontend | FastAPI base URL |
 | `REDIS_URL` | Backend | Upstash Redis connection |
@@ -116,11 +112,10 @@
 
 **Incoming:**
 - `POST /api/webhooks/paymongo` (Next.js route handler) — PayMongo payment events (checkout completed, payment succeeded, etc.)
-- `POST /api/auth/callback/google` (NextAuth) — Google OAuth callback
 
 **Outgoing:**
-- `POST /api/v1/auth/sync` (NextAuth -> FastAPI) — User sync on every Google sign-in
-- `GET /api/v1/auth/me` (NextAuth -> FastAPI) — Fetch user details after sync
+- `POST /api/v1/auth/sync` (Frontend/Clerk -> FastAPI) — User sync on sign-in
+- `GET /api/v1/auth/me` (Frontend/Clerk -> FastAPI) — Fetch user details after sync
 
 ## SSE (Server-Sent Events)
 

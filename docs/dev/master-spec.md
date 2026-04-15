@@ -14,7 +14,7 @@
 | `typescript` | 5.x | Type safety |
 | `tailwindcss` | 4.x | Styling |
 | `shadcn/ui` | latest | Component library |
-| `next-auth` | v5 | Auth (Google OAuth) |
+| `@clerk/nextjs` | latest | Auth (Google OAuth via Clerk) |
 | `@tanstack/react-query` | v5 | Server state + SSE polling |
 | `axios` | latest | HTTP client with interceptors |
 | `drizzle-orm` | latest | Database queries (CRUD only) |
@@ -226,13 +226,13 @@ CREATE INDEX idx_document_chunks_embedding
 ### Authentication
 All endpoints except `/api/v1/auth/*` require:
 ```
-Authorization: Bearer <nextauth_jwt>
+Authorization: Bearer <clerk_jwt>
 ```
 
 ### Endpoints
 
 ```
-POST   /api/v1/auth/sync                    # Upsert user from NextAuth
+POST   /api/v1/auth/sync                    # Upsert user from Clerk-authenticated frontend flow
 GET    /api/v1/auth/me                      # Current user + tier
 
 POST   /api/v1/documents/upload             # Upload file → { job_id, document_id }

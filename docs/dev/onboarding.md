@@ -34,7 +34,7 @@ See [`features/settings.md`](./settings.md) for how these settings are applied t
 
 ```
 1. User completes Google OAuth
-2. NextAuth signIn callback syncs user to FastAPI
+2. Clerk-authenticated frontend flow syncs user to FastAPI
 3. Middleware checks if user_preferences row exists
 4. If no preferences: redirect to /onboarding
 5. User selects format preference

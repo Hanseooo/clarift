@@ -60,7 +60,7 @@
 **Critical:**
 - `@neondatabase/serverless` — Neon PostgreSQL driver for frontend Drizzle queries (planned per `docs/dev/master-spec.md`, not yet installed)
 - `drizzle-orm` — Frontend ORM for CRUD operations (planned, not yet installed)
-- `next-auth` v5 — Google OAuth authentication (planned per `docs/dev/auth.md`, not yet installed)
+- `@clerk/nextjs` — Authentication and session management (Google OAuth via Clerk)
 - `@tanstack/react-query` v5 — Server state management and SSE polling (planned, not yet installed)
 - `sqlalchemy[asyncio]` — Backend async ORM (planned per `docs/dev/master-spec.md`, not yet in `pyproject.toml`)
 - `asyncpg` — Async PostgreSQL driver for backend (planned, not yet in `pyproject.toml`)
@@ -79,8 +79,8 @@
 ## Configuration
 
 **Environment:**
-- Frontend: `.env.local` (not present yet) — `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `DATABASE_URL`, `NEXT_PUBLIC_API_URL`
-- Backend: `.env` (not present yet) — `JWT_SECRET` (must match `NEXTAUTH_SECRET`), `DATABASE_URL` (asyncpg format), `REDIS_URL`, `GEMINI_API_KEY`, R2 credentials, `PAYMONGO_SECRET_KEY`, `SENTRY_DSN`
+- Frontend: `.env.local` — `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, Clerk redirect URLs, `DATABASE_URL`, `NEXT_PUBLIC_API_URL`
+- Backend: `.env` — `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `DATABASE_URL` (asyncpg format), `REDIS_URL`, `GEMINI_API_KEY`, R2 credentials, `PAYMONGO_SECRET_KEY`, `SENTRY_DSN`
 
 **Build:**
 - Frontend: `next.config.ts` (default config), `postcss.config.mjs` (Tailwind plugin), `tsconfig.json` (ES2017 target, strict mode, `@/*` path alias)
@@ -95,7 +95,7 @@
 - Python 3.12, uv
 - Running Neon PostgreSQL instance with pgvector extension enabled
 - Upstash Redis instance (for ARQ)
-- Google OAuth credentials (for NextAuth)
+- Clerk account with Google OAuth provider enabled
 - Gemini API key
 
 **Production:**

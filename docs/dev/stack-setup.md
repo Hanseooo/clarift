@@ -141,7 +141,8 @@ class Settings(BaseSettings):
     REDIS_URL: str
 
     # Auth
-    JWT_SECRET: str  # Must match NEXTAUTH_SECRET in frontend
+    CLERK_SECRET_KEY: str
+    CLERK_PUBLISHABLE_KEY: str
 
     # Gemini
     GEMINI_API_KEY: str
@@ -317,8 +318,9 @@ DATABASE_URL=postgresql+asyncpg://user:pass@host/clarift
 # Upstash Redis
 REDIS_URL=redis://default:token@host:port
 
-# Auth (must match NEXTAUTH_SECRET in frontend)
-JWT_SECRET=your-shared-secret
+# Clerk auth
+CLERK_SECRET_KEY=your-clerk-secret-key
+CLERK_PUBLISHABLE_KEY=your-clerk-publishable-key
 
 # Gemini
 GEMINI_API_KEY=
@@ -372,7 +374,7 @@ cd frontend
 
 ```bash
 # Auth
-npm install next-auth@beta
+npm install @clerk/nextjs
 
 # Database
 npm install drizzle-orm @neondatabase/serverless
@@ -485,11 +487,12 @@ afterAll(() => server.close())
 
 `.env.local`:
 ```bash
-# Auth
-NEXTAUTH_SECRET=your-shared-secret  # must match JWT_SECRET in backend
-NEXTAUTH_URL=http://localhost:3000
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
+# Auth (Clerk)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/login
+NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL=/dashboard
+NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL=/dashboard
 
 # Database (same Neon DB — Next.js uses direct serverless connection)
 DATABASE_URL=postgresql://user:pass@host/clarift?sslmode=require

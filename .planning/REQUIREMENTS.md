@@ -7,7 +7,7 @@ Clarift is a Next.js (frontend) and FastAPI (backend) application. The frontend 
 *These are the absolute boundaries. Anything outside is Phase 2+.*
 
 ### Core Infrastructure & Auth
-- **Google OAuth** (NextAuth v5 on frontend, synced to backend).
+- **Google OAuth** (Clerk on frontend, synced to backend).
 - **Onboarding** (capture global user settings).
 - **Pro Subscription via PayMongo** (upgrade/downgrade logic).
 - **Env-Based Pro Override** for testing without real payments.

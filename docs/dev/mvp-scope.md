@@ -121,7 +121,7 @@ MVP is built so that Phase 2 and Phase 3 features are **additions, not refactors
 | Redis caching | Wrap service method calls — routes and chains unchanged |
 | Spaced repetition | New tables + new service — no changes to existing quiz/practice services |
 | Token-based credits | Extend `quota_service.py` — same interface, different counting logic |
-| Magic link auth | Add NextAuth provider — no FastAPI changes |
+| Magic link auth | Add Clerk email sign-in method — no FastAPI changes |
 | Multi-document synthesis | New chain file + new route — existing chains unchanged |
 
 The modularity rules that make this possible are in [`modularity-guidelines.md`](./modularity-guidelines.md).

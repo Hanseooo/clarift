@@ -95,7 +95,7 @@ clarift/
 **`frontend/src/lib/`:**
 - Purpose: Shared utilities and configuration
 - Contains: `utils.ts` (cn helper)
-- Planned: `api-client.ts` (openapi-fetch instance), `auth.ts` (NextAuth config)
+- Planned: `api-client.ts` (openapi-fetch instance), auth helpers tied to Clerk
 
 **`docs/dev/`:**
 - Purpose: Comprehensive developer documentation and specifications

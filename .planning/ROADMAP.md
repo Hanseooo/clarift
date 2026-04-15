@@ -20,7 +20,7 @@ This roadmap is based directly on the 3-week `implementation-plan.md`.
 
 ### 1.2 Auth + User Sync
 - **Backend:** `POST /auth/sync`, `GET /auth/me`, JWT verification dependency, `get_current_user`.
-- **Frontend:** NextAuth v5 (Google OAuth), login UI.
+- **Frontend:** Clerk authentication (Google OAuth), login UI.
 
 ### 1.3 Document Upload + ARQ Pipeline
 - **Backend:** `POST /documents/upload`, ARQ `process_document` job, `GET /jobs/{job_id}/stream`.

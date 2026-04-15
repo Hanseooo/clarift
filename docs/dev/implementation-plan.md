@@ -56,8 +56,8 @@
 - `get_current_user` FastAPI dependency used on all protected routes
 
 **Team:**
-- NextAuth v5 with Google OAuth provider
-- `lib/auth.ts` — NextAuth config with sync callback to FastAPI
+- Clerk setup with Google OAuth provider
+- Root Clerk provider + Clerk middleware integration
 - Login page UI
 - Auth middleware protecting `/app/*` routes
 - `lib/api-client.ts` — openapi-fetch client with Authorization header interceptor
@@ -285,7 +285,7 @@ In `quota_service.py`, add `tokens_used` column tracking alongside count. The tr
 
 ### Adding Magic Link Auth
 
-Add Resend provider to NextAuth config. No FastAPI changes needed.
+Add email sign-in method in Clerk configuration. No FastAPI changes needed.
 
 ---
 

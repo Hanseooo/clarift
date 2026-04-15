@@ -94,13 +94,13 @@
 
 ---
 
-### Google OAuth Only for MVP Auth
+### Clerk + Google OAuth for MVP Auth
 
-**Decision:** Google OAuth only. No magic link for MVP.
+**Decision:** Clerk authentication with Google OAuth only for MVP. No email sign-in for MVP.
 
-**Why:** Magic link requires Resend integration, email template design, and token management. Google OAuth is one NextAuth provider configuration. For a 2–3 week MVP targeting Filipino students (who universally have Google accounts), this is the right cut.
+**Why:** Email sign-in requires additional setup and UX surface area. Clerk + Google OAuth keeps implementation lean for a 2–3 week MVP targeting Filipino students (who commonly have Google accounts), while preserving a clear upgrade path to additional Clerk sign-in methods later.
 
-**Post-MVP:** Magic link added for users who prefer email auth or don't want Google OAuth.
+**Post-MVP:** Add Clerk email sign-in for users who prefer email auth or do not want Google OAuth.
 
 ---
 

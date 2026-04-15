@@ -19,7 +19,7 @@
 - Purpose: UI rendering, CRUD operations, auth session management, quota display
 - Location: `frontend/src/`
 - Contains: Server Components, Server Actions, React Query hooks, shadcn/ui components
-- Depends on: Drizzle ORM → Neon PostgreSQL, NextAuth v5, FastAPI API (for AI data)
+- Depends on: Drizzle ORM → Neon PostgreSQL, Clerk, FastAPI API (for AI data)
 - Used by: Browser clients
 
 ### FastAPI Layer (Backend)
@@ -39,14 +39,10 @@
 
 ### Auth Flow
 1. User clicks "Sign in with Google" in Next.js
-2. NextAuth redirects to Google OAuth
-3. Google returns to `/api/auth/callback/google`
-4. NextAuth callback POSTs to FastAPI `/api/v1/auth/sync` (upsert user)
-5. FastAPI returns internal `user_id`
-6. NextAuth stores `{ userId, email, name }` in signed JWT (httpOnly cookie)
-7. All subsequent requests attach JWT as `Authorization: Bearer <token>`
-8. FastAPI verifies JWT using shared `NEXTAUTH_SECRET` / `JWT_SECRET`
-9. FastAPI extracts `user_id`, scopes all queries accordingly
+2. Clerk handles OAuth and establishes the session
+3. Frontend sends Clerk-issued JWT to FastAPI (`Authorization: Bearer <token>`) for protected API calls
+4. FastAPI verifies JWT via Clerk JWKS (RS256)
+5. FastAPI resolves user by token claims and scopes all queries accordingly
 
 ### Document Processing Flow (Async Job)
 1. Client POSTs file to FastAPI `/api/v1/documents/upload`
@@ -60,7 +56,7 @@
 
 ### CRUD Flow (Next.js Direct)
 1. Server Component or Server Action imports Drizzle client from `frontend/src/db/index.ts`
-2. Query scoped by `session.user.id` from NextAuth
+2. Query scoped by authenticated user context
 3. Direct execution against Neon PostgreSQL
 4. Results returned to component for rendering
 
@@ -77,7 +73,7 @@
 - Server Components for initial page data (no client state needed)
 - React Query for job status polling, SSE streaming, and client-side data needs
 - Server Actions for user-initiated writes (preferences, quiz attempts, etc.)
-- NextAuth JWT cookie for session state
+- Clerk session for auth state
 
 ## Key Abstractions
 
@@ -119,10 +115,10 @@
 - Triggers: Jobs enqueued by FastAPI services via Upstash Redis
 - Responsibilities: Document processing, AI chain execution, embedding generation (separate Railway process)
 
-**NextAuth:**
-- Location: `frontend/src/app/api/auth/[...nextauth]/route.ts` (planned)
-- Triggers: Auth callbacks from Google OAuth
-- Responsibilities: Session management, JWT creation, user sync with FastAPI
+**Clerk:**
+- Location: `frontend/src/app/layout.tsx`, `frontend/src/middleware.ts`
+- Triggers: Clerk-managed OAuth and session lifecycle
+- Responsibilities: Session management, route protection, frontend auth context
 
 **PayMongo Webhook:**
 - Location: `frontend/src/app/api/webhooks/paymongo/route.ts` (planned)
@@ -145,7 +141,7 @@
 
 **Validation:** Backend uses Pydantic v2 models for all request/response shapes. Frontend uses Zod for form validation. Generated API types (`src/types/api.ts`) ensure contract compliance.
 
-**Authentication:** NextAuth v5 with Google OAuth. JWT shared between Next.js and FastAPI via aligned secrets. All FastAPI endpoints (except auth) require `Authorization: Bearer <token>`.
+**Authentication:** Clerk with Google OAuth. FastAPI verifies Clerk JWTs via JWKS. All FastAPI endpoints (except auth) require `Authorization: Bearer <token>`.
 
 **Type Safety:** Backend uses Pydantic models between layers. Frontend uses generated types from OpenAPI spec. Drizzle schema provides TypeScript types for all CRUD operations.
 

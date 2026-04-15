@@ -44,23 +44,11 @@
 
 ## Security Considerations
 
-### No Environment File Templates
-- **Risk:** No `.env.example` file exists in either `backend/` or `frontend/`. The architecture doc (`docs/dev/architecture.md`) lists 14 environment variables including secrets (`NEXTAUTH_SECRET`, `JWT_SECRET`, `GEMINI_API_KEY`, `R2_SECRET_ACCESS_KEY`, `PAYMONGO_SECRET_KEY`). Without a template, developers may hardcode values or misconfigure secrets.
-- **Files:** `backend/` (no `.env.example`), `frontend/` (no `.env.example`)
-- **Current mitigation:** `.gitignore` present in both directories.
-- **Recommendations:** Create `.env.example` files in both `backend/` and `frontend/` with all required variable names and placeholder values. Document which vars must be identical across services (`NEXTAUTH_SECRET` = `JWT_SECRET`).
-
-### JWT Secret Alignment Risk
-- **Risk:** `NEXTAUTH_SECRET` (Next.js) and `JWT_SECRET` (FastAPI) must be identical for auth to work. If they drift, all authenticated requests fail silently or with opaque errors.
-- **Files:** `docs/dev/architecture.md` (line 97), deployment configuration (not yet present)
-- **Current mitigation:** Documented requirement only.
-- **Recommendations:** Add a startup check in FastAPI that validates the JWT secret can decode a test token. Add CI check that both services receive the same secret in deployment.
-
-### No Auth Implementation Yet
-- **Risk:** No NextAuth configuration, no JWT verification, no auth middleware, no protected routes. The entire auth flow documented in `docs/dev/architecture.md` is unimplemented.
-- **Files:** `frontend/src/app/` (no auth routes), `backend/` (no auth routes)
-- **Current mitigation:** None — the app has no authentication surface yet.
-- **Recommendations:** Implement auth first per `docs/dev/implementation-plan.md` priority (Days 3-4). Never build features that require user context before auth exists.
+### Auth Documentation Drift (Clerk Migration)
+- **Risk:** Some older docs still reference NextAuth setup while runtime code uses Clerk. This can mislead new contributors and break setup flows.
+- **Files:** `.planning/`, `docs/dev/` legacy references
+- **Current mitigation:** Clerk runtime is implemented in code (`frontend/src/app/layout.tsx`, `frontend/src/middleware.ts`, `backend/auth.py`).
+- **Recommendations:** Keep all planning and developer docs aligned to Clerk-only auth and remove stale NextAuth operational instructions.
 
 ### Vector Query User-Scoping Not Implemented
 - **Risk:** The architecture mandates `WHERE user_id = :user_id` on all pgvector similarity searches. This is a security requirement — without it, users could retrieve chunks from other users' documents.
