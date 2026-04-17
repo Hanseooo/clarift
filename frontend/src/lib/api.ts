@@ -28,9 +28,8 @@ export async function uploadDocument(file: File, token?: string) {
   const response = await clientToUse.POST("/api/v1/documents/upload", {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     body: formData as any,
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+// Do not set Content-Type; fetch will set it with proper boundary.
+      // headers: undefined,
   });
   return response;
 }

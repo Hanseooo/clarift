@@ -38,15 +38,16 @@ This roadmap is based directly on the 3-week `implementation-plan.md`.
 ## Phase 2: Core Loop Completion
 **Goal:** Complete the AI learning loop by implementing quiz generation with attempts, weak area detection, targeted practice drills, grounded chat, and frontend integration, with full quota enforcement.
 **Plans:** 9 plans
-- [ ] 02-01-PLAN.md — Expand quota system (add chat_used column, update quota_service.py, create enforce_quota dependency)
-- [ ] 02-02-PLAN.md — Integrate quiz chain with real database updates, implement attempt scoring and user_topic_performance updates
-- [ ] 02-03-PLAN.md — Create practice chain, implement weak areas detection, integrate with quota enforcement
-- [ ] 02-04-PLAN.md — Add quota enforcement to chat route, implement chunk retrieval in chat chain
-- [ ] 02-05-PLAN.md — Build frontend UI for quizzes: list, creation, and attempt pages
-- [ ] 02-06-PLAN.md — Generate OpenAPI schema and TypeScript API types for new endpoints
-- [ ] 02-07-PLAN.md — Build frontend UI for practice: weak areas display, practice creation, and attempt pages
-- [ ] 02-08-PLAN.md — Build frontend UI for chat: document selector, chat input, message display
-- [ ] 02-09-PLAN.md — Integration tests for core loop flows
+- [x] 02-01-PLAN.md — Expand quota system (add chat_used column, update quota_service.py, create enforce_quota dependency)
+- [x] 02-02-PLAN.md — Integrate quiz chain with real database updates, implement attempt scoring and user_topic_performance updates
+- [x] 02-03-PLAN.md — Create practice chain, implement weak areas detection, integrate with quota enforcement
+- [x] 02-04-PLAN.md — Add quota enforcement to chat route, implement chunk retrieval in chat chain
+- [x] 02-05-PLAN.md — Build frontend UI for quizzes: list, creation, and attempt pages
+- [x] 02-06-PLAN.md — Generate OpenAPI schema and TypeScript API types for new endpoints
+- [x] 02-07-PLAN.md — Build frontend UI for practice: weak areas display, practice creation, and attempt pages
+- [x] 02-08-PLAN.md — Build frontend UI for chat: document selector, chat input, message display
+- [x] 02-09-PLAN.md — Integration tests for core loop flows
+ - [x] 02-09-PLAN.md — Integration tests for core loop flows
 
 ### 2.1 Quiz Flow
 - **Backend:** Quiz generation with quota, attempt scoring, weak area detection.

@@ -11,7 +11,7 @@
           "auth"
         ],
         "summary": "Sync User",
-        "description": "Upsert user from NextAuth JWT token.\nCalled by frontend after successful OAuth login.",
+        "description": "Upsert user from Clerk JWT token.\nCalled by frontend after successful Clerk login.",
         "operationId": "sync_user_api_v1_auth_sync_post",
         "requestBody": {
           "content": {
@@ -62,6 +62,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/documents": {
+      "get": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "List Documents",
+        "operationId": "list_documents_api_v1_documents_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentListItem"
+                  },
+                  "type": "array",
+                  "title": "Response List Documents Api V1 Documents Get"
                 }
               }
             }
@@ -165,6 +195,34 @@
       }
     },
     "/api/v1/quizzes": {
+      "get": {
+        "tags": [
+          "quizzes"
+        ],
+        "summary": "List Quizzes",
+        "operationId": "list_quizzes_api_v1_quizzes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QuizItemResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Quizzes Api V1 Quizzes Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
       "post": {
         "tags": [
           "quizzes"
@@ -209,6 +267,53 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/api/v1/quizzes/{quiz_id}": {
+      "get": {
+        "tags": [
+          "quizzes"
+        ],
+        "summary": "Get Quiz",
+        "operationId": "get_quiz_api_v1_quizzes__quiz_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "quiz_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Quiz Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/quizzes/attempts": {
@@ -303,6 +408,77 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/api/v1/practice/weak-areas": {
+      "get": {
+        "tags": [
+          "practice"
+        ],
+        "summary": "Get Weak Areas",
+        "operationId": "get_weak_areas_api_v1_practice_weak_areas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/practice/{practice_id}": {
+      "get": {
+        "tags": [
+          "practice"
+        ],
+        "summary": "Get Practice Session",
+        "operationId": "get_practice_session_api_v1_practice__practice_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "practice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Practice Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/chat": {
@@ -607,6 +783,34 @@
         "title": "CreateSummaryRequest",
         "description": "Request body for creating a summary."
       },
+      "DocumentListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "created_at"
+        ],
+        "title": "DocumentListItem"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -619,6 +823,127 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "PracticeDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "weak_topics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Weak Topics"
+          },
+          "drills": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Drills"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "weak_topics",
+          "drills",
+          "created_at"
+        ],
+        "title": "PracticeDetailResponse"
+      },
+      "QuizDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "questions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Questions"
+          },
+          "question_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Question Types"
+          },
+          "question_count": {
+            "type": "integer",
+            "title": "Question Count"
+          },
+          "auto_mode": {
+            "type": "boolean",
+            "title": "Auto Mode"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "document_id",
+          "questions",
+          "question_types",
+          "question_count",
+          "auto_mode",
+          "created_at"
+        ],
+        "title": "QuizDetailResponse"
+      },
+      "QuizItemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "question_count": {
+            "type": "integer",
+            "title": "Question Count"
+          },
+          "question_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Question Types"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "document_id",
+          "question_count",
+          "question_types",
+          "created_at"
+        ],
+        "title": "QuizItemResponse"
       },
       "SubmitAttemptRequest": {
         "properties": {

@@ -12,19 +12,18 @@ Quota limits are defined per user tier (free/pro) and reset daily at UTC midnigh
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
-from sqlalchemy import select, update, insert
+from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from src.db.models import User, UserUsage
 from src.core.exceptions import QuotaExceededException
+from src.db.models import User, UserUsage
 
 logger = logging.getLogger(__name__)
 
-Feature = Literal["summary", "quiz", "practice", "document_upload"]
+Feature = Literal["summary", "quiz", "practice", "chat", "document_upload"]
 
 # Daily limits per tier
 TIER_LIMITS = {
@@ -32,12 +31,14 @@ TIER_LIMITS = {
         "summary": 3,
         "quiz": 3,
         "practice": 1,
+        "chat": 5,
         "document_upload": 5,  # lifetime limit, not daily
     },
     "pro": {
         "summary": 10,
         "quiz": 15,
         "practice": 10,
+        "chat": 20,
         "document_upload": None,  # unlimited
     },
 }
@@ -73,7 +74,7 @@ async def reset_if_needed(db: AsyncSession, usage: UserUsage) -> bool:
     now = datetime.now(timezone.utc)
     if usage.reset_at:
         # Ensure reset_at is timezone-aware (UTC)
-        reset_at = usage.reset_at
+        reset_at = cast(datetime, usage.reset_at)
         if reset_at.tzinfo is None:
             reset_at = reset_at.replace(tzinfo=timezone.utc)
         else:
@@ -90,6 +91,7 @@ async def reset_if_needed(db: AsyncSession, usage: UserUsage) -> bool:
                     summaries_used=0,
                     quizzes_used=0,
                     practice_used=0,
+                    chat_used=0,
                     reset_at=reset_tomorrow,
                 )
             )
@@ -114,7 +116,7 @@ async def check_quota(
     Raises QuotaExceededException if not.
     This function does NOT increment usage.
     """
-    usage = await get_or_create_user_usage(db, user.id)
+    usage = await get_or_create_user_usage(db, cast(UUID, user.id))
     await reset_if_needed(db, usage)
 
     tier = user.tier
@@ -130,6 +132,8 @@ async def check_quota(
         used = usage.quizzes_used
     elif feature == "practice":
         used = usage.practice_used
+    elif feature == "chat":
+        used = usage.chat_used
     elif feature == "document_upload":
         # document_upload is a lifetime limit for free tier,
         # stored in a separate column (not yet in schema).
@@ -156,7 +160,7 @@ async def increment_quota(
     Increment the usage counter for the given feature.
     Assumes quota has already been checked.
     """
-    usage = await get_or_create_user_usage(db, user.id)
+    usage = await get_or_create_user_usage(db, cast(UUID, user.id))
     await reset_if_needed(db, usage)
 
     # Determine which column to update
@@ -164,6 +168,7 @@ async def increment_quota(
         "summary": "summaries_used",
         "quiz": "quizzes_used",
         "practice": "practice_used",
+        "chat": "chat_used",
         # document_upload not yet supported
     }
     if feature not in column_map:

@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useCallback } from "react";
 import { UploadDropzone } from "./upload-dropzone";
 import { Button } from "@/components/ui/button";
-import { LogOut, RefreshCw, CheckCircle, XCircle, Clock } from "lucide-react";
+import { LogOut, RefreshCw, CheckCircle, XCircle, Clock, ChevronRight } from "lucide-react";
 import { useAuth } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,78 @@ export function DashboardClient({ token, userEmail }: DashboardClientProps) {
   const { signOut } = useAuth();
   const [jobs, setJobs] = useState<JobStatus[]>([]);
 
+  const startSSE = useCallback(
+    async (jobId: string, documentId: string) => {
+      if (!token) return;
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const response = await fetch(`${baseUrl}/api/v1/jobs/${jobId}/stream`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.body) return;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        let buffer = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          
+          // keep the last part in the buffer because it might be incomplete
+          buffer = parts.pop() || "";
+
+          for (const part of parts) {
+            const lines = part.split("\n");
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                try {
+                  const data = JSON.parse(line.substring(6));
+                  
+                  if (data.status === "timeout") continue;
+
+                  setJobs((prev) =>
+                    prev.map((job) =>
+                      job.jobId === jobId
+                        ? {
+                            ...job,
+                            status: data.status,
+                            progress: data.progress,
+                            message:
+                              data.status === "completed"
+                                ? "Processing completed successfully!"
+                                : data.status === "failed"
+                                ? "Processing failed."
+                                : "Processing document...",
+                          }
+                        : job
+                    )
+                  );
+
+                  if (data.status === "completed" || data.status === "failed") {
+                    return; // exit the function and close the stream logically
+                  }
+                } catch (e) {
+                  console.error("SSE parse error", e, line);
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error connecting to SSE stream:", err);
+      }
+    },
+    [token]
+  );
+
   const handleUploadSuccess = useCallback(
     (data: { document_id: string; job_id: string; message: string }) => {
       const newJob: JobStatus = {
@@ -34,10 +107,11 @@ export function DashboardClient({ token, userEmail }: DashboardClientProps) {
         documentId: data.document_id,
       };
       setJobs((prev) => [newJob, ...prev]);
-      // In a real implementation, start SSE connection here
-      console.log("Upload successful, job ID:", data.job_id);
+      
+      // Start SSE connection to stream updates
+      startSSE(data.job_id, data.document_id);
     },
-    []
+    [startSSE]
   );
 
   const handleSignOut = async () => {
@@ -67,19 +141,15 @@ export function DashboardClient({ token, userEmail }: DashboardClientProps) {
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Clarift Dashboard</h1>
+            <h1 className="text-3xl font-bold text-foreground">Welcome back</h1>
             <p className="text-muted-foreground mt-1">
-              Welcome back, <span className="font-medium text-foreground">{userEmail}</span>. Upload your study materials to get started.
+              Upload your study materials to generate summaries, quizzes, and practice materials.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" onClick={refreshJobs} className="gap-2">
               <RefreshCw className="size-4" />
-              Refresh
-            </Button>
-            <Button variant="ghost" onClick={handleSignOut} className="gap-2">
-              <LogOut className="size-4" />
-              Sign out
+              Refresh Activity
             </Button>
           </div>
         </header>
@@ -131,34 +201,44 @@ export function DashboardClient({ token, userEmail }: DashboardClientProps) {
                             <p className="text-sm text-muted-foreground">{job.message}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          {job.progress !== undefined && (
-                            <div className="w-24">
-                              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-primary transition-all"
-                                  style={{ width: `${job.progress}%` }}
-                                />
+                        <div className="flex flex-col md:flex-row md:items-center gap-4">
+                          <div className="flex items-center gap-4">
+                            {job.progress !== undefined && (
+                              <div className="w-24">
+                                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-primary transition-all duration-500 ease-in-out"
+                                    style={{ width: `${job.progress}%` }}
+                                  />
+                                </div>
+                                <p className="text-xs text-muted-foreground text-center mt-1">
+                                  {job.progress}%
+                                </p>
                               </div>
-                              <p className="text-xs text-muted-foreground text-center mt-1">
-                                {job.progress}%
-                              </p>
-                            </div>
-                          )}
-                          <span
-                            className={cn(
-                              "px-2 py-1 rounded-full text-xs font-medium",
-                              job.status === "completed"
-                                ? "bg-green-500/10 text-green-700"
-                                : job.status === "failed"
-                                ? "bg-destructive/10 text-destructive"
-                                : job.status === "processing"
-                                ? "bg-blue-500/10 text-blue-700"
-                                : "bg-muted text-muted-foreground"
                             )}
-                          >
-                            {job.status}
-                          </span>
+                            <span
+                              className={cn(
+                                "px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap",
+                                job.status === "completed"
+                                  ? "bg-green-500/10 text-green-700"
+                                  : job.status === "failed"
+                                  ? "bg-destructive/10 text-destructive"
+                                  : job.status === "processing"
+                                  ? "bg-blue-500/10 text-blue-700"
+                                  : "bg-muted text-muted-foreground"
+                              )}
+                            >
+                              {job.status}
+                            </span>
+                          </div>
+                          
+                          {job.status === "completed" && job.documentId && (
+                            <Link href={`/chat?document=${job.documentId}`}>
+                              <Button size="sm" className="w-full md:w-auto gap-1">
+                                Study Now <ChevronRight className="size-3" />
+                              </Button>
+                            </Link>
+                          )}
                         </div>
                       </div>
                     ))}

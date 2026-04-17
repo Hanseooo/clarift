@@ -3,15 +3,16 @@ Summaries router for generating structured summaries.
 """
 
 import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
-from src.db.models import Summary, Job
 from src.api.deps import get_current_user
-from src.services.summary_chain import run_summary_chain, SummaryChainInput
+from src.db.models import Job, Summary
+from src.db.session import get_db
+from src.services.summary_chain import SummaryChainInput, run_summary_chain
 
 router = APIRouter(prefix="/api/v1/summaries", tags=["summaries"])
 

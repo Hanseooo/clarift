@@ -3,17 +3,47 @@ Documents router for file upload and processing.
 """
 
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
-from src.db.models import Document, Job
 from src.api.deps import get_current_user
+from src.db.models import Document, Job
+from src.db.session import get_db
 from src.worker import get_arq_pool
 
 router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
+
+
+class DocumentListItem(BaseModel):
+    id: str
+    title: str
+    status: str
+    created_at: str
+
+
+@router.get("", response_model=list[DocumentListItem])
+async def list_documents(
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Document).where(Document.user_id == user.id).order_by(Document.created_at.desc())
+    )
+    documents = result.scalars().all()
+    return [
+        DocumentListItem(
+            id=str(document.id),
+            title=document.title,
+            status=document.status,
+            created_at=datetime.fromisoformat(str(document.created_at)).isoformat(),
+        )
+        for document in documents
+    ]
 
 
 @router.post("/upload")

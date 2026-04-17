@@ -30,7 +30,7 @@ async def get_arq_pool():
     """Get or create the ARQ Redis connection pool."""
     global _arq_pool
     if _arq_pool is None:
-        redis_settings = RedisSettings.from_url(settings.REDIS_URL)
+        redis_settings = RedisSettings.from_dsn(settings.REDIS_URL)
         _arq_pool = await create_pool(redis_settings)
         logger.info("ARQ pool connected to Redis at %s", settings.REDIS_URL)
     return _arq_pool
@@ -145,4 +145,22 @@ async def process_document(ctx: dict, document_id: str, job_id: str) -> None:
 
 
 # Export for use in routers
-__all__ = ["get_arq_pool", "process_document"]
+__all__ = ["get_arq_pool", "process_document", "WorkerSettings"]
+
+
+class WorkerSettings:
+    """
+    Settings for the ARQ worker.
+    Run with: arq src.worker.WorkerSettings
+    """
+
+    functions = [process_document]
+
+    # Needs to be a property or computed because settings.REDIS_URL is evaluated at runtime
+    redis_settings = RedisSettings.from_dsn(settings.REDIS_URL)
+
+    async def on_startup(ctx):
+        logger.info("ARQ Worker starting up...")
+
+    async def on_shutdown(ctx):
+        logger.info("ARQ Worker shutting down...")

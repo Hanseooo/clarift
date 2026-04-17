@@ -3,14 +3,18 @@ Practice router for generating targeted drills based on weak areas.
 """
 
 import uuid
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.deps import enforce_quota, get_current_user
+from src.db.models import PracticeSession, UserTopicPerformance
 from src.db.session import get_db
-from src.db.models import PracticeSession
-from src.api.deps import get_current_user
+from src.services.practice_chain import PracticeChainInput, run_practice_chain
 
 router = APIRouter(prefix="/api/v1/practice", tags=["practice"])
 
@@ -30,9 +34,17 @@ class CreatePracticeResponse(BaseModel):
     message: str
 
 
+class PracticeDetailResponse(BaseModel):
+    id: str
+    weak_topics: list[str]
+    drills: list[dict]
+    created_at: str
+
+
 @router.post("", response_model=CreatePracticeResponse)
 async def create_practice(
     request: CreatePracticeRequest,
+    _quota: None = Depends(enforce_quota("practice")),
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -48,20 +60,13 @@ async def create_practice(
             detail="drill_count must be between 1 and 20",
         )
 
-    # Create placeholder drills
-    drills = []
-    for i in range(request.drill_count):
-        drills.append(
-            {
-                "id": f"d{i + 1}",
-                "topic": request.weak_topics[i % len(request.weak_topics)]
-                if request.weak_topics
-                else "General",
-                "question": f"Practice question {i + 1} about {request.weak_topics[i % len(request.weak_topics)] if request.weak_topics else 'general topic'}?",
-                "answer": f"Placeholder answer {i + 1}",
-                "explanation": "This is a placeholder explanation.",
-            }
-        )
+    chain_input = PracticeChainInput(
+        weak_topics=request.weak_topics,
+        drill_count=request.drill_count,
+        user_id=str(user.id),
+    )
+    chain_output = await run_practice_chain(chain_input)
+    drills = chain_output["drills"]
 
     # Create PracticeSession record
     practice_stmt = (
@@ -82,4 +87,57 @@ async def create_practice(
         practice_id=str(practice.id),
         drills=drills,
         message="Practice session created.",
+    )
+
+
+@router.get("/weak-areas")
+async def get_weak_areas(
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(UserTopicPerformance).where(
+            UserTopicPerformance.user_id == user.id,
+            UserTopicPerformance.attempts >= 5,
+            UserTopicPerformance.quiz_count >= 2,
+            (UserTopicPerformance.correct * 1.0 / UserTopicPerformance.attempts) < 0.7,
+        )
+    )
+    rows = result.scalars().all()
+
+    weak_topics = [
+        {
+            "topic": row.topic,
+            "attempts": row.attempts,
+            "accuracy": 0 if row.attempts == 0 else round((row.correct / row.attempts) * 100, 2),
+            "quiz_count": row.quiz_count,
+        }
+        for row in rows
+    ]
+    return {"weak_topics": weak_topics}
+
+
+@router.get("/{practice_id}", response_model=PracticeDetailResponse)
+async def get_practice_session(
+    practice_id: str,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(PracticeSession).where(
+            PracticeSession.id == uuid.UUID(practice_id),
+            PracticeSession.user_id == user.id,
+        )
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Practice session not found"
+        )
+
+    return PracticeDetailResponse(
+        id=str(session.id),
+        weak_topics=session.weak_topics,
+        drills=session.drills if isinstance(session.drills, list) else [],
+        created_at=datetime.fromisoformat(str(session.created_at)).isoformat(),
     )

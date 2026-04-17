@@ -11,11 +11,9 @@ Steps:
 
 import logging
 import uuid
-from typing import TypedDict, Optional
+from typing import Optional, TypedDict
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.messages import HumanMessage, SystemMessage
-from pydantic import BaseModel
 
 from src.core.config import settings
 
@@ -87,7 +85,7 @@ Format the output as JSON with keys: key_concepts, relationships, paragraph_summ
         summary_content = "Summary generation failed due to LLM error."
 
     # Step 4: Generate diagram syntax (simplified)
-    diagram_prompt = f"""Based on the key concepts and relationships from the text above, generate a Mermaid.js diagram syntax.
+    diagram_prompt = """Based on the key concepts and relationships from the text above, generate a Mermaid.js diagram syntax.
 
 Focus on the main entities and their connections.
 

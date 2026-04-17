@@ -40,6 +40,11 @@ class User(Base):
         primary_key=True,
         server_default=text("gen_random_uuid()"),
     )
+    clerk_user_id: Mapped[str] = mapped_column(
+        Text,
+        unique=True,
+        nullable=False,
+    )
     email: Mapped[str] = mapped_column(
         Text,
         unique=True,
@@ -245,6 +250,11 @@ class UserTopicPerformance(Base):
         nullable=False,
         server_default=text("0"),
     )
+    quiz_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0"),
+    )
     last_updated: Mapped[TIMESTAMP] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,
@@ -274,6 +284,11 @@ class UserUsage(Base):
         server_default=text("0"),
     )
     practice_used: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0"),
+    )
+    chat_used: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
         server_default=text("0"),
@@ -348,34 +363,32 @@ class Job(Base):
     )
 
 
-# ─── Vector Support (future chunks table) ────────────────────────────────────
-# Uncomment when pgvector extension is installed:
-#
-# from sqlalchemy.dialects.postgresql import vector
-#
-# class DocumentChunk(Base):
-#     __tablename__ = "document_chunks"
-#
-#     id: Mapped[UUID] = mapped_column(
-#         UUID(as_uuid=True),
-#         primary_key=True,
-#         server_default=text("gen_random_uuid()"),
-#     )
-#     document_id: Mapped[UUID] = mapped_column(
-#         UUID(as_uuid=True),
-#         ForeignKey("documents.id", ondelete="CASCADE"),
-#         nullable=False,
-#     )
-#     user_id: Mapped[UUID] = mapped_column(
-#         UUID(as_uuid=True),
-#         ForeignKey("users.id", ondelete="CASCADE"),
-#         nullable=False,
-#     )
-#     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
-#     content: Mapped[str] = mapped_column(Text, nullable=False)
-#     embedding: Mapped[vector] = mapped_column(vector(1536))  # Gemini embedding dimension
-#     created_at: Mapped[TIMESTAMP] = mapped_column(
-#         TIMESTAMP(timezone=True),
-#         nullable=False,
-#         server_default=func.now(),
-#     )
+# ─── Document Chunks (retrieval context) ─────────────────────────────────────
+
+
+class DocumentChunk(Base):
+    __tablename__ = "document_chunks"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    document_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    embedding: Mapped[list[float] | None] = mapped_column(ARRAY(Numeric), nullable=True)
+    created_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )

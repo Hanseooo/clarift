@@ -5,16 +5,17 @@ Clerk JWT verification utilities.
 import json
 from typing import Any
 from urllib.request import urlopen
-from jose import jwt, JWTError
+
+from jose import JWTError, jwt
 from jose.constants import ALGORITHMS
-from jose.utils import base64url_decode
+
 from src.core.config import settings
 
 
 class ClerkJWKS:
     """Cache for Clerk JWKS."""
 
-    _jwks_url = "https://api.clerk.com/v1/jwks"
+    _jwks_url = settings.CLERK_JWKS_URL
     _jwks_cache = None
     _last_fetch = 0
 
@@ -65,11 +66,27 @@ def verify_clerk_token(token: str) -> dict[str, Any]:
     public_key = ClerkJWKS.get_public_key(kid)
 
     # Verify token
-    payload = jwt.decode(
-        token,
-        public_key,
-        algorithms=[ALGORITHMS.RS256],
-        audience=settings.CLERK_PUBLISHABLE_KEY,
-        issuer="clerk",
-    )
+
+    from src.core.config import settings
+
+    try:
+        # Use issuer from environment (must match Clerk JWT 'iss' claim)
+        issuer = getattr(settings, "CLERK_ISSUER", None)
+        if not issuer:
+            raise JWTError(
+                "CLERK_ISSUER not configured; add your Clerk instance URL to .env (e.g. https://leading-mantis-71.clerk.accounts.dev)"
+            )
+
+        # Remove audience check: Clerk JWTs use 'azp', not 'aud' by default
+        payload = jwt.decode(
+            token,
+            public_key,
+            algorithms=[ALGORITHMS.RS256],
+            issuer=issuer,
+        )
+    except Exception as e:
+        # Print error if in dev
+        if getattr(settings, "APP_ENV", "") == "development":
+            print(f"[Clerk JWT validation failed] {e}")
+        raise JWTError(f"JWT validation error: {e}")
     return payload

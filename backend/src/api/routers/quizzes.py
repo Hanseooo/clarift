@@ -3,15 +3,18 @@ Quizzes router for generating quizzes and submitting attempts.
 """
 
 import uuid
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
+from src.api.deps import enforce_quota, get_current_user
 from src.db.models import Quiz, QuizAttempt, UserTopicPerformance
-from src.api.deps import get_current_user
-from src.services.quiz_chain import run_quiz_chain, QuizChainInput
+from src.db.session import get_db
+from src.services.quiz_chain import QuizChainInput, run_quiz_chain
 
 router = APIRouter(prefix="/api/v1/quizzes", tags=["quizzes"])
 
@@ -32,6 +35,24 @@ class CreateQuizResponse(BaseModel):
     weak_topics: list[str]
 
 
+class QuizItemResponse(BaseModel):
+    id: str
+    document_id: str
+    question_count: int
+    question_types: list[str]
+    created_at: str
+
+
+class QuizDetailResponse(BaseModel):
+    id: str
+    document_id: str
+    questions: list[dict]
+    question_types: list[str]
+    question_count: int
+    auto_mode: bool
+    created_at: str
+
+
 class SubmitAttemptRequest(BaseModel):
     """Request body for submitting a quiz attempt."""
 
@@ -48,9 +69,55 @@ class SubmitAttemptResponse(BaseModel):
     message: str
 
 
+@router.get("", response_model=list[QuizItemResponse])
+async def list_quizzes(
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Quiz).where(Quiz.user_id == user.id).order_by(Quiz.created_at.desc())
+    )
+    quizzes = result.scalars().all()
+    return [
+        QuizItemResponse(
+            id=str(quiz.id),
+            document_id=str(quiz.document_id),
+            question_count=quiz.question_count,
+            question_types=quiz.question_types,
+            created_at=datetime.fromisoformat(str(quiz.created_at)).isoformat(),
+        )
+        for quiz in quizzes
+    ]
+
+
+@router.get("/{quiz_id}", response_model=QuizDetailResponse)
+async def get_quiz(
+    quiz_id: str,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Quiz).where(Quiz.id == uuid.UUID(quiz_id), Quiz.user_id == user.id)
+    )
+    quiz = result.scalar_one_or_none()
+    if quiz is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
+
+    return QuizDetailResponse(
+        id=str(quiz.id),
+        document_id=str(quiz.document_id),
+        questions=quiz.questions if isinstance(quiz.questions, list) else [],
+        question_types=quiz.question_types,
+        question_count=quiz.question_count,
+        auto_mode=quiz.auto_mode,
+        created_at=datetime.fromisoformat(str(quiz.created_at)).isoformat(),
+    )
+
+
 @router.post("", response_model=CreateQuizResponse)
 async def create_quiz(
     request: CreateQuizRequest,
+    _quota: None = Depends(enforce_quota("quiz")),
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -94,15 +161,16 @@ async def create_quiz(
     )
     chain_output = await run_quiz_chain(chain_input)
 
-    # Update quiz with chain output (stub)
-    # In reality, this would happen in the background job.
-    import logging
-
-    logger = logging.getLogger(__name__)
-    logger.info(
-        "Quiz chain completed for quiz %s",
-        quiz.id,
+    update_stmt = (
+        update(Quiz)
+        .where(Quiz.id == quiz.id)
+        .values(
+            questions=chain_output["questions"],
+            question_types=chain_output["question_types"],
+        )
     )
+    await db.execute(update_stmt)
+    await db.commit()
 
     return CreateQuizResponse(
         quiz_id=str(quiz.id),
@@ -123,9 +191,6 @@ async def submit_attempt(
     Creates a QuizAttempt record, calculates score, updates topic performance.
     Returns score and weak topics.
     """
-    # Validate quiz exists and belongs to user
-    from sqlalchemy import select
-
     result = await db.execute(
         select(Quiz).where(
             Quiz.id == uuid.UUID(request.quiz_id),
@@ -139,10 +204,77 @@ async def submit_attempt(
             detail="Quiz not found",
         )
 
-    # Stub scoring logic
-    # For now, assume all answers are correct (placeholder)
-    score = 100.0
-    weak_topics = []  # placeholder
+    questions = quiz.questions if isinstance(quiz.questions, list) else []
+    if not questions:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Quiz questions are not ready yet",
+        )
+
+    question_by_id = {
+        str(question.get("id")): question for question in questions if isinstance(question, dict)
+    }
+    total_questions = len(question_by_id)
+    correct_answers = 0
+
+    topic_stats: dict[str, dict[str, int]] = {}
+    for question_id, selected in request.answers.items():
+        question = question_by_id.get(question_id)
+        if not question:
+            continue
+        topic = str(question.get("topic") or "General")
+        expected = str(question.get("correct_answer") or "")
+        is_correct = selected == expected
+        if is_correct:
+            correct_answers += 1
+
+        if topic not in topic_stats:
+            topic_stats[topic] = {"attempts": 0, "correct": 0}
+        topic_stats[topic]["attempts"] += 1
+        topic_stats[topic]["correct"] += int(is_correct)
+
+    score = 0.0 if total_questions == 0 else round((correct_answers / total_questions) * 100, 2)
+
+    for topic, stats in topic_stats.items():
+        performance_result = await db.execute(
+            select(UserTopicPerformance).where(
+                UserTopicPerformance.user_id == user.id,
+                UserTopicPerformance.topic == topic,
+            )
+        )
+        performance = performance_result.scalar_one_or_none()
+        if performance is None:
+            await db.execute(
+                insert(UserTopicPerformance).values(
+                    user_id=user.id,
+                    topic=topic,
+                    attempts=stats["attempts"],
+                    correct=stats["correct"],
+                    quiz_count=1,
+                    last_updated=func.now(),
+                )
+            )
+        else:
+            await db.execute(
+                update(UserTopicPerformance)
+                .where(UserTopicPerformance.id == performance.id)
+                .values(
+                    attempts=performance.attempts + stats["attempts"],
+                    correct=performance.correct + stats["correct"],
+                    quiz_count=performance.quiz_count + 1,
+                    last_updated=func.now(),
+                )
+            )
+
+    weak_result = await db.execute(
+        select(UserTopicPerformance).where(
+            UserTopicPerformance.user_id == user.id,
+            UserTopicPerformance.attempts >= 5,
+            UserTopicPerformance.quiz_count >= 2,
+            (UserTopicPerformance.correct * 1.0 / UserTopicPerformance.attempts) < 0.7,
+        )
+    )
+    weak_topics = [entry.topic for entry in weak_result.scalars().all()]
 
     # Create QuizAttempt record
     attempt_stmt = (
@@ -159,8 +291,6 @@ async def submit_attempt(
     result = await db.execute(attempt_stmt)
     attempt = result.scalar_one()
 
-    # Update UserTopicPerformance (stub)
-    # In reality, we would update per-topic performance based on answers
     await db.commit()
 
     return SubmitAttemptResponse(

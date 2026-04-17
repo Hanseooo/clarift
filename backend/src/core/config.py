@@ -1,5 +1,6 @@
-from pydantic_settings import BaseSettings
 from typing import Literal
+
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -16,6 +17,8 @@ class Settings(BaseSettings):
     # Auth
     CLERK_SECRET_KEY: str
     CLERK_PUBLISHABLE_KEY: str
+    CLERK_JWKS_URL: str | None = None
+    CLERK_ISSUER: str | None = None
 
     # Gemini
     GEMINI_API_KEY: str

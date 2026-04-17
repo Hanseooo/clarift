@@ -6,9 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.deps import enforce_quota, get_current_user
 from src.db.session import get_db
-from src.api.deps import get_current_user
-from src.services.chat_chain import run_chat_chain, ChatChainInput
+from src.services.chat_chain import ChatChainInput, run_chat_chain
+from src.services.retrieval_service import get_user_chunks
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 
@@ -31,6 +32,7 @@ class ChatResponse(BaseModel):
 @router.post("", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
+    _quota: None = Depends(enforce_quota("chat")),
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -46,23 +48,20 @@ async def chat(
             detail="Question cannot be empty",
         )
 
-    # Call chat chain (stub)
+    chunks = await get_user_chunks(
+        db,
+        user_id=user.id,
+        document_id=request.document_id,
+        limit=5,
+    )
+
     chain_input = ChatChainInput(
         user_id=str(user.id),
         document_id=request.document_id,
         question=request.question,
+        chunks=chunks,
     )
     chain_output = await run_chat_chain(chain_input)
-
-    # Log usage (placeholder)
-    import logging
-
-    logger = logging.getLogger(__name__)
-    logger.info(
-        "Chat chain completed for user %s (document %s)",
-        user.id,
-        request.document_id or "all",
-    )
 
     return ChatResponse(
         answer=chain_output["answer"],
