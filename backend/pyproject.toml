@@ -22,6 +22,10 @@ dependencies = [
     "arq>=0.27",
     "langchain>=0.3.0",
     "langchain-google-genai>=0.0.14",
+    "langchain-text-splitters>=0.3.0",
+    "aioboto3>=13.0.0",
+    "pymupdf>=1.24.0",
+    "pgvector>=0.2.5",
 ]
 
 [tool.ruff]

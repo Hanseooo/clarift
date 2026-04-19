@@ -5,6 +5,7 @@ Matches exactly the Drizzle schema in frontend/src/db/schema.ts.
 See docs/dev/drizzle-schema.md for the definitive reference.
 """
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Boolean,
     ForeignKey,
@@ -386,7 +387,7 @@ class DocumentChunk(Base):
     )
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    embedding: Mapped[list[float] | None] = mapped_column(ARRAY(Numeric), nullable=True)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(768), nullable=True)
     created_at: Mapped[TIMESTAMP] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,

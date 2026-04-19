@@ -92,7 +92,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Summaries */
+        get: operations["list_summaries_api_v1_summaries_get"];
         put?: never;
         /**
          * Create Summary
@@ -102,6 +103,23 @@ export interface paths {
          *     Returns the summary ID and job ID for polling.
          */
         post: operations["create_summary_api_v1_summaries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/summaries/{summary_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Summary */
+        get: operations["get_summary_api_v1_summaries__summary_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -391,6 +409,15 @@ export interface components {
              */
             format: string;
         };
+        /** CreateSummaryResponse */
+        CreateSummaryResponse: {
+            /** Summary Id */
+            summary_id: string;
+            /** Job Id */
+            job_id: string;
+            /** Message */
+            message: string;
+        };
         /** DocumentListItem */
         DocumentListItem: {
             /** Id */
@@ -478,6 +505,27 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** SummaryResponse */
+        SummaryResponse: {
+            /** Id */
+            id: string;
+            /** Document Id */
+            document_id: string;
+            /** Format */
+            format: string;
+            /** Content */
+            content: string;
+            /** Diagram Syntax */
+            diagram_syntax: string | null;
+            /** Diagram Type */
+            diagram_type: string | null;
+            /** Quiz Type Flags */
+            quiz_type_flags: {
+                [key: string]: boolean;
+            } | null;
+            /** Created At */
+            created_at: string;
+        };
         /**
          * SyncRequest
          * @description Request body for auth/sync endpoint.
@@ -491,7 +539,10 @@ export interface components {
          * @description User profile response.
          */
         UserResponse: {
-            /** Id */
+            /**
+             * Id
+             * Format: uuid
+             */
             id: string;
             /** Email */
             email: string;
@@ -630,6 +681,26 @@ export interface operations {
             };
         };
     };
+    list_summaries_api_v1_summaries_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryResponse"][];
+                };
+            };
+        };
+    };
     create_summary_api_v1_summaries_post: {
         parameters: {
             query?: never;
@@ -649,7 +720,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["CreateSummaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_summary_api_v1_summaries__summary_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                summary_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryResponse"];
                 };
             };
             /** @description Validation Error */

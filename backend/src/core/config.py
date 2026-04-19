@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     )
     CHAT_WINDOW_SECONDS: int = 18000  # 5 hours
 
+    # Document processing safety limits
+    MAX_UPLOAD_SIZE_BYTES: int = 50 * 1024 * 1024
+    MAX_DOCUMENT_BYTES: int = 50 * 1024 * 1024
+    MAX_PDF_PAGES: int = 300
+    MAX_EXTRACTED_CHARS: int = 1_000_000
+    MAX_CHUNKS_PER_DOCUMENT: int = 500
+
     class Config:
         env_file = ".env"
 

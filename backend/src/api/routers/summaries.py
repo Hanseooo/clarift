@@ -3,16 +3,18 @@ Summaries router for generating structured summaries.
 """
 
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import get_current_user
-from src.db.models import Job, Summary
+from src.db.models import Document, Job, Summary
 from src.db.session import get_db
-from src.services.summary_chain import SummaryChainInput, run_summary_chain
+from src.worker import get_arq_pool
 
 router = APIRouter(prefix="/api/v1/summaries", tags=["summaries"])
 
@@ -24,7 +26,67 @@ class CreateSummaryRequest(BaseModel):
     format: str = "bullet"  # bullet, outline, paragraph
 
 
-@router.post("")
+class CreateSummaryResponse(BaseModel):
+    summary_id: str
+    job_id: str
+    message: str
+
+
+class SummaryResponse(BaseModel):
+    id: str
+    document_id: str
+    format: str
+    content: str
+    diagram_syntax: str | None
+    diagram_type: str | None
+    quiz_type_flags: dict[str, bool] | None
+    created_at: str
+
+
+def _to_summary_response(summary: Summary) -> SummaryResponse:
+    return SummaryResponse(
+        id=str(summary.id),
+        document_id=str(summary.document_id),
+        format=summary.format,
+        content=summary.content,
+        diagram_syntax=summary.diagram_syntax,
+        diagram_type=summary.diagram_type,
+        quiz_type_flags=summary.quiz_type_flags,
+        created_at=datetime.fromisoformat(str(summary.created_at)).isoformat(),
+    )
+
+
+@router.get("", response_model=list[SummaryResponse])
+async def list_summaries(
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Summary).where(Summary.user_id == user.id).order_by(Summary.created_at.desc())
+    )
+    summaries = result.scalars().all()
+    return [_to_summary_response(summary) for summary in summaries]
+
+
+@router.get("/{summary_id}", response_model=SummaryResponse)
+async def get_summary(
+    summary_id: uuid.UUID,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Summary).where(Summary.id == summary_id, Summary.user_id == user.id)
+    )
+    summary = result.scalar_one_or_none()
+    if summary is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Summary not found",
+        )
+    return _to_summary_response(summary)
+
+
+@router.post("", response_model=CreateSummaryResponse)
 async def create_summary(
     request: CreateSummaryRequest,
     user=Depends(get_current_user),
@@ -44,11 +106,29 @@ async def create_summary(
             detail=f"Invalid format: {request.format}. Allowed: {', '.join(allowed_formats)}",
         )
 
+    try:
+        document_uuid = uuid.UUID(request.document_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid document_id",
+        ) from exc
+
+    document_result = await db.execute(
+        select(Document).where(Document.id == document_uuid, Document.user_id == user.id)
+    )
+    document = document_result.scalar_one_or_none()
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
     # Create pending Summary record
     summary_stmt = (
         insert(Summary)
         .values(
-            document_id=uuid.UUID(request.document_id),
+            document_id=document.id,
             user_id=user.id,
             format=request.format,
             content="",  # placeholder, will be filled by chain
@@ -73,25 +153,14 @@ async def create_summary(
 
     await db.commit()
 
-    # TODO: Dispatch ARQ job that calls run_summary_chain
-    # For now, call the chain directly (stub)
-    chain_input = SummaryChainInput(
-        document_id=request.document_id,
-        user_id=str(user.id),
-        format=request.format,
-    )
-    chain_output = await run_summary_chain(chain_input)
-
-    # Update summary with chain output (stub)
-    # In reality, this would happen in the background job.
-    # We'll just log for now.
-    import logging
-
-    logger = logging.getLogger(__name__)
-    logger.info(
-        "Summary chain completed for summary %s (job %s)",
-        summary.id,
-        job.id,
+    pool = await get_arq_pool()
+    await pool.enqueue_job(
+        "run_summary_job",
+        str(summary.id),
+        str(job.id),
+        str(user.id),
+        str(document.id),
+        request.format,
     )
 
     return {

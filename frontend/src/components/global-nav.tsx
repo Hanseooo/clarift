@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton, useAuth } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
-import { MessageSquare, LayoutDashboard, FileText, BrainCircuit, GraduationCap } from "lucide-react";
+import { MessageSquare, LayoutDashboard, BrainCircuit, GraduationCap, ScrollText } from "lucide-react";
 
 export function GlobalNav() {
   const pathname = usePathname();
@@ -15,6 +15,7 @@ export function GlobalNav() {
   const routes = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Chat", path: "/chat", icon: MessageSquare },
+    { name: "Summaries", path: "/summaries", icon: ScrollText },
     { name: "Quizzes", path: "/quizzes", icon: GraduationCap },
     { name: "Practice", path: "/practice", icon: BrainCircuit },
   ];

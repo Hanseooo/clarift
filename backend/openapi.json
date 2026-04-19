@@ -150,6 +150,34 @@
       }
     },
     "/api/v1/summaries": {
+      "get": {
+        "tags": [
+          "summaries"
+        ],
+        "summary": "List Summaries",
+        "operationId": "list_summaries_api_v1_summaries_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SummaryResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Summaries Api V1 Summaries Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
       "post": {
         "tags": [
           "summaries"
@@ -172,7 +200,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSummaryResponse"
+                }
               }
             }
           },
@@ -192,6 +222,54 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/api/v1/summaries/{summary_id}": {
+      "get": {
+        "tags": [
+          "summaries"
+        ],
+        "summary": "Get Summary",
+        "operationId": "get_summary_api_v1_summaries__summary_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "summary_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Summary Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/quizzes": {
@@ -783,6 +861,29 @@
         "title": "CreateSummaryRequest",
         "description": "Request body for creating a summary."
       },
+      "CreateSummaryResponse": {
+        "properties": {
+          "summary_id": {
+            "type": "string",
+            "title": "Summary Id"
+          },
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary_id",
+          "job_id",
+          "message"
+        ],
+        "title": "CreateSummaryResponse"
+      },
       "DocumentListItem": {
         "properties": {
           "id": {
@@ -999,6 +1100,78 @@
         "title": "SubmitAttemptResponse",
         "description": "Response after submitting an attempt."
       },
+      "SummaryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "diagram_syntax": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diagram Syntax"
+          },
+          "diagram_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diagram Type"
+          },
+          "quiz_type_flags": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiz Type Flags"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "document_id",
+          "format",
+          "content",
+          "diagram_syntax",
+          "diagram_type",
+          "quiz_type_flags",
+          "created_at"
+        ],
+        "title": "SummaryResponse"
+      },
       "SyncRequest": {
         "properties": {
           "token": {
@@ -1017,6 +1190,7 @@
         "properties": {
           "id": {
             "type": "string",
+            "format": "uuid",
             "title": "Id"
           },
           "email": {
