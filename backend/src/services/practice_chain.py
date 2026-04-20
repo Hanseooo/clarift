@@ -28,7 +28,7 @@ class PracticeChainOutput(TypedDict):
 async def _validate_topics_with_llm(topics: list[str]) -> list[str]:
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
-        google_api_key=settings.GEMINI_API_KEY,
+        google_api_key=settings.GOOGLE_API_KEY,
         temperature=0,
     )
     prompt = (

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     CLERK_ISSUER: str | None = None
 
     # Gemini
-    GEMINI_API_KEY: str
+    GOOGLE_API_KEY: str
 
     # R2
     R2_ACCOUNT_ID: str

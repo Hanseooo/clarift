@@ -27,4 +27,8 @@ All backend setup, testing, and deployment instructions are found in `../docs/de
   uvicorn app.main:app --reload
   ```
 
+**ARQ Worker Note**
+
+> The ARQ worker now loads all environment variables from your `.env` file automatically at startup (via [python-dotenv](https://pypi.org/project/python-dotenv/)). Keep your `GEMINI_API_KEY` and all secrets in `.env` and they will be available for background processing.
+
 See `../docs/dev/stack-setup.md` for full detail.

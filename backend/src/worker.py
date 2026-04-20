@@ -8,6 +8,12 @@ Exports:
 
 import logging
 import uuid
+import os
+import asyncio
+from dotenv import load_dotenv
+
+load_dotenv()
+logging.getLogger(__name__).info(f"GOOGLE_API_KEY in env: {os.environ.get('GOOGLE_API_KEY')}")
 
 import fitz
 from arq import create_pool
@@ -18,6 +24,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 
 from src.core.config import settings
 from src.db.models import Document, DocumentChunk, Job, Summary
@@ -133,9 +140,33 @@ async def process_document(ctx: dict, document_id: str, job_id: str) -> None:
             raise ValueError("No chunks generated from extracted text")
 
         embeddings_client = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
+            model="models/gemini-embedding-001",
+            task_type="retrieval_document",
         )
-        vectors = await embeddings_client.aembed_documents(chunks)
+
+        # Batch chunks to respect free tier rate limits (100 requests / minute)
+        vectors = []
+        batch_size = 5
+
+        for i in range(0, len(chunks), batch_size):
+            batch = chunks[i : i + batch_size]
+
+            @retry(
+                wait=wait_exponential(multiplier=2, min=4, max=30),
+                stop=stop_after_attempt(5),
+                reraise=True,
+            )
+            async def embed_batch(b):
+                return await embeddings_client.aembed_documents(b)
+
+            try:
+                batch_vectors = await embed_batch(batch)
+                vectors.extend(batch_vectors)
+                # Small delay between batches to help throttle
+                await asyncio.sleep(2)
+            except Exception as e:
+                logger.error("Failed to embed batch after retries: %s", e)
+                raise
 
         await db_session.execute(delete(DocumentChunk).where(DocumentChunk.document_id == doc_uuid))
 

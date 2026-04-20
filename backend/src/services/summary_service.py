@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import uuid
+import asyncio
+from tenacity import retry, wait_exponential, stop_after_attempt
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from sqlalchemy import select
@@ -21,13 +23,21 @@ async def generate_summary_for_document(
 ) -> SummaryChainOutput:
     """Fetch secure chunk context and generate summary content with the LLM chain."""
     embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004",
+        model="models/gemini-embedding-001",
+        task_type="retrieval_document",
     )
     retrieval_query = (
         "Generate a complete study summary highlighting key concepts, "
         f"relationships, and useful notes in {format_value} format."
     )
-    query_embedding = await embeddings.aembed_query(retrieval_query)
+
+    @retry(
+        wait=wait_exponential(multiplier=2, min=4, max=30), stop=stop_after_attempt(5), reraise=True
+    )
+    async def embed_with_retry(query):
+        return await embeddings.aembed_query(query)
+
+    query_embedding = await embed_with_retry(retrieval_query)
 
     chunks_result = await db.execute(
         select(DocumentChunk.content)

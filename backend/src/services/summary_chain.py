@@ -64,7 +64,7 @@ async def run_summary_chain(input: SummaryChainInput) -> SummaryChainOutput:
     # Initialize Gemini LLM
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
-        google_api_key=settings.GEMINI_API_KEY,
+        google_api_key=settings.GOOGLE_API_KEY,
         temperature=0.2,
     )
 
