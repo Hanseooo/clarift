@@ -81,19 +81,34 @@ Text: {context_text}
 Please provide:
 1. Key concepts (bullet points)
 2. Relationships between concepts
-3. A concise paragraph summary
-
-Format the output as JSON with keys: key_concepts, relationships, paragraph_summary."""
+3. A concise paragraph summary"""
 
     user_prefs = input.get("user_preferences")
     if user_prefs:
-        prefs_str = (
-            f"User prefers {user_prefs.get('education_level', 'general')} level, "
-            f"formats: {user_prefs.get('output_formats', [])}, "
-            f"styles: {user_prefs.get('explanation_styles', [])}. "
-            f"Custom: {user_prefs.get('custom_instructions', '')}."
-        )
-        summary_prompt += f"\n\nApply these preferences if applicable: {prefs_str}"
+        prefs = []
+        level = user_prefs.get("education_level")
+        if level:
+            prefs.append(f"{level} level")
+
+        formats = user_prefs.get("output_formats")
+        if formats:
+            prefs.append(f"formats: {', '.join(formats)}")
+
+        styles = user_prefs.get("explanation_styles")
+        if styles:
+            prefs.append(f"styles: {', '.join(styles)}")
+
+        custom = user_prefs.get("custom_instructions")
+        if custom:
+            prefs.append(f"Custom instructions: {custom}")
+
+        if prefs:
+            prefs_str = "; ".join(prefs)
+            summary_prompt += f"\n\nApply these user preferences: {prefs_str}"
+
+    summary_prompt += (
+        "\n\nFormat the output as JSON with keys: key_concepts, relationships, paragraph_summary."
+    )
 
     summary_content = await _invoke_with_retry(llm, summary_prompt)
 
