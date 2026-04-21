@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth import verify_clerk_token
 from src.core.config import settings
-from src.db.models import User, UserPreference, UserUsage
+from src.db.models import User, UserUsage
 from src.db.session import get_db
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -113,14 +113,6 @@ async def sync_user(
 
     result = await db.execute(stmt)
     user = result.scalar_one()
-
-    # Ensure user preferences row exists
-    pref_stmt = insert(UserPreference).values(
-        user_id=user.id,
-        output_format="bullet",
-    )
-    pref_stmt = pref_stmt.on_conflict_do_nothing(index_elements=[UserPreference.user_id])
-    await db.execute(pref_stmt)
 
     # Ensure user usage row exists with reset_at = tomorrow
     tomorrow = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
