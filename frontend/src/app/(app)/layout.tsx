@@ -26,7 +26,7 @@ export default async function AppLayout({
     throw new Error("Unable to load user profile.");
   }
 
-  if (user && !user.userPreferences) {
+  if (!user || !user.userPreferences) {
     return redirect("/onboarding");
   }
 
