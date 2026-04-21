@@ -28,15 +28,32 @@ const EXPLANATION_STYLES = [
   "Socratic (Ask me questions)"
 ];
 
-export function OnboardingForm() {
+export function OnboardingForm({
+  initialData,
+}: {
+  initialData?: {
+    education_level?: string;
+    output_formats?: string[];
+    explanation_styles?: string[];
+    custom_instructions?: string;
+  };
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [educationLevel, setEducationLevel] = useState<string>("");
-  const [outputFormats, setOutputFormats] = useState<string[]>([]);
-  const [explanationStyles, setExplanationStyles] = useState<string[]>([]);
-  const [customInstructions, setCustomInstructions] = useState("");
+  const [educationLevel, setEducationLevel] = useState<string>(
+    initialData?.education_level || ""
+  );
+  const [outputFormats, setOutputFormats] = useState<string[]>(
+    initialData?.output_formats || []
+  );
+  const [explanationStyles, setExplanationStyles] = useState<string[]>(
+    initialData?.explanation_styles || []
+  );
+  const [customInstructions, setCustomInstructions] = useState(
+    initialData?.custom_instructions || ""
+  );
 
   const handleFormatChange = (format: string) => {
     setOutputFormats((prev) =>
