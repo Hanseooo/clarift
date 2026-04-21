@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Upload, File, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadDocument } from "@/lib/api";
+import { useAuth } from "@clerk/nextjs";
 
 interface UploadDropzoneProps {
-  token?: string;
   onUploadSuccess?: (data: { document_id: string; job_id: string; message: string }) => void;
   onUploadError?: (error: unknown) => void;
 }
 
-export function UploadDropzone({ token, onUploadSuccess, onUploadError }: UploadDropzoneProps) {
+export function UploadDropzone({ onUploadSuccess, onUploadError }: UploadDropzoneProps) {
+  const { getToken } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -62,7 +63,8 @@ export function UploadDropzone({ token, onUploadSuccess, onUploadError }: Upload
       }, 200);
 
       // Create a copy of the client with auth header if token provided
-      const response = await uploadDocument(selectedFile, token);
+      const currentToken = await getToken();
+      const response = await uploadDocument(selectedFile, currentToken || undefined);
 
       clearInterval(progressInterval);
       setUploadProgress(100);

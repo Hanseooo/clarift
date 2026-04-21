@@ -25,6 +25,7 @@ async def generate_summary_for_document(
     embeddings = GoogleGenerativeAIEmbeddings(
         model="models/gemini-embedding-001",
         task_type="retrieval_document",
+        output_dimensionality=768,  # Explicit for Matryoshka (prevents 3072-dim default)
     )
     retrieval_query = (
         "Generate a complete study summary highlighting key concepts, "

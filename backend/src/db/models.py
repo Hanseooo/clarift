@@ -387,6 +387,9 @@ class DocumentChunk(Base):
     )
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    # NOTE: Dimension 768 matches Gemini-embedding-001 with output_dimensionality=768.
+    # Changing or omitting the model or output_dimensionality param will break this contract and
+    # cause all DB inserts to fail. See https://cloud.google.com/vertex-ai/docs/generative-ai/embeddings/overview for updates.
     embedding: Mapped[list[float] | None] = mapped_column(Vector(768), nullable=True)
     created_at: Mapped[TIMESTAMP] = mapped_column(
         TIMESTAMP(timezone=True),

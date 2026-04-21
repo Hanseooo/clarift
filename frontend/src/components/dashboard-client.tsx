@@ -17,22 +17,22 @@ interface JobStatus {
 }
 
 interface DashboardClientProps {
-  token?: string;
   userEmail: string;
 }
 
-export function DashboardClient({ token, userEmail }: DashboardClientProps) {
-  const { signOut } = useAuth();
+export function DashboardClient({ userEmail }: DashboardClientProps) {
+  const { signOut, getToken } = useAuth();
   const [jobs, setJobs] = useState<JobStatus[]>([]);
 
   const startSSE = useCallback(
     async (jobId: string, documentId: string) => {
-      if (!token) return;
+      const currentToken = await getToken();
+      if (!currentToken) return;
       try {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const response = await fetch(`${baseUrl}/api/v1/jobs/${jobId}/stream`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${currentToken}`,
           },
         });
 
@@ -94,7 +94,7 @@ export function DashboardClient({ token, userEmail }: DashboardClientProps) {
         console.error("Error connecting to SSE stream:", err);
       }
     },
-    [token]
+    [getToken]
   );
 
   const handleUploadSuccess = useCallback(
@@ -167,7 +167,6 @@ export function DashboardClient({ token, userEmail }: DashboardClientProps) {
               </div>
               <div className="p-6">
                 <UploadDropzone
-                  token={token}
                   onUploadSuccess={handleUploadSuccess}
                   onUploadError={(error) => console.error("Upload error:", error)}
                 />
