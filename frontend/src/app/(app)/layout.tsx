@@ -15,9 +15,16 @@ export default async function AppLayout({
     return redirect("/login");
   }
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.clerkUserId, userId),
-  });
+  let user;
+  try {
+    user = await db.query.users.findFirst({
+      where: eq(users.clerkUserId, userId),
+      columns: { userPreferences: true }
+    });
+  } catch (error) {
+    console.error("Failed to verify user onboarding status:", error);
+    throw new Error("Unable to load user profile.");
+  }
 
   if (user && !user.userPreferences) {
     return redirect("/onboarding");
