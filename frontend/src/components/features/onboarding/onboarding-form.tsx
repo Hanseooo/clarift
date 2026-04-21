@@ -62,12 +62,17 @@ export function OnboardingForm() {
       custom_instructions: customInstructions,
     };
 
-    const result = await updateUserPreferences(data);
+    try {
+      const result = await updateUserPreferences(data);
 
-    if (result.success) {
-      router.push("/dashboard");
-    } else {
-      setError(result.error || "Something went wrong.");
+      if (result.success) {
+        router.push("/dashboard");
+      } else {
+        setError(result.error || "Something went wrong.");
+        setLoading(false);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred while saving preferences.");
       setLoading(false);
     }
   };
