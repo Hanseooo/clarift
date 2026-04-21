@@ -25,15 +25,20 @@ export async function updateUserPreferences(preferences: unknown) {
   const parsed = preferencesSchema.safeParse(preferences);
   
   if (!parsed.success) {
-    return { success: false, error: parsed.error.message };
+    return { success: false, error: parsed.error.issues[0]?.message || "Invalid input" };
   }
 
-  await db
-    .update(users)
-    .set({ userPreferences: parsed.data })
-    .where(eq(users.clerkUserId, userId));
+  try {
+    await db
+      .update(users)
+      .set({ userPreferences: parsed.data })
+      .where(eq(users.clerkUserId, userId));
 
-  revalidatePath("/");
-  
-  return { success: true };
+    revalidatePath("/");
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update user preferences:", error);
+    return { success: false, error: "Failed to update user preferences" };
+  }
 }
