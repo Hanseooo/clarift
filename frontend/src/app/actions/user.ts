@@ -13,21 +13,27 @@ const preferencesSchema = z.object({
   output_formats: z.array(z.string()).optional(),
   explanation_styles: z.array(z.string()).optional(),
   custom_instructions: z.string().optional()
-});
+}).strict();
 
 export async function updateUserPreferences(preferences: unknown) {
   const { userId } = await auth();
 
   if (!userId) {
-    throw new Error("Unauthorized");
+    return { success: false, error: "Unauthorized" };
   }
 
-  const parsedPreferences = preferencesSchema.parse(preferences);
+  const parsed = preferencesSchema.safeParse(preferences);
+  
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.message };
+  }
 
   await db
     .update(users)
-    .set({ userPreferences: parsedPreferences })
+    .set({ userPreferences: parsed.data })
     .where(eq(users.clerkUserId, userId));
 
   revalidatePath("/");
+  
+  return { success: true };
 }
