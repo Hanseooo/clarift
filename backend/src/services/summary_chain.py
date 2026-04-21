@@ -28,6 +28,7 @@ class SummaryChainInput(TypedDict):
 
     format: str  # "bullet", "outline", "paragraph"
     chunks: list[str]
+    user_preferences: Optional[dict]
 
 
 class SummaryChainOutput(TypedDict):
@@ -83,6 +84,16 @@ Please provide:
 3. A concise paragraph summary
 
 Format the output as JSON with keys: key_concepts, relationships, paragraph_summary."""
+
+    user_prefs = input.get("user_preferences")
+    if user_prefs:
+        prefs_str = (
+            f"User prefers {user_prefs.get('education_level', 'general')} level, "
+            f"formats: {user_prefs.get('output_formats', [])}, "
+            f"styles: {user_prefs.get('explanation_styles', [])}. "
+            f"Custom: {user_prefs.get('custom_instructions', '')}."
+        )
+        summary_prompt += f"\n\nApply these preferences if applicable: {prefs_str}"
 
     summary_content = await _invoke_with_retry(llm, summary_prompt)
 

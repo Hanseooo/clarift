@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import uuid
-import asyncio
-from tenacity import retry, wait_exponential, stop_after_attempt
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from tenacity import retry, stop_after_attempt, wait_exponential
 
-from src.db.models import DocumentChunk
+from src.db.models import DocumentChunk, User
 from src.services.summary_chain import SummaryChainInput, SummaryChainOutput, run_summary_chain
 
 
@@ -64,5 +63,8 @@ async def generate_summary_for_document(
         )
         chunks = [row[0] for row in fallback_result.all() if row[0]]
 
-    chain_input = SummaryChainInput(format=format_value, chunks=chunks)
+    user_result = await db.execute(select(User.user_preferences).where(User.id == user_id))
+    user_prefs = user_result.scalar_one_or_none()
+
+    chain_input = SummaryChainInput(format=format_value, chunks=chunks, user_preferences=user_prefs)
     return await run_summary_chain(chain_input)
