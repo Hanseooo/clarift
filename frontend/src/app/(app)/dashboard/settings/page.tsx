@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { users } from "@/db/schema";
-import { OnboardingForm } from "@/components/features/onboarding/onboarding-form";
+import { SettingsClient } from "./client";
 
 export default async function SettingsPage() {
   const { userId } = await auth();
@@ -39,7 +39,7 @@ export default async function SettingsPage() {
         </p>
       </div>
 
-      <OnboardingForm initialData={preferences} />
+      <SettingsClient preferences={preferences} />
     </div>
   );
 }

@@ -30,6 +30,7 @@ const EXPLANATION_STYLES = [
 
 export function OnboardingForm({
   initialData,
+  onSuccess,
 }: {
   initialData?: {
     education_level?: string;
@@ -37,6 +38,7 @@ export function OnboardingForm({
     explanation_styles?: string[];
     custom_instructions?: string;
   };
+  onSuccess?: () => void;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -83,12 +85,16 @@ export function OnboardingForm({
       const result = await updateUserPreferences(data);
 
       if (result.success) {
-        router.push("/dashboard");
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push("/dashboard");
+        }
       } else {
         setError(result.error || "Something went wrong.");
         setLoading(false);
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred while saving preferences.");
       setLoading(false);
     }
