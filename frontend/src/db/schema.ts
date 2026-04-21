@@ -13,21 +13,13 @@ import {
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
+  clerkUserId: text("clerk_user_id").unique(),
   email: text("email").unique().notNull(),
   name: text("name"),
   image: text("image"),
   tier: text("tier").notNull().default("free"), // "free" | "pro"
+  userPreferences: jsonb("user_preferences"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-})
-
-// ─── User Preferences ────────────────────────────────────────────────────────
-
-export const userPreferences = pgTable("user_preferences", {
-  userId: uuid("user_id")
-    .primaryKey()
-    .references(() => users.id, { onDelete: "cascade" }),
-  outputFormat: text("output_format").notNull().default("bullet"),
-  // "bullet" | "step-by-step" | "example-first"
 })
 
 // ─── Documents ───────────────────────────────────────────────────────────────
@@ -161,7 +153,6 @@ export type Summary = typeof summaries.$inferSelect
 export type Quiz = typeof quizzes.$inferSelect
 export type QuizAttempt = typeof quizAttempts.$inferSelect
 export type Job = typeof jobs.$inferSelect
-export type UserPreference = typeof userPreferences.$inferSelect
 export type UserUsage = typeof userUsage.$inferSelect
 export type UserTopicPerformance = typeof userTopicPerformance.$inferSelect
 export type PracticeSession = typeof practiceSessions.$inferSelect

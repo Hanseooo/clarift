@@ -58,28 +58,11 @@ class User(Base):
         nullable=False,
         server_default=text("'free'"),
     )
+    user_preferences: Mapped[JSONB | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[TIMESTAMP] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,
         server_default=func.now(),
-    )
-
-
-# ─── User Preferences ────────────────────────────────────────────────────────
-
-
-class UserPreference(Base):
-    __tablename__ = "user_preferences"
-
-    user_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
-    output_format: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
-        server_default=text("'bullet'"),
     )
 
 
