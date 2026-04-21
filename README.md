@@ -98,23 +98,19 @@ cd backend
 
 # Create virtual environment with uv
 uv venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-# Install dependencies
-uv pip install -r requirements.txt -r requirements-dev.txt
+# Install backend in editable mode from pyproject.toml
+uv pip install --python ".venv/Scripts/python.exe" -e .
 
 # Copy and configure environment
-cp .env.example .env
+copy .env.example .env
 # Fill in .env with your credentials
 
-# Enable pgvector on Neon database
-CREATE EXTENSION IF NOT EXISTS vector;
-
 # Run migrations
-alembic upgrade head
+uv run --python ".venv/Scripts/python.exe" alembic upgrade head
 
 # Start the backend server
-uvicorn app.main:app --reload
+uv run --python ".venv/Scripts/python.exe" uvicorn main:app --reload
 # Backend runs at http://localhost:8000
 # API docs available at http://localhost:8000/docs
 ```
@@ -124,8 +120,7 @@ uvicorn app.main:app --reload
 In a separate terminal:
 ```bash
 cd backend
-source .venv/bin/activate
-arq app.workers.WorkerSettings
+uv run --python ".venv/Scripts/python.exe" arq src.worker.WorkerSettings
 ```
 
 ### Frontend Setup
@@ -134,14 +129,14 @@ arq app.workers.WorkerSettings
 cd frontend
 
 # Install dependencies
-npm install
+pnpm install
 
 # Copy and configure environment
 cp .env.example .env.local
 # Fill in .env.local with your credentials
 
 # Start the development server
-npm run dev
+pnpm run dev
 # Frontend runs at http://localhost:3000
 ```
 
@@ -150,10 +145,11 @@ npm run dev
 Once the backend is running:
 ```bash
 cd frontend
-npm run generate:api
+pnpm run generate:openapi
+pnpm run generate:api-types
 ```
 
-This generates `src/types/api.ts` from the backend OpenAPI spec.
+This refreshes `backend/openapi.json` and generates `frontend/src/lib/api-types.ts`.
 
 ---
 
@@ -164,16 +160,13 @@ This generates `src/types/api.ts` from the backend OpenAPI spec.
 curl http://localhost:8000/health
 
 # Backend tests
-cd backend && pytest
-
-# Frontend tests
-cd frontend && npm run test
+cd backend && uv run --python ".venv/Scripts/python.exe" pytest -q
 
 # Frontend linting
-cd frontend && npm run lint
+cd frontend && pnpm lint
 
 # Backend linting
-cd backend && ruff check .
+cd backend && uv run --python ".venv/Scripts/python.exe" ruff check .
 ```
 
 ---
@@ -192,6 +185,13 @@ R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_BUCKET_NAME=clarift-uploads
+
+# Processing safety limits (optional; defaults shown)
+MAX_UPLOAD_SIZE_BYTES=52428800
+MAX_DOCUMENT_BYTES=52428800
+MAX_PDF_PAGES=300
+MAX_EXTRACTED_CHARS=1000000
+MAX_CHUNKS_PER_DOCUMENT=500
 PAYMONGO_SECRET_KEY=
 PAYMONGO_WEBHOOK_SECRET=
 SENTRY_DSN=
@@ -205,6 +205,32 @@ CLERK_SECRET_KEY=
 DATABASE_URL=postgresql://user:pass@host/clarift?sslmode=require
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
+
+---
+
+## End-to-End Test Flow (Core Loop)
+
+1. Start backend API: `uv run --python ".venv/Scripts/python.exe" uvicorn main:app --reload`
+2. Start worker: `uv run --python ".venv/Scripts/python.exe" arq src.worker.WorkerSettings`
+3. Start frontend: `pnpm run dev`
+4. In the app, go to `/dashboard` and upload a PDF.
+5. Confirm job status reaches `completed` in activity stream.
+6. Go to `/summaries`, create a summary for the uploaded document.
+7. Confirm summary job reaches `completed` and content appears in the summaries list/detail.
+8. Validate tenant isolation by signing in as another user and confirming they cannot view the first user's documents/summaries.
+
+---
+
+## Cloudflare R2 Setup (Required)
+
+1. Create bucket `clarift-uploads` in Cloudflare R2.
+2. Create an R2 API token with Object Read + Object Write for that bucket.
+3. In backend `.env`, set:
+   - `R2_ACCOUNT_ID`
+   - `R2_ACCESS_KEY_ID`
+   - `R2_SECRET_ACCESS_KEY`
+   - `R2_BUCKET_NAME`
+4. Restart backend + worker after updating env vars.
 
 ---
 

@@ -453,10 +453,10 @@ pytest --cov=app --cov-report=term-missing
 pytest -m integration
 
 # Frontend — watch mode
-cd frontend && npm run test
+cd frontend && pnpm run test
 
 # Frontend — single run with coverage
-npm run test:coverage
+pnpm run test:coverage
 ```
 
 ## Marking Integration Tests

@@ -105,7 +105,7 @@ These are non-negotiable. Violating them introduces bugs or technical debt that 
      const userId = session.user.id // from session, always
    ```
 
-10. **Never manually edit `src/types/api.ts`.** It is generated. Run `npm run generate:api` after backend changes.
+10. **Never manually edit `src/types/api.ts`.** It is generated. Run `pnpm run generate:api` after backend changes.
 
 11. **Default to Server Components.** Add `"use client"` only when you need state, effects, or event handlers.
 
@@ -136,7 +136,7 @@ These are non-negotiable. Violating them introduces bugs or technical debt that 
 3. Write service method in `app/services/[feature]_service.py`
 4. Write chain in `app/chains/[feature]_chain.py` if AI is involved
 5. Add quota dependency if metered: `Depends(enforce_quota("feature_name"))`
-6. Run `npm run generate:api` in frontend
+6. Run `pnpm run generate:api` in frontend
 7. Update the Drizzle schema if new tables were added via Alembic migration
 
 ### Adding a New Page
@@ -183,12 +183,14 @@ These are non-negotiable. Violating them introduces bugs or technical debt that 
 
 ## Environment Setup
 
+> **WARNING:** Never install Python packages globally. Always use a local virtual environment (e.g., `.venv`). Preferred tool: [`uv`](https://github.com/astral-sh/uv). Fallback to `pip` only if `uv` is unavailable.
+
 ```bash
 # Backend
 cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+uv venv  # or python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+uv pip install -r requirements.txt  # or pip install -r requirements.txt if uv unavailable
 cp .env.example .env
 # Fill in .env values
 alembic upgrade head
@@ -199,11 +201,11 @@ arq app.workers.WorkerSettings
 
 # Frontend
 cd frontend
-npm install
+pnpm install
 cp .env.example .env.local
 # Fill in .env.local values
-npm run generate:api  # generate types from running backend
-npm run dev
+pnpm run generate:api  # generate types from running backend
+pnpm run dev
 ```
 
 ---
@@ -218,9 +220,9 @@ pytest -k "test_quota"          # tests matching pattern
 pytest --cov=app --cov-report=term-missing
 
 # Frontend
-npm run test                    # vitest watch mode
-npm run test:run                # single run
-npm run test:coverage
+pnpm run test                    # vitest watch mode
+pnpm run test:run                # single run
+pnpm run test:coverage
 ```
 
 ---
@@ -233,7 +235,7 @@ A task is done when:
 - [ ] All vector queries are user-scoped
 - [ ] A pytest or vitest test covers the happy path
 - [ ] A test covers the main error case (quota exceeded, not found, etc.)
-- [ ] If a new endpoint was added: `npm run generate:api` was run
+- [ ] If a new endpoint was added: `pnpm run generate:api` was run
 - [ ] If a new table was added: both Alembic migration and Drizzle schema are updated
 - [ ] No `console.log` or `print()` left in production code paths
 - [ ] Ruff and Biome pass with no errors

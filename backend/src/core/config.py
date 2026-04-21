@@ -1,5 +1,6 @@
-from pydantic_settings import BaseSettings
 from typing import Literal
+
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -16,9 +17,11 @@ class Settings(BaseSettings):
     # Auth
     CLERK_SECRET_KEY: str
     CLERK_PUBLISHABLE_KEY: str
+    CLERK_JWKS_URL: str | None = None
+    CLERK_ISSUER: str | None = None
 
     # Gemini
-    GEMINI_API_KEY: str
+    GOOGLE_API_KEY: str
 
     # R2
     R2_ACCOUNT_ID: str
@@ -44,6 +47,13 @@ class Settings(BaseSettings):
         "If the context does not contain the answer, use the fallback message exactly."
     )
     CHAT_WINDOW_SECONDS: int = 18000  # 5 hours
+
+    # Document processing safety limits
+    MAX_UPLOAD_SIZE_BYTES: int = 50 * 1024 * 1024
+    MAX_DOCUMENT_BYTES: int = 50 * 1024 * 1024
+    MAX_PDF_PAGES: int = 300
+    MAX_EXTRACTED_CHARS: int = 1_000_000
+    MAX_CHUNKS_PER_DOCUMENT: int = 500
 
     class Config:
         env_file = ".env"

@@ -1,148 +1,168 @@
-"""
-ARQ worker for background job processing.
-
-Exports:
-- `arq_pool`: Redis connection pool for enqueuing jobs.
-- `process_document`: ARQ job function for document processing.
-"""
-
+import asyncio
 import logging
-import uuid
+import os
 
-from arq import create_pool
-from arq.connections import RedisSettings
-from sqlalchemy import update
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import func
+from arq.connections import RedisSettings, create_pool
+from arq.worker import func
+from dotenv import load_dotenv
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.core.config import settings
-from src.db.models import Document, Job
-from src.db.session import AsyncSessionLocal
+from src.services.summary_service import GoogleGenerativeAIEmbeddings  # Adjust import as needed
+
+# from src.db.session import get_db_session  # Uncomment if needed for DB
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# Redis connection pool for enqueuing jobs.
-# Created lazily on first use.
-_arq_pool = None
+# --- Matryoshka/Gemini explicit dimensionality contract ---
+# Gemini Embeddings API defaults can change (3072-dim by default as of 2026) and will BREAK Neon/pgvector if not set.
+# ENSURE output_dimensionality=768 is ALWAYS set, & all downstream vector DB fields expect 768.
+
+
+async def process_chunks(ctx, chunks, batch_size):
+    embeddings_client = ctx["embeddings_client"]
+    vectors = []
+    for i in range(0, len(chunks), batch_size):
+        batch = chunks[i : i + batch_size]
+
+        @retry(
+            wait=wait_exponential(multiplier=2, min=4, max=30),
+            stop=stop_after_attempt(5),
+            reraise=True,
+        )
+        async def embed_batch(b):
+            return await embeddings_client.aembed_documents(b)
+
+        try:
+            batch_vectors = await embed_batch(batch)
+            # --- Fail-fast batch assertion on embedding size for Matryoshka/Gemini (required for prod safety!)
+            if not all(len(v) == 768 for v in batch_vectors):
+                actual_dims = [len(v) for v in batch_vectors[:5]]
+                raise ValueError(
+                    f"Dimension mismatch in batch! Expected 768, but found sizes like {actual_dims}. "
+                    "Verify 'output_dimensionality' is set to 768 in the embedding client."
+                )
+            vectors.extend(batch_vectors)
+            await asyncio.sleep(2)  # Throttle between batches
+        except Exception as e:
+            logger.error("Failed to embed batch after retries: %s", e)
+            raise
+    return vectors
+
+
+async def on_startup(ctx):
+    ctx["embeddings_client"] = GoogleGenerativeAIEmbeddings(
+        model="models/gemini-embedding-001",
+        output_dimensionality=768,
+    )
+    logger.info("ARQ Worker startup: Embeddings client (explicit 768-dim Matryoshka) initialized.")
+    # ctx['db_pool'] = await get_db_session()  # Uncomment if DB needed
+
+
+async def process_document(ctx, document_id: str, job_id: str):
+    """
+    Process document: Download from R2, extract text, chunk, embed, and save to DB.
+    """
+    import fitz
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    from sqlalchemy import update
+    from sqlalchemy.future import select
+
+    from src.db.models import Document, DocumentChunk, Job
+    from src.db.session import AsyncSessionLocal
+    from src.services.s3_service import S3Service
+
+    logger.info(f"Starting process_document for doc {document_id} and job {job_id}")
+
+    try:
+        async with AsyncSessionLocal() as session:
+            # 1. Fetch document metadata
+            result = await session.execute(select(Document).where(Document.id == document_id))
+            document = result.scalar_one_or_none()
+            if not document:
+                raise ValueError(f"Document {document_id} not found")
+
+            # 2. Download from R2
+            logger.info(f"Downloading from R2: {document.r2_key}")
+            s3_service = S3Service()
+            pdf_bytes = await s3_service.download_file(document.r2_key)
+
+            # 3. Extract text
+            logger.info("Extracting text from PDF...")
+            with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+                text = "\n".join(page.get_text() for page in doc)
+
+            # 4. Chunk text
+            logger.info("Chunking text...")
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000,
+                chunk_overlap=200,
+            )
+            chunks = text_splitter.split_text(text)
+            logger.info(f"Created {len(chunks)} chunks")
+
+            # 5. Embed chunks
+            logger.info("Generating embeddings...")
+            vectors = await process_chunks(ctx, chunks, batch_size=20)
+
+            # 6. Save chunks to DB
+            logger.info("Saving chunks and embeddings to database...")
+            for i, (chunk_text, embedding) in enumerate(zip(chunks, vectors, strict=False)):
+                doc_chunk = DocumentChunk(
+                    document_id=document.id,
+                    user_id=document.user_id,
+                    chunk_index=i,
+                    content=chunk_text,
+                    embedding=embedding,
+                )
+                session.add(doc_chunk)
+
+            # 7. Update Document status
+            await session.execute(
+                update(Document).where(Document.id == document_id).values(status="completed")
+            )
+
+            # 8. Update Job status
+            await session.execute(
+                update(Job)
+                .where(Job.id == job_id)
+                .values(
+                    status="completed",
+                    result={"message": "Document processed successfully", "chunks": len(chunks)},
+                )
+            )
+
+            await session.commit()
+            logger.info(f"Finished process_document for doc {document_id}")
+
+    except Exception as e:
+        logger.error(f"Error processing document {document_id}: {str(e)}", exc_info=True)
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                update(Document)
+                .where(Document.id == document_id)
+                .values(status="failed", error=str(e))
+            )
+            await session.execute(
+                update(Job).where(Job.id == job_id).values(status="failed", error=str(e))
+            )
+            await session.commit()
+
+
+class WorkerSettings:
+    redis_settings = RedisSettings.from_dsn(os.getenv("REDIS_URL", "redis://localhost:6379"))
+    functions = [
+        func(process_chunks, name="process_chunks"),
+        func(process_document, name="process_document"),
+    ]
+    on_startup = on_startup
+
+
+# --- FastAPI bridge for enqueueing jobs ---
 
 
 async def get_arq_pool():
-    """Get or create the ARQ Redis connection pool."""
-    global _arq_pool
-    if _arq_pool is None:
-        redis_settings = RedisSettings.from_url(settings.REDIS_URL)
-        _arq_pool = await create_pool(redis_settings)
-        logger.info("ARQ pool connected to Redis at %s", settings.REDIS_URL)
-    return _arq_pool
-
-
-async def close_arq_pool():
-    """Close the ARQ pool (call during shutdown)."""
-    global _arq_pool
-    if _arq_pool is not None:
-        await _arq_pool.close()
-        _arq_pool = None
-        logger.info("ARQ pool closed")
-
-
-async def process_document(ctx: dict, document_id: str, job_id: str) -> None:
-    """
-    ARQ job for document processing pipeline.
-
-    Steps:
-    1. Download the file from R2
-    2. Extract text (OCR if needed)
-    3. Chunk and embed
-    4. Update document and job status
-
-    Args:
-        ctx: ARQ context (contains job ID, Redis connection, etc.)
-        document_id: ID of the document record
-        job_id: ID of the associated job record
-    """
-    logger.info(
-        "Processing document %s (job %s)",
-        document_id,
-        job_id,
-    )
-
-    db_session: AsyncSession | None = None
-    try:
-        # Convert string IDs to UUID
-        doc_uuid = uuid.UUID(document_id)
-        job_uuid = uuid.UUID(job_id)
-
-        # Create database session
-        db_session = AsyncSessionLocal()
-
-        # 1. Update job status to 'processing'
-        await db_session.execute(
-            update(Job).where(Job.id == job_uuid).values(status="processing", updated_at=func.now())
-        )
-
-        # 2. Update document status to 'processing'
-        await db_session.execute(
-            update(Document).where(Document.id == doc_uuid).values(status="processing")
-        )
-        await db_session.commit()
-
-        # 3. Download file from R2 (stub)
-        # In a real implementation, we would:
-        # - Use R2 client with settings.R2_* credentials
-        # - Download file bytes
-        logger.info("Stub: Would download file from R2 for document %s", document_id)
-
-        # 4. Extract text (stub)
-        # For now, assume plain text extraction; OCR would be added later
-        extracted_text = "Extracted text placeholder. Real implementation will use OCR for images, PDF parsing, etc."
-        logger.info("Stub: Text extraction complete, length %d chars", len(extracted_text))
-
-        # 5. Chunk text (stub)
-        # For now, simple split by sentences; later use semantic chunking
-        chunks = [extracted_text[i : i + 500] for i in range(0, len(extracted_text), 500)]
-        logger.info("Stub: Created %d chunks", len(chunks))
-
-        # 6. Update document status to 'processed'
-        await db_session.execute(
-            update(Document).where(Document.id == doc_uuid).values(status="processed")
-        )
-
-        # 7. Update job status to 'completed'
-        await db_session.execute(
-            update(Job)
-            .where(Job.id == job_uuid)
-            .values(status="completed", result={"chunks_count": len(chunks)}, updated_at=func.now())
-        )
-        await db_session.commit()
-
-        logger.info("Document processing completed successfully")
-
-    except Exception as exc:
-        logger.exception("Document processing failed")
-        # Update job and document status to 'error' with error message
-        if db_session:
-            try:
-                await db_session.rollback()
-                # Update job error
-                await db_session.execute(
-                    update(Job)
-                    .where(Job.id == uuid.UUID(job_id))
-                    .values(status="error", error=str(exc)[:500], updated_at=func.now())
-                )
-                # Update document error
-                await db_session.execute(
-                    update(Document)
-                    .where(Document.id == uuid.UUID(document_id))
-                    .values(status="error", error=str(exc)[:500])
-                )
-                await db_session.commit()
-            except Exception as inner_exc:
-                logger.error("Failed to update error status: %s", inner_exc)
-        raise
-    finally:
-        if db_session:
-            await db_session.close()
-
-
-# Export for use in routers
-__all__ = ["get_arq_pool", "process_document"]
+    """Create ARQ Redis connection pool for FastAPI dependency injection."""
+    return await create_pool(RedisSettings.from_dsn(settings.REDIS_URL))

@@ -269,7 +269,7 @@ Follow this checklist to add any new AI-powered feature to Clarift:
 4. **Write the service** in `app/services/[feature]_service.py`. It fetches chunks, calls chain, enqueues job, writes results.
 5. **Write the ARQ job** in `app/workers/[feature]_worker.py` if the feature is async.
 6. **Write the route** in `app/api/v1/routes/[feature].py`. Attach quota dependency if it's a metered feature.
-7. **Run `npm run generate:api`** in frontend to update the type contract.
+7. **Run `pnpm run generate:api`** in frontend to update the type contract.
 8. **Write the React Query hook** in `frontend/src/hooks/use-[feature].ts`.
 9. **Write the Server Action** if there are any CRUD writes (Drizzle).
 10. **Build the UI components** in `components/features/[feature]/`.

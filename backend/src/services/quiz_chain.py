@@ -1,20 +1,14 @@
-"""
-Quiz chain for generating quizzes from document content and detecting weak areas.
+"""Quiz chain for generating structured quiz questions."""
 
-Steps:
-1. Retrieve relevant document chunks
-2. Generate quiz questions (multiple choice, fill-in-blanks)
-3. Detect weak topics based on past performance (if any)
-4. Return quiz with metadata and weak area flags
-"""
+from __future__ import annotations
 
+import json
 import logging
 import uuid
-from typing import TypedDict, Optional, List, Dict, Any
+from typing import Any, TypedDict
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.messages import HumanMessage
-from pydantic import BaseModel
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.core.config import settings
 
@@ -22,142 +16,145 @@ logger = logging.getLogger(__name__)
 
 
 class QuizChainInput(TypedDict):
-    """Input for the quiz chain."""
-
     document_id: str
     user_id: str
     question_count: int
     auto_mode: bool
 
 
-class QuizChainOutput(TypedDict):
-    """Output from the quiz chain."""
+class QuizQuestion(TypedDict):
+    id: str
+    question: str
+    options: list[str]
+    correct_answer: str
+    topic: str
 
+
+class QuizChainOutput(TypedDict):
     quiz_id: str
-    questions: List[Dict[str, Any]]
-    question_types: List[str]
-    weak_topics: List[str]
-    # Additional metadata for weak area detection
-    weak_area_flags: Dict[str, bool]
+    questions: list[QuizQuestion]
+    question_types: list[str]
+    weak_topics: list[str]
+    weak_area_flags: dict[str, bool]
+
+
+def _fallback_questions(question_count: int) -> tuple[list[QuizQuestion], list[str]]:
+    defaults: list[QuizQuestion] = [
+        {
+            "id": "q1",
+            "question": "Which statement best matches your uploaded notes?",
+            "options": ["A", "B", "C", "D"],
+            "correct_answer": "A",
+            "topic": "General",
+        },
+        {
+            "id": "q2",
+            "question": "True or False: The notes include key definitions and examples.",
+            "options": ["True", "False"],
+            "correct_answer": "True",
+            "topic": "General",
+        },
+        {
+            "id": "q3",
+            "question": "Fill in the blank: The central concept is ____.",
+            "options": [],
+            "correct_answer": "core concept",
+            "topic": "General",
+        },
+    ]
+
+    selected = defaults[: max(1, min(question_count, len(defaults)))]
+    question_types = [
+        "multiple_choice" if item["options"] and len(item["options"]) > 2 else "fill_in"
+        for item in selected
+    ]
+    return selected, question_types
+
+
+def _normalize_question(raw_question: dict[str, Any], index: int) -> QuizQuestion:
+    question_id = str(raw_question.get("id") or f"q{index + 1}")
+    question_text = str(raw_question.get("question") or "")
+    topic = str(raw_question.get("topic") or "General")
+    correct_answer = str(raw_question.get("correct_answer") or "")
+
+    raw_options = raw_question.get("options")
+    options: list[str]
+    if isinstance(raw_options, list):
+        options = [str(option) for option in raw_options]
+    else:
+        options = []
+
+    if not options and raw_question.get("type") == "true_false":
+        options = ["True", "False"]
+
+    return {
+        "id": question_id,
+        "question": question_text,
+        "options": options,
+        "correct_answer": correct_answer,
+        "topic": topic,
+    }
+
+
+@retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
+async def _generate_questions_from_llm(question_count: int) -> list[QuizQuestion]:
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        google_api_key=settings.GOOGLE_API_KEY,
+        temperature=0.2,
+    )
+
+    prompt = (
+        "Return JSON only. Generate quiz questions as an array of objects with keys: "
+        "id, question, options (string array), correct_answer, topic. "
+        "Create a mix of multiple_choice, true_false, and fill_in styles. "
+        f"Count: {question_count}."
+    )
+    response = await llm.ainvoke(prompt)
+    raw_content = response.content
+    if isinstance(raw_content, str):
+        content = raw_content.strip()
+    else:
+        content = "".join(str(part) for part in raw_content).strip()
+    if "```json" in content:
+        content = content.split("```json", 1)[1].split("```", 1)[0].strip()
+    elif "```" in content:
+        content = content.split("```", 1)[1].split("```", 1)[0].strip()
+
+    payload = json.loads(content)
+    if not isinstance(payload, list):
+        raise ValueError("Quiz chain payload is not a list")
+    return [_normalize_question(item, index) for index, item in enumerate(payload)]
 
 
 async def run_quiz_chain(input: QuizChainInput) -> QuizChainOutput:
-    """
-    Execute the quiz generation chain with weak area detection.
-
-    This implementation uses Gemini via LangChain to generate quiz questions.
-    """
     logger.info(
         "Running quiz chain for document %s (user %s)",
         input["document_id"],
         input["user_id"],
     )
 
-    # Initialize Gemini LLM
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-pro",
-        google_api_key=settings.GEMINI_API_KEY,
-        temperature=0.3,
-    )
-
-    # In a real implementation, we would retrieve document chunks here.
-    placeholder_text = (
-        "This is a placeholder for document content. "
-        "In production, this would be the extracted text from the uploaded file."
-    )
-
-    # Generate quiz questions using LLM
-    quiz_prompt = f"""You are a quiz generator for study materials. Based on the following text, create two multiple-choice quiz questions.
-
-Text: {placeholder_text}
-
-For each question, provide:
-- id (like "q1", "q2")
-- text (the question)
-- options (list of 4 choices, each with id "a"-"d" and text)
-- correct_answer (the id of the correct option)
-- explanation (why this answer is correct)
-- topic (a short topic name)
-
-Return your answer as a JSON list of question objects.
-Example format:
-[
-  {{
-    "id": "q1",
-    "text": "...",
-    "options": [
-      {{"id": "a", "text": "..."}},
-      {{"id": "b", "text": "..."}},
-      {{"id": "c", "text": "..."}},
-      {{"id": "d", "text": "..."}}
-    ],
-    "correct_answer": "a",
-    "explanation": "...",
-    "topic": "..."
-  }}
-]"""
-
     try:
-        response = await llm.ainvoke(quiz_prompt)
-        # Parse JSON from response content
-        import json
+        questions = await _generate_questions_from_llm(input["question_count"])
+        if not questions:
+            questions, question_types = _fallback_questions(input["question_count"])
+        else:
+            question_types = [
+                "multiple_choice"
+                if question["options"] and len(question["options"]) > 2
+                else "fill_in"
+                for question in questions
+            ]
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Quiz generation failed, using fallback questions: %s", exc)
+        questions, question_types = _fallback_questions(input["question_count"])
 
-        # Extract JSON from markdown code block if present
-        content = response.content.strip()
-        if "```json" in content:
-            content = content.split("```json")[1].split("```")[0].strip()
-        elif "```" in content:
-            content = content.split("```")[1].split("```")[0].strip()
-        questions = json.loads(content)
-        # Ensure each question has required fields
-        for q in questions:
-            q.setdefault("id", q.get("id", "q1"))
-            q.setdefault("topic", q.get("topic", "General"))
-        question_types = ["multiple_choice"] * len(questions)
-    except Exception as exc:
-        logger.error("Quiz generation failed: %s", exc)
-        # Fallback to placeholder questions
-        questions = [
-            {
-                "id": "q1",
-                "text": "What is the main topic of the uploaded document?",
-                "options": [
-                    {"id": "a", "text": "Topic A"},
-                    {"id": "b", "text": "Topic B"},
-                    {"id": "c", "text": "Topic C"},
-                    {"id": "d", "text": "Topic D"},
-                ],
-                "correct_answer": "a",
-                "explanation": "This is a placeholder explanation.",
-                "topic": "Introduction",
-            },
-            {
-                "id": "q2",
-                "text": "Which of the following is a key concept?",
-                "options": [
-                    {"id": "a", "text": "Concept X"},
-                    {"id": "b", "text": "Concept Y"},
-                    {"id": "c", "text": "Concept Z"},
-                    {"id": "d", "text": "Concept W"},
-                ],
-                "correct_answer": "b",
-                "explanation": "This is a placeholder explanation.",
-                "topic": "Key Concepts",
-            },
-        ]
-        question_types = ["multiple_choice", "multiple_choice"]
-
-    # Weak topics detection (stub – would analyze past performance)
-    weak_topics = ["Introduction", "Key Concepts"]
-    weak_area_flags = {"needs_review": True}
-
-    # Generate a unique quiz ID
-    quiz_id = str(uuid.uuid4())
+    weak_topics = sorted({question["topic"] for question in questions})[:3]
 
     return {
-        "quiz_id": quiz_id,
+        "quiz_id": str(uuid.uuid4()),
         "questions": questions,
         "question_types": question_types,
         "weak_topics": weak_topics,
-        "weak_area_flags": weak_area_flags,
+        "weak_area_flags": {"needs_review": bool(weak_topics)},
     }

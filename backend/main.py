@@ -2,15 +2,16 @@ import sentry_sdk
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from src.core.config import settings
-from src.core.exceptions import QuotaExceededException, DocumentNotReadyException
+
 from src.api.routers.auth import router as auth_router
-from src.api.routers.jobs import router as jobs_router
-from src.api.routers.documents import router as documents_router
-from src.api.routers.summaries import router as summaries_router
-from src.api.routers.quizzes import router as quizzes_router
-from src.api.routers.practice import router as practice_router
 from src.api.routers.chat import router as chat_router
+from src.api.routers.documents import router as documents_router
+from src.api.routers.jobs import router as jobs_router
+from src.api.routers.practice import router as practice_router
+from src.api.routers.quizzes import router as quizzes_router
+from src.api.routers.summaries import router as summaries_router
+from src.core.config import settings
+from src.core.exceptions import DocumentNotReadyException, QuotaExceededException
 
 if settings.SENTRY_DSN:
     sentry_sdk.init(dsn=settings.SENTRY_DSN, traces_sample_rate=0.1)

@@ -4,14 +4,15 @@ Jobs router for streaming job progress via SSE.
 
 import asyncio
 import json
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
-from src.db.models import Job
 from src.api.deps import get_current_user
+from src.db.models import Job
+from src.db.session import get_db
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
 
@@ -27,8 +28,10 @@ async def stream_job_progress(
     Frontend polls this endpoint to show real‑time progress.
     """
     # Validate job ID format (UUID)
+    user_id = user.id
+
     # Fetch job ensuring it belongs to the authenticated user
-    result = await db.execute(select(Job).where(Job.id == job_id, Job.user_id == user.id))
+    result = await db.execute(select(Job).where(Job.id == job_id, Job.user_id == user_id))
     job = result.scalar_one_or_none()
     if not job:
         raise HTTPException(
@@ -45,8 +48,11 @@ async def stream_job_progress(
         poll_interval = 1.0  # seconds
 
         for _ in range(max_polls):
+            # End the current transaction to get fresh data from the database
+            await db.rollback()
+
             # Refresh job from database
-            result = await db.execute(select(Job).where(Job.id == job_id, Job.user_id == user.id))
+            result = await db.execute(select(Job).where(Job.id == job_id, Job.user_id == user_id))
             job = result.scalar_one()
 
             # Build SSE event
@@ -62,8 +68,8 @@ async def stream_job_progress(
 
             yield f"data: {json.dumps(event_data, default=str)}\n\n"
 
-            # If job is done (success or failed), stop streaming
-            if job.status in ("success", "failed"):
+            # If job is done (completed or failed), stop streaming
+            if job.status in ("completed", "failed"):
                 break
 
             await asyncio.sleep(poll_interval)
@@ -90,7 +96,7 @@ def _estimate_progress(job: Job) -> float | None:
     mapping = {
         "pending": 0.0,
         "processing": 50.0,
-        "success": 100.0,
+        "completed": 100.0,
         "failed": 100.0,
     }
     return mapping.get(job.status)

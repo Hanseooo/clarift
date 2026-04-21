@@ -3,17 +3,49 @@ Documents router for file upload and processing.
 """
 
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
-from src.db.models import Document, Job
 from src.api.deps import get_current_user
+from src.core.config import settings
+from src.db.models import Document, Job
+from src.db.session import get_db
+from src.services.s3_service import S3Service
 from src.worker import get_arq_pool
 
 router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
+
+
+class DocumentListItem(BaseModel):
+    id: str
+    title: str
+    status: str
+    created_at: str
+
+
+@router.get("", response_model=list[DocumentListItem])
+async def list_documents(
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Document).where(Document.user_id == user.id).order_by(Document.created_at.desc())
+    )
+    documents = result.scalars().all()
+    return [
+        DocumentListItem(
+            id=str(document.id),
+            title=document.title,
+            status=document.status,
+            created_at=datetime.fromisoformat(str(document.created_at)).isoformat(),
+        )
+        for document in documents
+    ]
 
 
 @router.post("/upload")
@@ -43,11 +75,22 @@ async def upload_document(
             f"Allowed: {', '.join(allowed_mime_types)}",
         )
 
-    # In a real implementation, we would:
-    # 1. Upload to R2 storage
-    # 2. Generate a unique R2 key
-    # For now, stub the R2 key.
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    if file_size > settings.MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=(
+                f"File is too large ({file_size} bytes). "
+                f"Maximum allowed is {settings.MAX_UPLOAD_SIZE_BYTES} bytes."
+            ),
+        )
+
     r2_key = f"documents/{user.id}/{uuid.uuid4()}-{file.filename}"
+    s3_service = S3Service()
+    file.file.seek(0)
+    await s3_service.upload_file(file.file, r2_key)
 
     # Create Document record
     doc_stmt = (

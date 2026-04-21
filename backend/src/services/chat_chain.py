@@ -1,17 +1,12 @@
-"""
-Grounded chat chain for answering questions based on uploaded documents.
+"""Grounded chat chain with service-layer retrieval and citations."""
 
-Steps:
-1. Retrieve relevant document chunks (filtered by user_id)
-2. Generate grounded answer using retrieved chunks
-3. Return answer with citations
-"""
+from __future__ import annotations
 
 import logging
-from typing import TypedDict, Optional, List, Dict, Any
+from typing import Any, TypedDict, cast
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.messages import HumanMessage, SystemMessage
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.core.config import settings
 
@@ -19,85 +14,81 @@ logger = logging.getLogger(__name__)
 
 
 class ChatChainInput(TypedDict):
-    """Input for the chat chain."""
-
     user_id: str
-    document_id: Optional[str]  # optional: if None, search across all user docs
+    document_id: str | None
     question: str
+    chunks: list[dict[str, Any]]
 
 
 class ChatChainOutput(TypedDict):
-    """Output from the chat chain."""
-
     answer: str
-    citations: List[Dict[str, Any]]
-    relevant_chunks: List[str]
+    citations: list[dict[str, Any]]
+    relevant_chunks: list[str]
+
+
+@retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
+async def _generate_grounded_answer(question: str, context: str) -> str:
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        google_api_key=settings.GOOGLE_API_KEY,
+        temperature=0.1,
+    )
+    prompt = (
+        f"{settings.CHAT_SYSTEM_PROMPT}\n\n"
+        f"Context:\n{context}\n\n"
+        f"Question: {question}\n\n"
+        f"If missing answer in context, return exactly: {settings.CHAT_FALLBACK_MESSAGE}"
+    )
+    response = await llm.ainvoke(prompt)
+    raw = response.content
+    if isinstance(raw, str):
+        text_value = cast(str, raw)
+        return text_value.strip()
+    return "".join(str(part) for part in raw).strip()
 
 
 async def run_chat_chain(input: ChatChainInput) -> ChatChainOutput:
-    """
-    Execute the grounded chat chain.
+    chunks = input["chunks"][:5]
+    if not chunks:
+        return {
+            "answer": settings.CHAT_FALLBACK_MESSAGE,
+            "citations": [],
+            "relevant_chunks": [],
+        }
 
-    This implementation uses Gemini via LangChain to generate grounded answers.
-    """
-    logger.info(
-        "Running chat chain for user %s (document %s)",
-        input["user_id"],
-        input["document_id"] or "all",
-    )
-
-    # Initialize Gemini LLM
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-pro",
-        google_api_key=settings.GEMINI_API_KEY,
-        temperature=0.1,
-    )
-
-    # In a real implementation, we would retrieve relevant document chunks here.
-    # For demonstration, we use a placeholder context.
-    placeholder_context = "This is a placeholder for retrieved document chunks. In production, this would be actual text extracted from the user's uploaded files."
-
-    # Build the prompt with system instructions
-    system_prompt = settings.CHAT_SYSTEM_PROMPT
-    user_question = input["question"]
-
-    chat_prompt = f"""{system_prompt}
-
-Context from uploaded notes:
-{placeholder_context}
-
-Question: {user_question}
-
-Answer the question using ONLY the context above. If the context does not contain enough information to answer, respond with the exact fallback message: "{settings.CHAT_FALLBACK_MESSAGE}"
-
-Provide your answer, and include citations referencing the context."""
+    context_parts = [str(item.get("content", "")) for item in chunks if item.get("content")]
+    context = "\n\n".join(context_parts)
+    if not context.strip():
+        return {
+            "answer": settings.CHAT_FALLBACK_MESSAGE,
+            "citations": [],
+            "relevant_chunks": [],
+        }
 
     try:
-        response = await llm.ainvoke(chat_prompt)
-        answer = response.content.strip()
-        # If answer contains fallback message, treat as no context
-        if settings.CHAT_FALLBACK_MESSAGE in answer:
-            answer = settings.CHAT_FALLBACK_MESSAGE
-            citations = []
-            relevant_chunks = []
-        else:
-            # Simulate citations (in real implementation, we would map to actual chunks)
-            citations = [
-                {
-                    "chunk_id": "chunk1",
-                    "document_id": input.get("document_id", "doc-123"),
-                    "text": placeholder_context[:100] + "...",
-                }
-            ]
-            relevant_chunks = [placeholder_context]
-    except Exception as exc:
-        logger.error("Chat chain LLM call failed: %s", exc)
-        answer = "Sorry, an error occurred while generating the answer."
-        citations = []
-        relevant_chunks = []
+        answer = await _generate_grounded_answer(input["question"], context)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Chat chain generation failed: %s", exc)
+        answer = settings.CHAT_FALLBACK_MESSAGE
+
+    if answer == settings.CHAT_FALLBACK_MESSAGE:
+        return {
+            "answer": settings.CHAT_FALLBACK_MESSAGE,
+            "citations": [],
+            "relevant_chunks": [],
+        }
+
+    citations = [
+        {
+            "chunk_id": str(item.get("id")),
+            "document_id": str(item.get("document_id")),
+            "chunk_index": item.get("chunk_index"),
+        }
+        for item in chunks
+    ]
 
     return {
         "answer": answer,
         "citations": citations,
-        "relevant_chunks": relevant_chunks,
+        "relevant_chunks": context_parts,
     }

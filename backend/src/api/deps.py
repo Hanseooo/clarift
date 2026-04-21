@@ -2,16 +2,18 @@
 Dependencies for FastAPI routes.
 """
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import JWTError
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from collections.abc import Callable
 
-from src.core.config import settings
-from src.db.session import get_db
-from src.db.models import User
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from auth import verify_clerk_token
+from src.db.models import User
+from src.db.session import get_db
+from src.services.quota_service import Feature, check_and_increment_quota
 
 security = HTTPBearer(auto_error=False)
 
@@ -40,16 +42,16 @@ async def get_current_user(
             detail="Invalid or expired Clerk token",
         )
 
-    # Clerk JWT payload includes "sub" (user ID) and "email"
-    email = payload.get("email")
-    if not email:
+    # Clerk JWT payload includes "sub" (user ID)
+    sub = payload.get("sub")
+    if not sub:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token missing required claim: email",
+            detail="Token missing required claim: clerk_user_id/sub",
         )
 
-    # Find user by email
-    result = await db.execute(select(User).where(User.email == email))
+    # Find user by Clerk user ID
+    result = await db.execute(select(User).where(User.clerk_user_id == sub))
     user = result.scalar_one_or_none()
     if not user:
         # This should not happen if auth/sync has been called
@@ -69,3 +71,13 @@ async def require_pro_user(user: User = Depends(get_current_user)) -> User:
             detail="Pro subscription required",
         )
     return user
+
+
+def enforce_quota(feature: Feature) -> Callable:
+    async def quota_dependency(
+        user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> None:
+        await check_and_increment_quota(db, user, feature)
+
+    return quota_dependency

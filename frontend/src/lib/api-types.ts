@@ -15,8 +15,8 @@ export interface paths {
         put?: never;
         /**
          * Sync User
-         * @description Upsert user from NextAuth JWT token.
-         *     Called by frontend after successful OAuth login.
+         * @description Upsert user from Clerk JWT token.
+         *     Called by frontend after successful Clerk login.
          */
         post: operations["sync_user_api_v1_auth_sync_post"];
         delete?: never;
@@ -37,6 +37,23 @@ export interface paths {
          * @description Get current user profile using JWT from Authorization header.
          */
         get: operations["get_current_user_profile_api_v1_auth_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Documents */
+        get: operations["list_documents_api_v1_documents_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -75,7 +92,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Summaries */
+        get: operations["list_summaries_api_v1_summaries_get"];
         put?: never;
         /**
          * Create Summary
@@ -91,6 +109,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/summaries/{summary_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Summary */
+        get: operations["get_summary_api_v1_summaries__summary_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quizzes": {
         parameters: {
             query?: never;
@@ -98,7 +133,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Quizzes */
+        get: operations["list_quizzes_api_v1_quizzes_get"];
         put?: never;
         /**
          * Create Quiz
@@ -108,6 +144,23 @@ export interface paths {
          *     Returns the quiz ID and weak topics.
          */
         post: operations["create_quiz_api_v1_quizzes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quizzes/{quiz_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Quiz */
+        get: operations["get_quiz_api_v1_quizzes__quiz_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -153,6 +206,40 @@ export interface paths {
          *     Creates a PracticeSession record and returns generated drills.
          */
         post: operations["create_practice_api_v1_practice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/practice/weak-areas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Weak Areas */
+        get: operations["get_weak_areas_api_v1_practice_weak_areas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/practice/{practice_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Practice Session */
+        get: operations["get_practice_session_api_v1_practice__practice_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -322,10 +409,75 @@ export interface components {
              */
             format: string;
         };
+        /** CreateSummaryResponse */
+        CreateSummaryResponse: {
+            /** Summary Id */
+            summary_id: string;
+            /** Job Id */
+            job_id: string;
+            /** Message */
+            message: string;
+        };
+        /** DocumentListItem */
+        DocumentListItem: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Status */
+            status: string;
+            /** Created At */
+            created_at: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** PracticeDetailResponse */
+        PracticeDetailResponse: {
+            /** Id */
+            id: string;
+            /** Weak Topics */
+            weak_topics: string[];
+            /** Drills */
+            drills: {
+                [key: string]: unknown;
+            }[];
+            /** Created At */
+            created_at: string;
+        };
+        /** QuizDetailResponse */
+        QuizDetailResponse: {
+            /** Id */
+            id: string;
+            /** Document Id */
+            document_id: string;
+            /** Questions */
+            questions: {
+                [key: string]: unknown;
+            }[];
+            /** Question Types */
+            question_types: string[];
+            /** Question Count */
+            question_count: number;
+            /** Auto Mode */
+            auto_mode: boolean;
+            /** Created At */
+            created_at: string;
+        };
+        /** QuizItemResponse */
+        QuizItemResponse: {
+            /** Id */
+            id: string;
+            /** Document Id */
+            document_id: string;
+            /** Question Count */
+            question_count: number;
+            /** Question Types */
+            question_types: string[];
+            /** Created At */
+            created_at: string;
         };
         /**
          * SubmitAttemptRequest
@@ -353,6 +505,27 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** SummaryResponse */
+        SummaryResponse: {
+            /** Id */
+            id: string;
+            /** Document Id */
+            document_id: string;
+            /** Format */
+            format: string;
+            /** Content */
+            content: string;
+            /** Diagram Syntax */
+            diagram_syntax: string | null;
+            /** Diagram Type */
+            diagram_type: string | null;
+            /** Quiz Type Flags */
+            quiz_type_flags: {
+                [key: string]: boolean;
+            } | null;
+            /** Created At */
+            created_at: string;
+        };
         /**
          * SyncRequest
          * @description Request body for auth/sync endpoint.
@@ -366,7 +539,10 @@ export interface components {
          * @description User profile response.
          */
         UserResponse: {
-            /** Id */
+            /**
+             * Id
+             * Format: uuid
+             */
             id: string;
             /** Email */
             email: string;
@@ -452,6 +628,26 @@ export interface operations {
             };
         };
     };
+    list_documents_api_v1_documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentListItem"][];
+                };
+            };
+        };
+    };
     upload_document_api_v1_documents_upload_post: {
         parameters: {
             query?: never;
@@ -485,6 +681,26 @@ export interface operations {
             };
         };
     };
+    list_summaries_api_v1_summaries_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryResponse"][];
+                };
+            };
+        };
+    };
     create_summary_api_v1_summaries_post: {
         parameters: {
             query?: never;
@@ -504,7 +720,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["CreateSummaryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -514,6 +730,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_summary_api_v1_summaries__summary_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                summary_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_quizzes_api_v1_quizzes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizItemResponse"][];
                 };
             };
         };
@@ -538,6 +805,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateQuizResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_quiz_api_v1_quizzes__quiz_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -604,6 +902,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreatePracticeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_weak_areas_api_v1_practice_weak_areas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_practice_session_api_v1_practice__practice_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                practice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeDetailResponse"];
                 };
             };
             /** @description Validation Error */

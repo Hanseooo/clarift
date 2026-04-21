@@ -123,32 +123,41 @@ uvicorn main:app --reload
   ```
   Should return `{ "status": "ok" }`
 
-### Optional: Run background jobs/worker
-If you need async document processing (not MVP testing):
+### REQUIRED: Run background jobs/worker
+For uploads, document processing, or any background AI features, you MUST run the ARQ worker in a separate terminal. Without this, uploads will stay at "0% pending" and processing will never complete.
 ```bash
 uv run arq src.workers.WorkerSettings
 ```
 
 ---
 
-## 5. Sign In and Test!
-- Go to [http://localhost:3000](http://localhost:3000) in your browser
-- Click "Sign in with Google" – complete via Clerk
-- You should be redirected to the Dashboard with your Google email
-- (Optional: Upload docs and check workflow)
+## 5. All Components Checklist (Run Each In Its Own Terminal Window)
+1. Start Redis (local or Upstash)
+2. Start the backend API server
+3. Start the ARQ worker for background jobs
+4. Start the frontend dev server
+All four must be running. Check logs—each should show "listening" or "ready" when fully booted.
+
+## 6. Sign In and Test!
+- Open [http://localhost:3000](http://localhost:3000) in your browser
+- Click "Sign in with Google" and log in via Clerk
+- You should reach the Dashboard with your Google email
+- Upload a document; the job status should move from "pending" to "completed"
 
 ---
 
-## 6. Troubleshooting
-- **Clerk keys invalid/empty?** Check the API key section in Clerk dashboard.
-- **Redis/DB connection refused?** Make sure Docker containers are running OR use correct Upstash/Neon URLs.
-- **Migrations fail?** Ensure Postgres is running and your `.env` is populated. Try `alembic revision --autogenerate` only for schema changes (not first-run).
-- **Frontend blank?** Check your terminal/logs, confirm `pnpm dev`/`uvicorn` are running, and that env files are filled.
-- **Still stuck?** See `/docs/dev/` or ask in your dev chat/support channel!
+## 7. Troubleshooting
+- **Upload jobs stuck at 0% or 'pending'?**  The ARQ worker is not running, or Redis is misconfigured. Start the worker as shown above, and check your Redis host/port.
+- **Clerk keys invalid/empty?** Check the API key section in Clerk dashboard, and confirm both frontend/backend use the same Clerk instance.
+- **Users not found, session issues, or database errors?** Check that you use Clerk user IDs (not emails) and that Alembic migrations ran with correctly set .env values.
+- **Redis/DB connection refused?** Make sure Docker containers are running, or use correct Upstash/Neon URLs.
+- **Migrations fail?** Ensure Postgres is running, .env is populated, and only use `alembic revision --autogenerate` for schema changes—not first setup.
+- **Frontend blank?** Check all four processes and your logs; each should be running and env files filled.
+- **Still stuck?** See `/docs/dev/` or ask in your dev support channel.
 
 ---
 
-## 7. What's Next?
+## 8. What's Next?
 Want to see how things work under the hood? Check:
 - `/docs/dev/stack-setup.md` for the original Day 1 power user guide
 - `/docs/dev/` index for feature specs and system architecture

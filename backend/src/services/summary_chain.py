@@ -9,13 +9,14 @@ Steps:
 5. Flag quiz‑worthy sections
 """
 
+from __future__ import annotations
+
 import logging
-import uuid
-from typing import TypedDict, Optional
+from collections.abc import Iterable
+from typing import Optional, TypedDict
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.messages import HumanMessage, SystemMessage
-from pydantic import BaseModel
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.core.config import settings
 
@@ -25,19 +26,31 @@ logger = logging.getLogger(__name__)
 class SummaryChainInput(TypedDict):
     """Input for the summary chain."""
 
-    document_id: str
-    user_id: str
     format: str  # "bullet", "outline", "paragraph"
+    chunks: list[str]
 
 
 class SummaryChainOutput(TypedDict):
     """Output from the summary chain."""
 
-    summary_id: str
     content: str
     diagram_syntax: Optional[str]
     diagram_type: Optional[str]
-    quiz_type_flags: dict
+    quiz_type_flags: dict[str, bool]
+
+
+def _normalize_llm_text(raw_content: object) -> str:
+    if isinstance(raw_content, str):
+        return raw_content.strip()
+    if isinstance(raw_content, Iterable):
+        return "".join(str(part) for part in raw_content).strip()
+    return str(raw_content).strip()
+
+
+@retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
+async def _invoke_with_retry(llm: ChatGoogleGenerativeAI, prompt: str) -> str:
+    response = await llm.ainvoke(prompt)
+    return _normalize_llm_text(response.content)
 
 
 async def run_summary_chain(input: SummaryChainInput) -> SummaryChainOutput:
@@ -46,30 +59,23 @@ async def run_summary_chain(input: SummaryChainInput) -> SummaryChainOutput:
 
     This implementation uses Gemini via LangChain to generate a structured summary.
     """
-    logger.info(
-        "Running summary chain for document %s (user %s)",
-        input["document_id"],
-        input["user_id"],
-    )
+    logger.info("Running summary chain")
 
     # Initialize Gemini LLM
     llm = ChatGoogleGenerativeAI(
-        model="gemini-pro",
-        google_api_key=settings.GEMINI_API_KEY,
+        model="gemini-2.5-flash",
+        google_api_key=settings.GOOGLE_API_KEY,
         temperature=0.2,
     )
 
-    # In a real implementation, we would retrieve document chunks here.
-    # For now, we use placeholder text to demonstrate LLM integration.
-    placeholder_text = (
-        "This is a placeholder for document content. "
-        "In production, this would be the extracted text from the uploaded file."
-    )
+    context_text = "\n\n".join(input["chunks"]).strip()
+    if not context_text:
+        raise ValueError("No chunks available for summary generation")
 
     # Step 1-3: Generate structured summary
     summary_prompt = f"""You are a study assistant. Create a structured summary of the following text.
 
-Text: {placeholder_text}
+Text: {context_text}
 
 Please provide:
 1. Key concepts (bullet points)
@@ -78,38 +84,27 @@ Please provide:
 
 Format the output as JSON with keys: key_concepts, relationships, paragraph_summary."""
 
-    try:
-        summary_response = await llm.ainvoke(summary_prompt)
-        summary_content = summary_response.content
-    except Exception as exc:
-        logger.error("Gemini API call failed: %s", exc)
-        # Fallback to placeholder content
-        summary_content = "Summary generation failed due to LLM error."
+    summary_content = await _invoke_with_retry(llm, summary_prompt)
 
     # Step 4: Generate diagram syntax (simplified)
-    diagram_prompt = f"""Based on the key concepts and relationships from the text above, generate a Mermaid.js diagram syntax.
+    diagram_prompt = f"""Based on the key concepts and relationships from this summary, generate Mermaid.js diagram syntax.
+
+Summary: {summary_content}
 
 Focus on the main entities and their connections.
 
 Return only the Mermaid syntax, no extra text."""
 
-    try:
-        diagram_response = await llm.ainvoke(diagram_prompt)
-        diagram_syntax = diagram_response.content.strip()
-        diagram_type = "mermaid"
-    except Exception as exc:
-        logger.error("Gemini diagram generation failed: %s", exc)
-        diagram_syntax = None
-        diagram_type = None
+    diagram_syntax = await _invoke_with_retry(llm, diagram_prompt)
+    diagram_type = "mermaid"
 
     # Step 5: Flag quiz‑worthy sections (simplified)
-    quiz_flags = {"multiple_choice": True, "fill_in_blanks": False}
-
-    # Generate a unique summary ID
-    summary_id = str(uuid.uuid4())
+    quiz_flags = {
+        "multiple_choice": True,
+        "fill_in_blanks": bool(summary_content),
+    }
 
     return {
-        "summary_id": summary_id,
         "content": summary_content,
         "diagram_syntax": diagram_syntax,
         "diagram_type": diagram_type,
