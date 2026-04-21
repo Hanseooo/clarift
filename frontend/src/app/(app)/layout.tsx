@@ -12,7 +12,7 @@ export default async function AppLayout({
   const { userId } = await auth();
   
   if (!userId) {
-    return redirect("/login");
+    redirect("/login");
   }
 
   let user;
@@ -27,7 +27,7 @@ export default async function AppLayout({
   }
 
   if (!user || !user.userPreferences) {
-    return redirect("/onboarding");
+    redirect("/onboarding");
   }
 
   return <>{children}</>;
