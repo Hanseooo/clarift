@@ -13,6 +13,7 @@ import {
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
+  clerkUserId: text("clerk_user_id").unique(),
   email: text("email").unique().notNull(),
   name: text("name"),
   image: text("image"),

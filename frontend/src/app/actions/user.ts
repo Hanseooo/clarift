@@ -1,0 +1,33 @@
+"use server";
+
+import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+
+import { z } from "zod";
+
+const preferencesSchema = z.object({
+  education_level: z.string().optional(),
+  output_formats: z.array(z.string()).optional(),
+  explanation_styles: z.array(z.string()).optional(),
+  custom_instructions: z.string().optional()
+});
+
+export async function updateUserPreferences(preferences: unknown) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  const parsedPreferences = preferencesSchema.parse(preferences);
+
+  await db
+    .update(users)
+    .set({ userPreferences: parsedPreferences })
+    .where(eq(users.clerkUserId, userId));
+
+  revalidatePath("/");
+}
