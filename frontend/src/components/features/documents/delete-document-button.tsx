@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { Loader2, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { deleteDocument } from "@/app/actions/documents";
@@ -17,6 +18,7 @@ export function DeleteDocumentButton({
   documentId,
   className,
 }: DeleteDocumentButtonProps) {
+  const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [isPending, setIsPending] = React.useState(false);
 
@@ -25,6 +27,7 @@ export function DeleteDocumentButton({
     try {
       await deleteDocument(documentId);
       setOpen(false);
+      router.push("/documents");
     } catch (error) {
       console.error("Failed to delete document:", error);
     } finally {

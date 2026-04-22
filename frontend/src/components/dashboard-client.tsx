@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useState, useCallback } from "react";
 import { UploadDropzone } from "./upload-dropzone";
 import { Button } from "@/components/ui/button";
-import { LogOut, RefreshCw, CheckCircle, XCircle, Clock, ChevronRight } from "lucide-react";
+import { LogOut, RefreshCw, CheckCircle, XCircle, Clock, ChevronRight, FileText, Trash2 } from "lucide-react";
 import { useAuth } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { DeleteDocumentButton } from "@/components/features/documents/delete-document-button";
 
 interface JobStatus {
   jobId: string;
@@ -16,11 +17,20 @@ interface JobStatus {
   documentId?: string;
 }
 
-interface DashboardClientProps {
-  userEmail: string;
+interface Document {
+  id: string;
+  title: string;
+  status: string;
+  mimeType: string;
+  createdAt: Date;
 }
 
-export function DashboardClient({ userEmail }: DashboardClientProps) {
+interface DashboardClientProps {
+  userEmail: string;
+  documents: Document[];
+}
+
+export function DashboardClient({ userEmail, documents }: DashboardClientProps) {
   const { signOut, getToken } = useAuth();
   const [jobs, setJobs] = useState<JobStatus[]>([]);
 
@@ -232,11 +242,18 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
                           </div>
                           
                           {job.status === "completed" && job.documentId && (
-                            <Link href={`/chat?document=${job.documentId}`}>
-                              <Button size="sm" className="w-full md:w-auto gap-1">
-                                Study Now <ChevronRight className="size-3" />
-                              </Button>
-                            </Link>
+                            <div className="flex items-center gap-2">
+                              <Link href={`/documents/${job.documentId}`}>
+                                <Button size="sm" variant="outline" className="w-full md:w-auto gap-1">
+                                  View <ChevronRight className="size-3" />
+                                </Button>
+                              </Link>
+                              <Link href={`/chat?document=${job.documentId}`}>
+                                <Button size="sm" className="w-full md:w-auto gap-1">
+                                  Study Now <ChevronRight className="size-3" />
+                                </Button>
+                              </Link>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -277,9 +294,61 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
                   <p className="text-sm text-muted-foreground">
                     Receive targeted practice drills for weak topics.
                   </p>
-                </div>
               </div>
             </div>
+
+            {/* Documents List */}
+            <div className="border border-border rounded-2xl bg-card overflow-hidden">
+              <div className="border-b border-border p-6">
+                <h2 className="text-xl font-semibold text-foreground">Your Documents</h2>
+                <p className="text-muted-foreground mt-1">View and manage your uploaded documents.</p>
+              </div>
+              <div className="p-6">
+                {documents.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="size-12 mx-auto mb-3 opacity-50" />
+                    <p>No documents yet. Upload a file to get started.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="border border-border rounded-xl p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                      >
+                        <Link href={`/documents/${doc.id}`} className="flex items-center gap-3 flex-1">
+                          <FileText className="size-5 text-muted-foreground shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground truncate">{doc.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(doc.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </Link>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              "px-2 py-1 rounded-full text-xs font-medium",
+                              doc.status === "ready" || doc.status === "completed"
+                                ? "bg-green-500/10 text-green-700"
+                                : doc.status === "processing"
+                                ? "bg-yellow-500/10 text-yellow-700"
+                                : doc.status === "failed"
+                                ? "bg-destructive/10 text-destructive"
+                                : "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            {doc.status}
+                          </span>
+                          <DeleteDocumentButton documentId={doc.id} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
           </div>
         </div>
       </div>
