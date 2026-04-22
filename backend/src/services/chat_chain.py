@@ -29,7 +29,7 @@ class ChatChainOutput(TypedDict):
 @retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
 async def _generate_grounded_answer(question: str, context: str) -> str:
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model="gemini-2.5-flash-lite",
         google_api_key=settings.GOOGLE_API_KEY,
         temperature=0.1,
     )

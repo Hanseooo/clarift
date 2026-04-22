@@ -151,11 +151,129 @@ async def process_document(ctx, document_id: str, job_id: str):
             await session.commit()
 
 
+async def run_summary_job(
+    ctx, summary_id: str, job_id: str, user_id: str, document_id: str, format_value: str
+):
+    """
+    Generate summary for a document: retrieve chunks, run summary chain, save results.
+    """
+    import asyncio
+    import uuid
+
+    from langchain_google_genai.chat_models import ChatGoogleGenerativeAIError
+    from sqlalchemy import update
+
+    from src.db.models import Job, Summary
+    from src.db.session import AsyncSessionLocal
+    from src.services.summary_service import generate_summary_for_document
+
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting run_summary_job for summary {summary_id}, job {job_id}")
+
+    try:
+        async with AsyncSessionLocal() as session:
+            logger.info(f"Database session created for summary {summary_id}")
+            # Generate summary using service with timeout
+            logger.info(f"Calling generate_summary_for_document for document {document_id}")
+            try:
+                # Add timeout to prevent hanging (5 minutes)
+                chain_output = await asyncio.wait_for(
+                    generate_summary_for_document(
+                        db=session,
+                        user_id=uuid.UUID(user_id),
+                        document_id=uuid.UUID(document_id),
+                        format_value=format_value,
+                    ),
+                    timeout=300.0,  # 5 minutes
+                )
+                logger.info(f"Successfully generated summary chain output for {summary_id}")
+            except asyncio.TimeoutError:
+                error_msg = (
+                    f"Summary generation timed out after 5 minutes for document {document_id}"
+                )
+                logger.error(error_msg)
+                raise TimeoutError(error_msg)
+
+            # Update Summary record
+            await session.execute(
+                update(Summary)
+                .where(Summary.id == uuid.UUID(summary_id))
+                .values(
+                    content=chain_output["content"],
+                    diagram_syntax=chain_output["diagram_syntax"],
+                    diagram_type=chain_output["diagram_type"],
+                    quiz_type_flags=chain_output["quiz_type_flags"],
+                )
+            )
+
+            # Update Job status
+            await session.execute(
+                update(Job)
+                .where(Job.id == uuid.UUID(job_id))
+                .values(
+                    status="completed",
+                    result={"message": "Summary generated successfully", "summary_id": summary_id},
+                )
+            )
+
+            await session.commit()
+            logger.info(f"Finished run_summary_job for summary {summary_id}")
+
+    except ChatGoogleGenerativeAIError as e:
+        # Handle AI service errors (quota, rate limits, etc.)
+        error_msg = str(e)
+        if "quota" in error_msg.lower() or "RESOURCE_EXHAUSTED" in error_msg:
+            error_msg = "AI quota exceeded. Please check your Google AI quota or try again later."
+        elif "rate limit" in error_msg.lower():
+            error_msg = "AI rate limit exceeded. Please try again later."
+
+        logger.error(f"AI error generating summary {summary_id}: {error_msg}", exc_info=True)
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                update(Summary)
+                .where(Summary.id == uuid.UUID(summary_id))
+                .values(content="", diagram_syntax=None, diagram_type=None, quiz_type_flags=None)
+            )
+            await session.execute(
+                update(Job)
+                .where(Job.id == uuid.UUID(job_id))
+                .values(status="failed", error=error_msg)
+            )
+            await session.commit()
+
+    except TimeoutError as e:
+        logger.error(f"Timeout generating summary {summary_id}: {str(e)}", exc_info=True)
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                update(Summary)
+                .where(Summary.id == uuid.UUID(summary_id))
+                .values(content="", diagram_syntax=None, diagram_type=None, quiz_type_flags=None)
+            )
+            await session.execute(
+                update(Job).where(Job.id == uuid.UUID(job_id)).values(status="failed", error=str(e))
+            )
+            await session.commit()
+
+    except Exception as e:
+        logger.error(f"Error generating summary {summary_id}: {str(e)}", exc_info=True)
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                update(Summary)
+                .where(Summary.id == uuid.UUID(summary_id))
+                .values(content="", diagram_syntax=None, diagram_type=None, quiz_type_flags=None)
+            )
+            await session.execute(
+                update(Job).where(Job.id == uuid.UUID(job_id)).values(status="failed", error=str(e))
+            )
+            await session.commit()
+
+
 class WorkerSettings:
     redis_settings = RedisSettings.from_dsn(os.getenv("REDIS_URL", "redis://localhost:6379"))
     functions = [
         func(process_chunks, name="process_chunks"),
         func(process_document, name="process_document"),
+        func(run_summary_job, name="run_summary_job"),
     ]
     on_startup = on_startup
 

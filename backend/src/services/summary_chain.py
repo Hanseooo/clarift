@@ -11,12 +11,14 @@ Steps:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Iterable
 from typing import Optional, TypedDict
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from tenacity import retry, stop_after_attempt, wait_exponential
+from langchain_google_genai.chat_models import ChatGoogleGenerativeAIError
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from src.core.config import settings
 
@@ -48,7 +50,21 @@ def _normalize_llm_text(raw_content: object) -> str:
     return str(raw_content).strip()
 
 
-@retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
+def is_retryable_error(exception):
+    """Check if an exception is retryable (not a quota error)."""
+    if isinstance(exception, ChatGoogleGenerativeAIError):
+        error_str = str(exception).lower()
+        if "quota" in error_str or "resource_exhausted" in error_str or "rate limit" in error_str:
+            return False
+    return True
+
+
+@retry(
+    wait=wait_exponential(min=1, max=8),
+    stop=stop_after_attempt(3),
+    retry=retry_if_exception(is_retryable_error),
+    reraise=True,
+)
 async def _invoke_with_retry(llm: ChatGoogleGenerativeAI, prompt: str) -> str:
     response = await llm.ainvoke(prompt)
     return _normalize_llm_text(response.content)
@@ -64,7 +80,7 @@ async def run_summary_chain(input: SummaryChainInput) -> SummaryChainOutput:
 
     # Initialize Gemini LLM
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model="gemini-2.5-flash-lite",
         google_api_key=settings.GOOGLE_API_KEY,
         temperature=0.2,
     )
@@ -73,15 +89,33 @@ async def run_summary_chain(input: SummaryChainInput) -> SummaryChainOutput:
     if not context_text:
         raise ValueError("No chunks available for summary generation")
 
-    # Step 1-3: Generate structured summary
-    summary_prompt = f"""You are a study assistant. Create a structured summary of the following text.
+    # Step 1-3: Generate structured summary in Markdown format
+    summary_prompt = f"""You are a study assistant. Create a comprehensive study summary of the following text.
 
 Text: {context_text}
 
-Please provide:
-1. Key concepts (bullet points)
-2. Relationships between concepts
-3. A concise paragraph summary"""
+Generate a structured summary using advanced Markdown formatting:
+
+## Formatting Requirements:
+1. **Use Markdown Tables** for comparisons when appropriate
+2. **Use LaTeX syntax** for math equations:
+   - Inline math: `$E = mc^2$`
+   - Display math: `$$\\int_a^b f(x) dx$$`
+3. **Use GitHub alert syntax** for key concepts:
+   - `> [!NOTE]` for important notes
+   - `> [!IMPORTANT]` for critical information
+   - `> [!TIP]` for helpful tips
+4. **Structure with Heading 2 (`##`)** for major sections - each `##` will create a new page in the UI
+5. Use bullet points, numbered lists, and bold/italic formatting as needed
+
+## Content Requirements:
+- Start with a brief overview
+- List key concepts with explanations
+- Explain relationships between concepts
+- Include examples where helpful
+- End with a summary paragraph
+
+Format: Use clean, well-structured Markdown with proper spacing."""
 
     user_prefs = input.get("user_preferences")
     if user_prefs:
@@ -106,11 +140,10 @@ Please provide:
             prefs_str = "; ".join(prefs)
             summary_prompt += f"\n\nApply these user preferences: {prefs_str}"
 
-    summary_prompt += (
-        "\n\nFormat the output as JSON with keys: key_concepts, relationships, paragraph_summary."
-    )
-
     summary_content = await _invoke_with_retry(llm, summary_prompt)
+
+    # Throttle between LLM calls to avoid rate limits (similar to embeddings worker)
+    await asyncio.sleep(2)
 
     # Step 4: Generate diagram syntax (simplified)
     diagram_prompt = f"""Based on the key concepts and relationships from this summary, generate Mermaid.js diagram syntax.

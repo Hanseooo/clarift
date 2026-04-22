@@ -320,9 +320,14 @@ export function DashboardClient({ userEmail, documents }: DashboardClientProps) 
                           <FileText className="size-5 text-muted-foreground shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-foreground truncate">{doc.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(doc.createdAt).toLocaleDateString()}
-                            </p>
+                             <p className="text-xs text-muted-foreground">
+                               {new Date(doc.createdAt).toLocaleDateString('en-US', {
+                                 year: 'numeric',
+                                 month: 'short',
+                                 day: 'numeric',
+                                 timeZone: 'UTC'
+                               })}
+                             </p>
                           </div>
                         </Link>
                         <div className="flex items-center gap-2">

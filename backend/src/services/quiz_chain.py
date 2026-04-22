@@ -99,7 +99,7 @@ def _normalize_question(raw_question: dict[str, Any], index: int) -> QuizQuestio
 @retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
 async def _generate_questions_from_llm(question_count: int) -> list[QuizQuestion]:
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model="gemini-2.5-flash-lite",
         google_api_key=settings.GOOGLE_API_KEY,
         temperature=0.2,
     )
