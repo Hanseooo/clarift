@@ -1,6 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
+import { RichMarkdown } from "@/components/ui/rich-markdown";
+import { Button } from "@/components/ui/button";
 
 type SummaryItem = {
   id: string;
@@ -42,10 +46,10 @@ export function SummaryList({ summaries, initialSelectedId }: SummaryListProps) 
 
       <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
         <ul className="space-y-2">
-          {summaries.map((summary) => {
+           {summaries.map((summary) => {
             const isActive = summary.id === selectedSummary?.id;
             return (
-              <li key={summary.id}>
+              <li key={summary.id} className="relative">
                 <button
                   className={`w-full rounded-xl border p-3 text-left transition-colors ${
                     isActive
@@ -58,22 +62,42 @@ export function SummaryList({ summaries, initialSelectedId }: SummaryListProps) 
                   <p className="font-medium text-foreground">{summary.format} summary</p>
                   <p className="text-xs text-muted-foreground">{new Date(summary.created_at).toLocaleString()}</p>
                 </button>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="absolute right-2 top-2"
+                  asChild
+                >
+                  <Link href={`/summaries/${summary.id}`}>
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                </Button>
               </li>
             );
           })}
         </ul>
 
-        {selectedSummary ? (
+           {selectedSummary ? (
           <article className="space-y-4">
-            <header className="space-y-1">
-              <h3 className="text-lg font-semibold text-foreground">Summary Detail</h3>
+            <header className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-foreground">Summary Detail</h3>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/summaries/${selectedSummary.id}`} className="inline-flex items-center gap-1">
+                    <ExternalLink className="h-3 w-3" />
+                    View Full Details
+                  </Link>
+                </Button>
+              </div>
               <p className="text-sm text-muted-foreground">Document: {selectedSummary.document_id}</p>
             </header>
 
             <div className="rounded-xl border border-border bg-background p-4">
-              <pre className="whitespace-pre-wrap break-words text-sm text-foreground">
-                {selectedSummary.content || "Summary is still being generated..."}
-              </pre>
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <RichMarkdown
+                  content={selectedSummary.content || "Summary is still being generated..."}
+                />
+              </div>
             </div>
 
             {selectedSummary.diagram_syntax ? (

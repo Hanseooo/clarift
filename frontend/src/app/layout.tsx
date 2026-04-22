@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ClerkProvider } from "@clerk/nextjs";
 import { GlobalNav } from "@/components/global-nav";
+import "katex/dist/katex.min.css";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
