@@ -11,12 +11,14 @@ Steps:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Iterable
 from typing import Optional, TypedDict
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from tenacity import retry, stop_after_attempt, wait_exponential
+from langchain_google_genai.chat_models import ChatGoogleGenerativeAIError
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from src.core.config import settings
 
@@ -48,7 +50,21 @@ def _normalize_llm_text(raw_content: object) -> str:
     return str(raw_content).strip()
 
 
-@retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
+def is_retryable_error(exception):
+    """Check if an exception is retryable (not a quota error)."""
+    if isinstance(exception, ChatGoogleGenerativeAIError):
+        error_str = str(exception).lower()
+        if "quota" in error_str or "resource_exhausted" in error_str or "rate limit" in error_str:
+            return False
+    return True
+
+
+@retry(
+    wait=wait_exponential(min=1, max=8),
+    stop=stop_after_attempt(3),
+    retry=retry_if_exception(is_retryable_error),
+    reraise=True,
+)
 async def _invoke_with_retry(llm: ChatGoogleGenerativeAI, prompt: str) -> str:
     response = await llm.ainvoke(prompt)
     return _normalize_llm_text(response.content)
@@ -64,7 +80,7 @@ async def run_summary_chain(input: SummaryChainInput) -> SummaryChainOutput:
 
     # Initialize Gemini LLM
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model="gemini-2.5-flash-lite",
         google_api_key=settings.GOOGLE_API_KEY,
         temperature=0.2,
     )
@@ -125,6 +141,9 @@ Format: Use clean, well-structured Markdown with proper spacing."""
             summary_prompt += f"\n\nApply these user preferences: {prefs_str}"
 
     summary_content = await _invoke_with_retry(llm, summary_prompt)
+
+    # Throttle between LLM calls to avoid rate limits (similar to embeddings worker)
+    await asyncio.sleep(2)
 
     # Step 4: Generate diagram syntax (simplified)
     diagram_prompt = f"""Based on the key concepts and relationships from this summary, generate Mermaid.js diagram syntax.

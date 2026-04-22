@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps import get_current_user
+from src.api.deps import enforce_quota, get_current_user
 from src.db.models import Document, Job, Summary
 from src.db.session import get_db
 from src.worker import get_arq_pool
@@ -89,6 +89,7 @@ async def get_summary(
 @router.post("", response_model=CreateSummaryResponse)
 async def create_summary(
     request: CreateSummaryRequest,
+    _quota: None = Depends(enforce_quota("summary")),
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
