@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { RichMarkdown } from "@/components/ui/rich-markdown";
 import { Button } from "@/components/ui/button";
+import { RichMarkdown } from "@/components/ui/rich-markdown";
 
 type SummaryItem = {
   id: string;
@@ -60,7 +60,16 @@ export function SummaryList({ summaries, initialSelectedId }: SummaryListProps) 
                   type="button"
                 >
                   <p className="font-medium text-foreground">{summary.format} summary</p>
-                  <p className="text-xs text-muted-foreground">{new Date(summary.created_at).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(summary.created_at).toLocaleString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      timeZone: 'UTC'
+                    })}
+                  </p>
                 </button>
                 <Button
                   variant="ghost"
@@ -93,7 +102,7 @@ export function SummaryList({ summaries, initialSelectedId }: SummaryListProps) 
             </header>
 
             <div className="rounded-xl border border-border bg-background p-4">
-              <div className="prose prose-sm dark:prose-invert max-w-none">
+               <div className="prose prose-sm dark:prose-invert max-w-none">
                 <RichMarkdown
                   content={selectedSummary.content || "Summary is still being generated..."}
                 />
