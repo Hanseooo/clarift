@@ -431,6 +431,7 @@ export interface components {
              * @default bullet
              */
             format: string;
+            override_preferences?: components["schemas"]["OverridePreferences"] | null;
         };
         /** CreateSummaryResponse */
         CreateSummaryResponse: {
@@ -474,6 +475,17 @@ export interface components {
             lesson: string;
             /** Chunks Used */
             chunks_used: number;
+        };
+        /** OverridePreferences */
+        OverridePreferences: {
+            /** Education Level */
+            education_level?: string | null;
+            /** Output Formats */
+            output_formats?: string[] | null;
+            /** Explanation Styles */
+            explanation_styles?: string[] | null;
+            /** Custom Instructions */
+            custom_instructions?: string | null;
         };
         /** PracticeDetailResponse */
         PracticeDetailResponse: {
@@ -562,7 +574,7 @@ export interface components {
             diagram_type: string | null;
             /** Quiz Type Flags */
             quiz_type_flags: {
-                [key: string]: boolean;
+                [key: string]: unknown;
             } | null;
             /** Created At */
             created_at: string;

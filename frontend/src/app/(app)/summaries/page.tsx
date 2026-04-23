@@ -7,6 +7,7 @@ import { users } from "@/db/schema";
 import { SummaryCreation } from "@/components/features/summary/summary-creation";
 import { SummaryList } from "@/components/features/summary/summary-list";
 import { createAuthenticatedClient } from "@/lib/api";
+import { OverridePreferences } from "@/types/preferences";
 
 type DocumentOption = {
   id: string;
@@ -47,12 +48,7 @@ export default async function SummariesPage() {
 
   const documents = (documentsResponse.data as DocumentOption[] | undefined) ?? [];
   const summaries = (summariesResponse.data as SummaryItem[] | undefined) ?? [];
-  const initialPreferences = (userRecord?.userPreferences as {
-    education_level?: string;
-    output_formats?: string[];
-    explanation_styles?: string[];
-    custom_instructions?: string;
-  }) ?? {};
+  const initialPreferences = (userRecord?.userPreferences as OverridePreferences) ?? {};
 
   return (
     <main className="min-h-screen bg-background p-4 md:p-8">

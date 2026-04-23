@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { OverridePreferences } from "@/types/preferences";
 
 const EDUCATION_LEVELS = [
   "High School",
@@ -36,13 +37,6 @@ const EXPLANATION_STYLES = [
   "Analogy-based",
   "Socratic (Ask me questions)"
 ];
-
-type OverridePreferences = {
-  education_level?: string;
-  output_formats?: string[];
-  explanation_styles?: string[];
-  custom_instructions?: string;
-};
 
 type OverrideSettingsModalProps = {
   initialPreferences?: OverridePreferences;

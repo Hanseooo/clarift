@@ -20,12 +20,19 @@ from src.worker import get_arq_pool
 router = APIRouter(prefix="/api/v1/summaries", tags=["summaries"])
 
 
+class OverridePreferences(BaseModel):
+    education_level: Optional[str] = None
+    output_formats: Optional[list[str]] = None
+    explanation_styles: Optional[list[str]] = None
+    custom_instructions: Optional[str] = None
+
+
 class CreateSummaryRequest(BaseModel):
     """Request body for creating a summary."""
 
     document_id: str
     format: str = "bullet"  # bullet, outline, paragraph
-    override_preferences: Optional[dict] = None
+    override_preferences: Optional[OverridePreferences] = None
 
 
 class CreateSummaryResponse(BaseModel):

@@ -7,17 +7,11 @@ import { useAuth } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { createAuthenticatedClient } from "@/lib/api";
 import { OverrideSettingsModal } from "@/components/features/generation/override-settings-modal";
+import { OverridePreferences } from "@/types/preferences";
 
 type DocumentOption = {
   id: string;
   title: string;
-};
-
-type OverridePreferences = {
-  education_level?: string;
-  output_formats?: string[];
-  explanation_styles?: string[];
-  custom_instructions?: string;
 };
 
 type SummaryCreationProps = {
@@ -101,16 +95,11 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
       }
 
       const authClient = createAuthenticatedClient(token);
-      const requestBody = {
-        document_id: documentId,
-        format,
-        override_preferences: overridePreferences ?? undefined,
-      };
       const { data, error } = await authClient.POST("/api/v1/summaries", {
-        body: requestBody as {
-          document_id: string;
-          format: string;
-          override_preferences?: OverridePreferences;
+        body: {
+          document_id: documentId,
+          format,
+          override_preferences: overridePreferences ?? undefined,
         },
       });
 
@@ -166,7 +155,7 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
         <span className="text-sm font-medium text-foreground">Format</span>
         <OverrideSettingsModal
           initialPreferences={initialPreferences}
-          onSave={(preferences) => {
+          onSave={async (preferences) => {
             setOverridePreferences(preferences);
           }}
         />
