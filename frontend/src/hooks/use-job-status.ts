@@ -27,6 +27,13 @@ export function useJobStatus({ jobId, token, onComplete, onError }: UseJobStatus
   const [progress, setProgress] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+    onErrorRef.current = onError;
+  }, [onComplete, onError]);
 
   const connect = useCallback(() => {
     if (!jobId || !token) return;
@@ -84,8 +91,8 @@ export function useJobStatus({ jobId, token, onComplete, onError }: UseJobStatus
                 if (data.progress !== undefined) setProgress(data.progress);
 
                 if (data.status === "complete") {
-                  if (data.result && onComplete) {
-                    onComplete(data.result);
+                  if (data.result && onCompleteRef.current) {
+                    onCompleteRef.current(data.result);
                   }
                   return;
                 }
@@ -93,8 +100,8 @@ export function useJobStatus({ jobId, token, onComplete, onError }: UseJobStatus
                 if (data.status === "failed") {
                   const errorMsg = data.error || "Job failed unexpectedly";
                   setError(errorMsg);
-                  if (onError) {
-                    onError(errorMsg);
+                  if (onErrorRef.current) {
+                    onErrorRef.current(errorMsg);
                   }
                   return;
                 }
@@ -110,14 +117,14 @@ export function useJobStatus({ jobId, token, onComplete, onError }: UseJobStatus
         }
         const errorMsg = err instanceof Error ? err.message : "Connection lost";
         setError(errorMsg);
-        if (onError) {
-          onError(errorMsg);
+        if (onErrorRef.current) {
+          onErrorRef.current(errorMsg);
         }
       }
     };
 
     fetchSSE();
-  }, [jobId, token, onComplete, onError]);
+  }, [jobId, token]);
 
   useEffect(() => {
     if (jobId && token) {

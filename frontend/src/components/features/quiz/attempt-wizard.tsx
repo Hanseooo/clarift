@@ -27,7 +27,25 @@ interface AttemptWizardProps {
   questions: QuizQuestion[];
 }
 
+function safeJsonParse(value: string): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
+
+const questionTypeBadgeClasses: Record<QuizType, string> = {
+  mcq: "bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-200",
+  true_false: "bg-[#F0FDF4] text-[#166534] dark:bg-[#052E16] dark:text-[#4ADE80]",
+  identification: "bg-[#FFF7ED] text-[#9A3412] dark:bg-[#431407] dark:text-[#FB923C]",
+  multi_select: "bg-[#F5F3FF] text-[#5B21B6] dark:bg-[#1E0A3C] dark:text-[#A78BFA]",
+  ordering: "bg-[#F0F9FF] text-[#0C4A6E] dark:bg-[#082F49] dark:text-[#38BDF8]",
+};
 
 function OrderItem({
   item,
@@ -175,7 +193,7 @@ function MultiSelectQuestion({
   value: string;
   onChange: (answer: string) => void;
 }) {
-  const selectedAnswers: string[] = value ? JSON.parse(value) : [];
+  const selectedAnswers: string[] = safeJsonParse(value);
 
   const toggleOption = (option: string) => {
     const updated = selectedAnswers.includes(option)
@@ -228,7 +246,7 @@ function OrderingQuestion({
   value: string;
   onChange: (answer: string) => void;
 }) {
-  const items: string[] = value ? JSON.parse(value) : (question.options ?? []);
+  const items: string[] = value ? safeJsonParse(value) : (question.options ?? []);
 
   const handleMoveUp = (index: number) => {
     if (index === 0) return;
@@ -330,7 +348,7 @@ export function AttemptWizard({ quizId, questions }: AttemptWizardProps) {
       <div className="rounded-xl border border-border bg-card p-4 md:p-5 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand-800 dark:bg-brand-900/40 dark:text-brand-200">
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${questionTypeBadgeClasses[currentQuestion.type]}`}>
             {currentQuestion.type.replace("_", " ")}
           </span>
           <span className="text-xs text-muted-foreground">
@@ -399,7 +417,7 @@ export function AttemptWizard({ quizId, questions }: AttemptWizardProps) {
         <Button
           size="sm"
           onClick={handleNext}
-          disabled={!hasAnswer && !isLastQuestion}
+          disabled={!hasAnswer}
           className="flex-1"
         >
           {isLastQuestion ? (

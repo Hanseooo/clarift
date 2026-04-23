@@ -4,14 +4,9 @@ import { useState } from "react";
 import { Check, X, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
-type QuizTypeFlags = {
-  mcq: { applicable: true; reason: string };
-  true_false: { applicable: boolean; reason: string };
-  identification: { applicable: boolean; reason: string };
-  multi_select: { applicable: boolean; reason: string };
-  ordering: { applicable: boolean; reason: string };
-};
+type QuizTypeFlag = { applicable: boolean; reason: string };
 
 type QuizTypeSettings = {
   mcq: boolean;
@@ -27,11 +22,12 @@ type QuizSettings = {
 };
 
 interface QuizSettingsPanelProps {
-  applicabilityFlags: QuizTypeFlags | null;
+  applicabilityFlags: Record<string, QuizTypeFlag> | null;
+  loadingFlags?: boolean;
   onGenerate: (settings: QuizSettings | null) => void;
 }
 
-const typeLabels: Record<keyof QuizTypeFlags, string> = {
+const typeLabels: Record<string, string> = {
   mcq: "Multiple Choice",
   true_false: "True / False",
   identification: "Identification",
@@ -39,7 +35,7 @@ const typeLabels: Record<keyof QuizTypeFlags, string> = {
   ordering: "Ordering",
 };
 
-const typeColors: Record<keyof QuizTypeFlags, { bg: string; text: string; border: string; badgeBg: string; badgeText: string }> = {
+const typeColors: Record<string, { bg: string; text: string; border: string; badgeBg: string; badgeText: string }> = {
   mcq: {
     bg: "bg-brand-50 dark:bg-brand-950/20",
     text: "text-brand-800 dark:text-brand-200",
@@ -48,36 +44,36 @@ const typeColors: Record<keyof QuizTypeFlags, { bg: string; text: string; border
     badgeText: "text-brand-800 dark:text-brand-200",
   },
   true_false: {
-    bg: "bg-emerald-50 dark:bg-emerald-950/20",
-    text: "text-emerald-800 dark:text-emerald-200",
-    border: "border-emerald-200 dark:border-emerald-800",
-    badgeBg: "bg-emerald-100 dark:bg-emerald-900/40",
-    badgeText: "text-emerald-800 dark:text-emerald-200",
+    bg: "bg-[#F0FDF4] dark:bg-[#052E16]",
+    text: "text-[#166534] dark:text-[#4ADE80]",
+    border: "border-[#BBF7D0] dark:border-[#166534]",
+    badgeBg: "bg-[#F0FDF4] dark:bg-[#052E16]",
+    badgeText: "text-[#166534] dark:text-[#4ADE80]",
   },
   identification: {
-    bg: "bg-orange-50 dark:bg-orange-950/20",
-    text: "text-orange-800 dark:text-orange-200",
-    border: "border-orange-200 dark:border-orange-800",
-    badgeBg: "bg-orange-100 dark:bg-orange-900/40",
-    badgeText: "text-orange-800 dark:text-orange-200",
+    bg: "bg-[#FFF7ED] dark:bg-[#431407]",
+    text: "text-[#9A3412] dark:text-[#FB923C]",
+    border: "border-[#FFEDD5] dark:border-[#9A3412]",
+    badgeBg: "bg-[#FFF7ED] dark:bg-[#431407]",
+    badgeText: "text-[#9A3412] dark:text-[#FB923C]",
   },
   multi_select: {
-    bg: "bg-purple-50 dark:bg-purple-950/20",
-    text: "text-purple-800 dark:text-purple-200",
-    border: "border-purple-200 dark:border-purple-800",
-    badgeBg: "bg-purple-100 dark:bg-purple-900/40",
-    badgeText: "text-purple-800 dark:text-purple-200",
+    bg: "bg-[#F5F3FF] dark:bg-[#1E0A3C]",
+    text: "text-[#5B21B6] dark:text-[#A78BFA]",
+    border: "border-[#EDE9FE] dark:border-[#5B21B6]",
+    badgeBg: "bg-[#F5F3FF] dark:bg-[#1E0A3C]",
+    badgeText: "text-[#5B21B6] dark:text-[#A78BFA]",
   },
   ordering: {
-    bg: "bg-sky-50 dark:bg-sky-950/20",
-    text: "text-sky-800 dark:text-sky-200",
-    border: "border-sky-200 dark:border-sky-800",
-    badgeBg: "bg-sky-100 dark:bg-sky-900/40",
-    badgeText: "text-sky-800 dark:text-sky-200",
+    bg: "bg-[#F0F9FF] dark:bg-[#082F49]",
+    text: "text-[#0C4A6E] dark:text-[#38BDF8]",
+    border: "border-[#E0F2FE] dark:border-[#0C4A6E]",
+    badgeBg: "bg-[#F0F9FF] dark:bg-[#082F49]",
+    badgeText: "text-[#0C4A6E] dark:text-[#38BDF8]",
   },
 };
 
-export function QuizSettingsPanel({ applicabilityFlags, onGenerate }: QuizSettingsPanelProps) {
+export function QuizSettingsPanel({ applicabilityFlags, loadingFlags = false, onGenerate }: QuizSettingsPanelProps) {
   const [autoMode, setAutoMode] = useState(true);
   const [overrides, setOverrides] = useState<QuizTypeSettings>({
     mcq: true,
@@ -87,11 +83,12 @@ export function QuizSettingsPanel({ applicabilityFlags, onGenerate }: QuizSettin
     ordering: true,
   });
 
-  const handleToggleType = (type: keyof QuizTypeFlags) => {
+  const handleToggleType = (type: string) => {
     if (autoMode) return;
+    const key = type as keyof QuizTypeSettings;
     setOverrides((prev) => ({
       ...prev,
-      [type]: !prev[type],
+      [key]: !prev[key],
     }));
   };
 
@@ -105,11 +102,11 @@ export function QuizSettingsPanel({ applicabilityFlags, onGenerate }: QuizSettin
 
   const hasAnySelected = autoMode || Object.values(overrides).some(Boolean);
 
-  if (!applicabilityFlags) {
+  if (loadingFlags || !applicabilityFlags) {
     return (
       <div className="rounded-xl border border-border bg-card p-5">
         <p className="text-sm text-muted-foreground">
-          Loading quiz type analysis...
+          {loadingFlags ? "Analyzing document..." : "Loading quiz type analysis..."}
         </p>
       </div>
     );
@@ -127,27 +124,18 @@ export function QuizSettingsPanel({ applicabilityFlags, onGenerate }: QuizSettin
           <span className={`text-xs ${autoMode ? "text-brand-600 dark:text-brand-400" : "text-muted-foreground"}`}>
             Auto
           </span>
-          <button
-            type="button"
-            onClick={() => setAutoMode(!autoMode)}
-            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-              autoMode ? "bg-brand-500" : "bg-muted"
-            }`}
-          >
-            <span
-              className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                autoMode ? "translate-x-[18px]" : "translate-x-1"
-              }`}
-            />
-          </button>
+          <Switch
+            checked={autoMode}
+            onCheckedChange={() => setAutoMode(!autoMode)}
+          />
         </div>
       </div>
 
       <div className="space-y-2">
-        {(Object.keys(applicabilityFlags) as Array<keyof QuizTypeFlags>).map((type) => {
+        {(Object.keys(applicabilityFlags) as string[]).map((type) => {
           const flag = applicabilityFlags[type];
           const colors = typeColors[type];
-          const isChecked = autoMode ? flag.applicable : overrides[type];
+          const isChecked = autoMode ? flag.applicable : overrides[type as keyof QuizTypeSettings];
           const isDisabled = autoMode || !flag.applicable;
 
           return (

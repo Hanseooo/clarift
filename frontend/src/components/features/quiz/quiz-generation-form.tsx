@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QuizSettingsPanel } from "@/components/features/quiz/quiz-settings-panel";
 import { useJobStatus } from "@/hooks/use-job-status";
-import { client } from "@/lib/api";
+import { client, createAuthenticatedClient } from "@/lib/api";
 
 type DocumentOption = {
   id: string;
@@ -39,6 +40,8 @@ export function QuizGenerationForm({ documents, token }: QuizGenerationFormProps
   const [jobId, setJobId] = useState<string | null>(null);
   const [quizId, setQuizId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
+  const [applicabilityFlags, setApplicabilityFlags] = useState<Record<string, { applicable: boolean; reason: string }> | null>(null);
+  const [loadingFlags, setLoadingFlags] = useState(false);
 
   const handleComplete = (result: Record<string, unknown>) => {
     if (result.quiz_id) {
@@ -59,8 +62,36 @@ export function QuizGenerationForm({ documents, token }: QuizGenerationFormProps
     onError: handleError,
   });
 
+  const fetchApplicabilityFlags = async (docId: string) => {
+    setLoadingFlags(true);
+    try {
+      const authClient = createAuthenticatedClient(token);
+      const { data } = await authClient.GET("/api/v1/summaries");
+
+      if (data) {
+        const summaries = data as Array<{ document_id: string; quiz_type_flags?: Record<string, boolean> }>;
+        const docSummary = summaries.find((s) => s.document_id === docId);
+        const rawFlags = docSummary?.quiz_type_flags;
+        if (rawFlags) {
+          const flags = Object.fromEntries(
+            Object.entries(rawFlags).map(([key, value]) => [
+              key,
+              { applicable: value as boolean, reason: value ? "Content supports this type" : "Insufficient content for this type" },
+            ])
+          );
+          setApplicabilityFlags(flags as Record<string, { applicable: boolean; reason: string }>);
+        }
+      }
+    } catch {
+      // Flags will remain null, panel shows fallback
+    } finally {
+      setLoadingFlags(false);
+    }
+  };
+
   const handleSelectDocument = () => {
     if (!selectedDocId) return;
+    fetchApplicabilityFlags(selectedDocId);
     setStep("settings");
   };
 
@@ -120,17 +151,18 @@ export function QuizGenerationForm({ documents, token }: QuizGenerationFormProps
           </div>
         ) : (
           <>
-            <select
-              value={selectedDocId}
-              onChange={(e) => setSelectedDocId(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-            >
-              {documents.map((doc) => (
-                <option key={doc.id} value={doc.id}>
-                  {doc.title}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedDocId} onValueChange={setSelectedDocId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a document" />
+              </SelectTrigger>
+              <SelectContent>
+                {documents.map((doc) => (
+                  <SelectItem key={doc.id} value={doc.id}>
+                    {doc.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <Button className="w-full" onClick={handleSelectDocument} disabled={!selectedDocId}>
               Continue
@@ -144,7 +176,8 @@ export function QuizGenerationForm({ documents, token }: QuizGenerationFormProps
   if (step === "settings") {
     return (
       <QuizSettingsPanel
-        applicabilityFlags={null}
+        applicabilityFlags={applicabilityFlags}
+        loadingFlags={loadingFlags}
         onGenerate={handleGenerate}
       />
     );
