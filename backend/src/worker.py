@@ -268,12 +268,121 @@ async def run_summary_job(
             await session.commit()
 
 
+async def run_quiz_job(
+    ctx,
+    quiz_id: str,
+    job_id: str,
+    user_id: str,
+    document_id: str,
+    question_count: int = 5,
+    auto_mode: bool = True,
+):
+    """
+    Generate quiz for a document: retrieve user-scoped chunks, run quiz chain, save results.
+    """
+    import uuid
+
+    from langchain_google_genai.chat_models import ChatGoogleGenerativeAIError
+    from sqlalchemy import update
+
+    from src.db.models import Job, Quiz
+    from src.db.session import AsyncSessionLocal
+    from src.services.quiz_chain import QuizChainInput, run_quiz_chain
+
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting run_quiz_job for quiz {quiz_id}, job {job_id}")
+
+    try:
+        async with AsyncSessionLocal() as session:
+            # Update job status to processing
+            await session.execute(
+                update(Job).where(Job.id == uuid.UUID(job_id)).values(status="processing")
+            )
+            await session.commit()
+
+            # Run quiz chain with timeout (5 minutes)
+            try:
+                chain_output = await asyncio.wait_for(
+                    run_quiz_chain(
+                        QuizChainInput(
+                            document_id=document_id,
+                            user_id=user_id,
+                            question_count=question_count,
+                            auto_mode=auto_mode,
+                        )
+                    ),
+                    timeout=300.0,
+                )
+                logger.info(f"Successfully generated quiz chain output for {quiz_id}")
+            except asyncio.TimeoutError:
+                error_msg = f"Quiz generation timed out after 5 minutes for document {document_id}"
+                logger.error(error_msg)
+                raise TimeoutError(error_msg)
+
+            # Update Quiz record
+            await session.execute(
+                update(Quiz)
+                .where(Quiz.id == uuid.UUID(quiz_id))
+                .values(
+                    questions=chain_output["questions"],
+                    question_types=chain_output["question_types"],
+                    question_count=len(chain_output["questions"]),
+                )
+            )
+
+            # Update Job status
+            await session.execute(
+                update(Job)
+                .where(Job.id == uuid.UUID(job_id))
+                .values(
+                    status="completed",
+                    result={"message": "Quiz generated successfully", "quiz_id": quiz_id},
+                )
+            )
+
+            await session.commit()
+            logger.info(f"Finished run_quiz_job for quiz {quiz_id}")
+
+    except ChatGoogleGenerativeAIError as e:
+        error_msg = str(e)
+        if "quota" in error_msg.lower() or "RESOURCE_EXHAUSTED" in error_msg:
+            error_msg = "AI quota exceeded. Please check your Google AI quota or try again later."
+        elif "rate limit" in error_msg.lower():
+            error_msg = "AI rate limit exceeded. Please try again later."
+
+        logger.error(f"AI error generating quiz {quiz_id}: {error_msg}", exc_info=True)
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                update(Job)
+                .where(Job.id == uuid.UUID(job_id))
+                .values(status="failed", error=error_msg)
+            )
+            await session.commit()
+
+    except TimeoutError as e:
+        logger.error(f"Timeout generating quiz {quiz_id}: {str(e)}", exc_info=True)
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                update(Job).where(Job.id == uuid.UUID(job_id)).values(status="failed", error=str(e))
+            )
+            await session.commit()
+
+    except Exception as e:
+        logger.error(f"Error generating quiz {quiz_id}: {str(e)}", exc_info=True)
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                update(Job).where(Job.id == uuid.UUID(job_id)).values(status="failed", error=str(e))
+            )
+            await session.commit()
+
+
 class WorkerSettings:
     redis_settings = RedisSettings.from_dsn(os.getenv("REDIS_URL", "redis://localhost:6379"))
     functions = [
         func(process_chunks, name="process_chunks"),
         func(process_document, name="process_document"),
         func(run_summary_job, name="run_summary_job"),
+        func(run_quiz_job, name="run_quiz_job"),
     ]
     on_startup = on_startup
 

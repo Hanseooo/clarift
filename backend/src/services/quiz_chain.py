@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import uuid
@@ -96,7 +97,7 @@ def _normalize_question(raw_question: dict[str, Any], index: int) -> QuizQuestio
     }
 
 
-@retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
+@retry(wait=wait_exponential(min=4, max=30), stop=stop_after_attempt(5), reraise=True)
 async def _generate_questions_from_llm(question_count: int) -> list[QuizQuestion]:
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash-lite",
@@ -111,6 +112,7 @@ async def _generate_questions_from_llm(question_count: int) -> list[QuizQuestion
         f"Count: {question_count}."
     )
     response = await llm.ainvoke(prompt)
+    await asyncio.sleep(2)  # Throttle between LLM calls
     raw_content = response.content
     if isinstance(raw_content, str):
         content = raw_content.strip()
