@@ -4,6 +4,7 @@ Summaries router for generating structured summaries.
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -39,7 +40,7 @@ class SummaryResponse(BaseModel):
     content: str
     diagram_syntax: str | None
     diagram_type: str | None
-    quiz_type_flags: dict[str, bool] | None
+    quiz_type_flags: dict[str, Any] | None
     created_at: str
 
 

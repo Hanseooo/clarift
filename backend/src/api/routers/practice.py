@@ -8,15 +8,27 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import enforce_quota, get_current_user
 from src.db.models import PracticeSession, UserTopicPerformance
 from src.db.session import get_db
-from src.services.practice_chain import PracticeChainInput, run_practice_chain
+from src.services.practice_service import create_practice_session, generate_mini_lesson
 
 router = APIRouter(prefix="/api/v1/practice", tags=["practice"])
+
+
+class LessonRequest(BaseModel):
+    """Request body for generating a mini-lesson."""
+
+    topics: list[str]
+
+
+class LessonResponse(BaseModel):
+    """Response containing a generated mini-lesson."""
+
+    lesson: str
+    chunks_used: int
 
 
 class CreatePracticeRequest(BaseModel):
@@ -41,6 +53,36 @@ class PracticeDetailResponse(BaseModel):
     created_at: str
 
 
+@router.post("/lesson", response_model=LessonResponse)
+async def generate_lesson(
+    request: LessonRequest,
+    _quota: None = Depends(enforce_quota("practice")),
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Generate a concise mini-lesson for the given topics.
+
+    Retrieves relevant user-scoped chunks and generates a 2-paragraph explanation.
+    """
+    if not request.topics:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="topics must not be empty",
+        )
+
+    result = await generate_mini_lesson(
+        db,
+        user_id=user.id,
+        topics=request.topics,
+    )
+
+    return LessonResponse(
+        lesson=result["lesson"],
+        chunks_used=result["chunk_count"],
+    )
+
+
 @router.post("", response_model=CreatePracticeResponse)
 async def create_practice(
     request: CreatePracticeRequest,
@@ -51,7 +93,8 @@ async def create_practice(
     """
     Request targeted practice drills for weak topics.
 
-    Creates a PracticeSession record and returns generated drills.
+    Delegates to the practice service layer which handles chain invocation
+    and session record creation.
     """
     # Validate drill_count
     if request.drill_count < 1 or request.drill_count > 20:
@@ -60,32 +103,16 @@ async def create_practice(
             detail="drill_count must be between 1 and 20",
         )
 
-    chain_input = PracticeChainInput(
+    result = await create_practice_session(
+        db,
+        user.id,
         weak_topics=request.weak_topics,
         drill_count=request.drill_count,
-        user_id=str(user.id),
     )
-    chain_output = await run_practice_chain(chain_input)
-    drills = chain_output["drills"]
-
-    # Create PracticeSession record
-    practice_stmt = (
-        insert(PracticeSession)
-        .values(
-            user_id=user.id,
-            weak_topics=request.weak_topics,
-            drills=drills,
-        )
-        .returning(PracticeSession)
-    )
-    result = await db.execute(practice_stmt)
-    practice = result.scalar_one()
-
-    await db.commit()
 
     return CreatePracticeResponse(
-        practice_id=str(practice.id),
-        drills=drills,
+        practice_id=result["session_id"],
+        drills=result["drills"],
         message="Practice session created.",
     )
 

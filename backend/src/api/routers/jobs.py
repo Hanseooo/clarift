@@ -88,15 +88,29 @@ async def stream_job_progress(
     )
 
 
-def _estimate_progress(job: Job) -> float | None:
+def _estimate_progress(job: Job) -> float:
     """
     Heuristic to map job status to a progress percentage (0‑100).
-    Can be enhanced later with actual progress tracking.
+    Quiz jobs have more granular steps than summary jobs.
     """
-    mapping = {
+    quiz_mapping = {
+        "pending": 0.0,
+        "processing": 60.0,
+        "completed": 100.0,
+        "failed": 100.0,
+    }
+
+    summary_mapping = {
         "pending": 0.0,
         "processing": 50.0,
         "completed": 100.0,
         "failed": 100.0,
     }
-    return mapping.get(job.status)
+
+    mapping = {
+        "quiz": quiz_mapping,
+        "summary": summary_mapping,
+    }
+
+    job_mapping = mapping.get(job.type, summary_mapping)
+    return job_mapping.get(job.status, 0.0)

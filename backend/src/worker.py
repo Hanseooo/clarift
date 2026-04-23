@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import uuid
 
 from arq.connections import RedisSettings, create_pool
 from arq.worker import func
@@ -10,30 +11,40 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from src.core.config import settings
 from src.services.summary_service import GoogleGenerativeAIEmbeddings  # Adjust import as needed
 
-# from src.db.session import get_db_session  # Uncomment if needed for DB
-
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# --- Matryoshka/Gemini explicit dimensionality contract ---
-# Gemini Embeddings API defaults can change (3072-dim by default as of 2026) and will BREAK Neon/pgvector if not set.
-# ENSURE output_dimensionality=768 is ALWAYS set, & all downstream vector DB fields expect 768.
+
+async def _update_job_status(db_session, job_id: str, status: str, result=None, error=None):
+    """Helper to update job status, reducing duplication across error handlers."""
+    from sqlalchemy import update
+
+    from src.db.models import Job
+
+    values = {"status": status}
+    if result is not None:
+        values["result"] = result
+    if error is not None:
+        values["error"] = error
+    await db_session.execute(update(Job).where(Job.id == uuid.UUID(job_id)).values(values))
+    await db_session.commit()
 
 
 async def process_chunks(ctx, chunks, batch_size):
     embeddings_client = ctx["embeddings_client"]
     vectors = []
+
+    @retry(
+        wait=wait_exponential(multiplier=2, min=4, max=30),
+        stop=stop_after_attempt(5),
+        reraise=True,
+    )
+    async def embed_batch(b):
+        return await embeddings_client.aembed_documents(b)
+
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i : i + batch_size]
-
-        @retry(
-            wait=wait_exponential(multiplier=2, min=4, max=30),
-            stop=stop_after_attempt(5),
-            reraise=True,
-        )
-        async def embed_batch(b):
-            return await embeddings_client.aembed_documents(b)
 
         try:
             batch_vectors = await embed_batch(batch)
@@ -58,7 +69,6 @@ async def on_startup(ctx):
         output_dimensionality=768,
     )
     logger.info("ARQ Worker startup: Embeddings client (explicit 768-dim Matryoshka) initialized.")
-    # ctx['db_pool'] = await get_db_session()  # Uncomment if DB needed
 
 
 async def process_document(ctx, document_id: str, job_id: str):
@@ -157,9 +167,6 @@ async def run_summary_job(
     """
     Generate summary for a document: retrieve chunks, run summary chain, save results.
     """
-    import asyncio
-    import uuid
-
     from langchain_google_genai.chat_models import ChatGoogleGenerativeAIError
     from sqlalchemy import update
 
@@ -268,12 +275,142 @@ async def run_summary_job(
             await session.commit()
 
 
+@retry(
+    wait=wait_exponential(multiplier=2, min=4, max=30),
+    stop=stop_after_attempt(5),
+    reraise=True,
+)
+async def _run_quiz_chain(input_data):
+    """Retry-wrapped helper for the LLM/chain portion of quiz generation."""
+    from src.chains.quiz_chain import run_quiz_chain
+
+    return await run_quiz_chain(input_data)
+
+
+async def run_quiz_job(
+    ctx,
+    quiz_id: str,
+    job_id: str,
+    user_id: str,
+    document_id: str,
+    question_count: int = 5,
+    question_distribution: dict | None = None,
+    auto_mode: bool = True,
+):
+    """
+    Generate quiz for a document: retrieve summary content, run quiz chain, save results.
+    """
+    from langchain_google_genai.chat_models import ChatGoogleGenerativeAIError
+    from sqlalchemy import update
+    from sqlalchemy.future import select
+
+    from src.chains.quiz_chain import QuizChainInput
+    from src.db.models import Job, Quiz, Summary
+    from src.db.session import AsyncSessionLocal
+
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting run_quiz_job for quiz {quiz_id}, job {job_id}")
+
+    try:
+        async with AsyncSessionLocal() as session:
+            # Validate quiz exists before proceeding
+            result = await session.execute(select(Quiz).where(Quiz.id == uuid.UUID(quiz_id)))
+            quiz = result.scalar_one_or_none()
+            if not quiz:
+                raise ValueError(f"Quiz {quiz_id} not found")
+
+            # Update job status to processing
+            await session.execute(
+                update(Job).where(Job.id == uuid.UUID(job_id)).values(status="processing")
+            )
+            await session.commit()
+
+            # Fetch the summary content for the document
+            summary_result = await session.execute(
+                select(Summary.content).where(
+                    Summary.user_id == uuid.UUID(user_id),
+                    Summary.document_id == uuid.UUID(document_id),
+                )
+            )
+            summary_row = summary_result.scalar_one_or_none()
+            if not summary_row:
+                raise ValueError(f"Summary not found for document {document_id}")
+            chunks = [summary_row]
+
+            # Run quiz chain with timeout (5 minutes)
+            try:
+                chain_output = await asyncio.wait_for(
+                    _run_quiz_chain(
+                        QuizChainInput(
+                            document_id=document_id,
+                            user_id=user_id,
+                            question_count=question_count,
+                            auto_mode=auto_mode,
+                            question_distribution=question_distribution or {"mcq": question_count},
+                            chunks=chunks,
+                        )
+                    ),
+                    timeout=300.0,
+                )
+                logger.info(f"Successfully generated quiz chain output for {quiz_id}")
+            except asyncio.TimeoutError:
+                error_msg = f"Quiz generation timed out after 5 minutes for document {document_id}"
+                logger.error(error_msg)
+                raise TimeoutError(error_msg)
+
+            # Update Quiz record
+            await session.execute(
+                update(Quiz)
+                .where(Quiz.id == uuid.UUID(quiz_id))
+                .values(
+                    questions=chain_output["questions"],
+                    question_types=chain_output["question_types"],
+                    question_count=len(chain_output["questions"]),
+                )
+            )
+
+            # Update Job status
+            await session.execute(
+                update(Job)
+                .where(Job.id == uuid.UUID(job_id))
+                .values(
+                    status="completed",
+                    result={"message": "Quiz generated successfully", "quiz_id": quiz_id},
+                )
+            )
+
+            await session.commit()
+            logger.info(f"Finished run_quiz_job for quiz {quiz_id}")
+
+    except ChatGoogleGenerativeAIError as e:
+        error_msg = str(e)
+        if "quota" in error_msg.lower() or "RESOURCE_EXHAUSTED" in error_msg:
+            error_msg = "AI quota exceeded. Please check your Google AI quota or try again later."
+        elif "rate limit" in error_msg.lower():
+            error_msg = "AI rate limit exceeded. Please try again later."
+
+        logger.error(f"AI error generating quiz {quiz_id}: {error_msg}", exc_info=True)
+        async with AsyncSessionLocal() as session:
+            await _update_job_status(session, job_id, "failed", error=error_msg)
+
+    except TimeoutError as e:
+        logger.error(f"Timeout generating quiz {quiz_id}: {str(e)}", exc_info=True)
+        async with AsyncSessionLocal() as session:
+            await _update_job_status(session, job_id, "failed", error=str(e))
+
+    except Exception as e:
+        logger.error(f"Error generating quiz {quiz_id}: {str(e)}", exc_info=True)
+        async with AsyncSessionLocal() as session:
+            await _update_job_status(session, job_id, "failed", error=str(e))
+
+
 class WorkerSettings:
     redis_settings = RedisSettings.from_dsn(os.getenv("REDIS_URL", "redis://localhost:6379"))
     functions = [
         func(process_chunks, name="process_chunks"),
         func(process_document, name="process_document"),
         func(run_summary_job, name="run_summary_job"),
+        func(run_quiz_job, name="run_quiz_job"),
     ]
     on_startup = on_startup
 
