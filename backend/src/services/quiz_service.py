@@ -8,11 +8,19 @@ from typing import Any
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel, model_validator
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.models import Document, DocumentChunk, Job, Quiz, Summary
+from src.db.models import (
+    Document,
+    DocumentChunk,
+    Job,
+    Quiz,
+    QuizAttempt,
+    Summary,
+    UserTopicPerformance,
+)
 from src.worker import get_arq_pool
 
 logger = logging.getLogger(__name__)
@@ -270,3 +278,112 @@ async def get_quiz_by_id(
             detail="Quiz not found",
         )
     return quiz
+
+
+async def submit_quiz_attempt(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    quiz_id: str,
+    answers: dict[str, str],
+) -> dict[str, Any]:
+    """
+    Submit a quiz attempt: validate ownership, calculate score,
+    upsert topic performance, detect weak topics, create attempt record.
+
+    Returns dict with attempt_id, score, and weak_topics.
+    """
+    quiz = await get_quiz_by_id(db, user_id, uuid.UUID(quiz_id))
+
+    questions = quiz.questions if isinstance(quiz.questions, list) else []
+    if not questions:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Quiz questions are not ready yet",
+        )
+
+    question_by_id = {
+        str(question.get("id")): question for question in questions if isinstance(question, dict)
+    }
+    total_questions = len(question_by_id)
+    correct_answers = 0
+
+    topic_stats: dict[str, dict[str, int]] = {}
+    for question_id, selected in answers.items():
+        question = question_by_id.get(question_id)
+        if not question:
+            continue
+        topic = str(question.get("topic") or "General")
+        expected = str(question.get("correct_answer") or "")
+        is_correct = selected == expected
+        if is_correct:
+            correct_answers += 1
+
+        if topic not in topic_stats:
+            topic_stats[topic] = {"attempts": 0, "correct": 0}
+        topic_stats[topic]["attempts"] += 1
+        topic_stats[topic]["correct"] += int(is_correct)
+
+    score = 0.0 if total_questions == 0 else round((correct_answers / total_questions) * 100, 2)
+
+    for topic, stats in topic_stats.items():
+        performance_result = await db.execute(
+            select(UserTopicPerformance).where(
+                UserTopicPerformance.user_id == user_id,
+                UserTopicPerformance.topic == topic,
+            )
+        )
+        performance = performance_result.scalar_one_or_none()
+        if performance is None:
+            await db.execute(
+                insert(UserTopicPerformance).values(
+                    user_id=user_id,
+                    topic=topic,
+                    attempts=stats["attempts"],
+                    correct=stats["correct"],
+                    quiz_count=1,
+                    last_updated=func.now(),
+                )
+            )
+        else:
+            await db.execute(
+                update(UserTopicPerformance)
+                .where(UserTopicPerformance.id == performance.id)
+                .values(
+                    attempts=performance.attempts + stats["attempts"],
+                    correct=performance.correct + stats["correct"],
+                    quiz_count=performance.quiz_count + 1,
+                    last_updated=func.now(),
+                )
+            )
+
+    weak_result = await db.execute(
+        select(UserTopicPerformance).where(
+            UserTopicPerformance.user_id == user_id,
+            UserTopicPerformance.attempts >= 5,
+            UserTopicPerformance.quiz_count >= 2,
+            (UserTopicPerformance.correct * 1.0 / UserTopicPerformance.attempts) < 0.7,
+        )
+    )
+    weak_topics = [entry.topic for entry in weak_result.scalars().all()]
+
+    attempt_stmt = (
+        insert(QuizAttempt)
+        .values(
+            quiz_id=quiz.id,
+            user_id=user_id,
+            answers=answers,
+            score=score,
+            topics=weak_topics,
+        )
+        .returning(QuizAttempt)
+    )
+    result = await db.execute(attempt_stmt)
+    attempt = result.scalar_one()
+
+    await db.commit()
+
+    return {
+        "attempt_id": str(attempt.id),
+        "score": score,
+        "weak_topics": weak_topics,
+    }
