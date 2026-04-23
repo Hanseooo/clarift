@@ -16,7 +16,7 @@ from src.chains.practice_chain import PracticeChainInput, run_practice_chain
 from src.chains.retry import is_retryable_error
 from src.core.config import settings
 from src.db.models import PracticeSession, UserTopicPerformance
-from src.services.retrieval_service import get_user_chunks
+from src.services.retrieval_service import get_relevant_chunks
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,8 @@ async def create_practice_session(
         weak_topics = ["General"]
         logger.warning("No weak topics found for user %s, falling back to General", user_id)
 
-    chunks = await get_user_chunks(db, user_id=user_id, document_id=None, limit=10)
+    query = f"Generate practice questions testing definitions, concepts, and relationships related to {', '.join(weak_topics)}"
+    chunks = await get_relevant_chunks(db, user_id=user_id, query=query, limit=10)
 
     chain_input = PracticeChainInput(
         weak_topics=weak_topics,
@@ -136,13 +137,10 @@ async def generate_mini_lesson(
     Generate a mini-lesson for the given topics.
     Retrieves relevant chunks scoped to the topics and generates lesson content via LLM.
     """
-    chunks = await get_user_chunks(db, user_id=user_id, document_id=None, limit=10)
+    query = f"Explain the concepts of {', '.join(topics)}"
+    chunks = await get_relevant_chunks(db, user_id=user_id, query=query, limit=10)
 
-    topic_context = []
-    for chunk in chunks:
-        content = chunk["content"]
-        if any(topic.lower() in content.lower() for topic in topics):
-            topic_context.append(content)
+    topic_context = [chunk["content"] for chunk in chunks]
 
     if not topic_context:
         lesson_content = "No relevant content found for the specified topics."

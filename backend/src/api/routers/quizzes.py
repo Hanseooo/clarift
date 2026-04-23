@@ -13,6 +13,7 @@ from src.api.deps import enforce_quota, get_current_user
 from src.db.session import get_db
 from src.services.quiz_service import (
     QuizRequest,
+    QuizSettings,
     create_quiz_job,
     get_quiz_by_id,
     list_quizzes_by_user,
@@ -131,6 +132,7 @@ async def create_quiz(
 
     service_request = QuizRequest(
         document_id=uuid.UUID(request.document_id),
+        settings=QuizSettings(auto_mode=request.auto_mode),
     )
 
     result = await create_quiz_job(db, user.id, service_request)

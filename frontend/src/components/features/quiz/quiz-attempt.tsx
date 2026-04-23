@@ -7,10 +7,15 @@ import { useSubmitAttempt } from "@/hooks/use-quiz";
 
 type QuizQuestion = {
   id: string;
+  type: string;
   question: string;
-  options: string[];
-  correct_answer: string;
+  options?: string[];
+  correct_answer?: string | boolean;
+  correct_answers?: string[];
+  steps?: string[];
+  correct_order?: number[];
   topic: string;
+  explanation: string;
 };
 
 type QuizData = {
@@ -22,11 +27,11 @@ type QuizAttemptProps = {
   quiz: QuizData;
 };
 
-const LETTERS = ["A", "B", "C", "D"];
+const LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 export function QuizAttempt({ quiz }: QuizAttemptProps) {
   const { mutateAsync, isLoading, error } = useSubmitAttempt();
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string | string[] | number[]>>({});
   const [result, setResult] = useState<null | { score: number; weak_topics: string[] }>(null);
 
   const total = quiz.questions.length;
@@ -38,6 +43,141 @@ export function QuizAttempt({ quiz }: QuizAttemptProps) {
       answers,
     });
     setResult({ score: response.score, weak_topics: response.weak_topics });
+  };
+
+  const renderQuestion = (question: QuizQuestion, index: number) => {
+    const qtype = question.type;
+
+    if (qtype === "mcq") {
+      return (
+        <div className="grid gap-2">
+          {(question.options ?? []).map((option, optionIndex) => {
+            const letter = LETTERS[optionIndex] ?? String(optionIndex + 1);
+            const selected = answers[question.id] === option;
+            return (
+              <button
+                key={`${question.id}-${letter}`}
+                className={`flex items-center gap-3 rounded-xl border px-3 py-2 text-left ${
+                  selected
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border bg-background"
+                }`}
+                type="button"
+                onClick={() => setAnswers((prev) => ({ ...prev, [question.id]: option }))}
+              >
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-xs font-semibold">
+                  {letter}
+                </span>
+                <span className="text-sm">{option}</span>
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (qtype === "true_false") {
+      return (
+        <div className="grid gap-2">
+          {["True", "False"].map((option) => {
+            const selected = answers[question.id] === option;
+            return (
+              <button
+                key={`${question.id}-${option}`}
+                className={`flex items-center gap-3 rounded-xl border px-3 py-2 text-left ${
+                  selected
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border bg-background"
+                }`}
+                type="button"
+                onClick={() => setAnswers((prev) => ({ ...prev, [question.id]: option }))}
+              >
+                <span className="text-sm">{option}</span>
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (qtype === "identification") {
+      return (
+        <input
+          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          placeholder="Type your answer"
+          value={(answers[question.id] as string) ?? ""}
+          onChange={(event) =>
+            setAnswers((prev) => ({
+              ...prev,
+              [question.id]: event.target.value,
+            }))
+          }
+        />
+      );
+    }
+
+    if (qtype === "multi_select") {
+      const selected = (answers[question.id] as string[]) ?? [];
+      return (
+        <div className="grid gap-2">
+          {(question.options ?? []).map((option, optionIndex) => {
+            const letter = LETTERS[optionIndex] ?? String(optionIndex + 1);
+            const isSelected = selected.includes(option);
+            return (
+              <button
+                key={`${question.id}-${letter}`}
+                className={`flex items-center gap-3 rounded-xl border px-3 py-2 text-left ${
+                  isSelected
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border bg-background"
+                }`}
+                type="button"
+                onClick={() => {
+                  const next = isSelected
+                    ? selected.filter((o) => o !== option)
+                    : [...selected, option];
+                  setAnswers((prev) => ({ ...prev, [question.id]: next }));
+                }}
+              >
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-xs font-semibold">
+                  {letter}
+                </span>
+                <span className="text-sm">{option}</span>
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (qtype === "ordering") {
+      const steps = question.steps ?? [];
+      const order = (answers[question.id] as number[]) ?? [];
+      return (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Enter step numbers in correct order (comma-separated)</p>
+          <input
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            placeholder={`e.g. ${steps.map((_, i) => i + 1).join(", ")}`}
+            value={order.join(", ")}
+            onChange={(event) => {
+              const nums = event.target.value
+                .split(",")
+                .map((s) => parseInt(s.trim(), 10))
+                .filter((n) => !isNaN(n));
+              setAnswers((prev) => ({ ...prev, [question.id]: nums }));
+            }}
+          />
+          <ol className="list-decimal list-inside text-sm text-muted-foreground">
+            {steps.map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
+          </ol>
+        </div>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -56,43 +196,7 @@ export function QuizAttempt({ quiz }: QuizAttemptProps) {
               {index + 1}. {question.question}
             </h3>
 
-            <div className="grid gap-2">
-              {question.options.length ? (
-                question.options.map((option, optionIndex) => {
-                  const letter = LETTERS[optionIndex] ?? String(optionIndex + 1);
-                  const selected = answers[question.id] === option;
-                  return (
-                    <button
-                      key={`${question.id}-${letter}`}
-                      className={`flex items-center gap-3 rounded-xl border px-3 py-2 text-left ${
-                        selected
-                          ? "border-primary bg-primary/10 text-foreground"
-                          : "border-border bg-background"
-                      }`}
-                      type="button"
-                      onClick={() => setAnswers((prev) => ({ ...prev, [question.id]: option }))}
-                    >
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-xs font-semibold">
-                        {letter}
-                      </span>
-                      <span className="text-sm">{option}</span>
-                    </button>
-                  );
-                })
-              ) : (
-                <input
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-                  placeholder="Type your answer"
-                  value={answers[question.id] ?? ""}
-                  onChange={(event) =>
-                    setAnswers((prev) => ({
-                      ...prev,
-                      [question.id]: event.target.value,
-                    }))
-                  }
-                />
-              )}
-            </div>
+            {renderQuestion(question, index)}
           </article>
         ))}
       </div>

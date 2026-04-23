@@ -27,7 +27,14 @@ logger = logging.getLogger(__name__)
 TYPE_PROMPTS = {
     "mcq": "Generate {count} multiple choice questions with exactly 4 options each. Mark the correct answer.",
     "true_false": "Generate {count} true/false questions about clear factual claims.",
-    "identification": "Generate {count} fill-in-the-blank questions. Blank replaces a specific term or value.",
+    "identification": (
+        "Generate {count} fill-in-the-blank (identification) questions. "
+        "Each blank replaces a SINGLE specific term, keyword, or short phrase (max 3 words). "
+        "The correct_answer MUST be a single word or very short phrase — never a full sentence. "
+        "CRITICAL: The question must include a format hint in parentheses, e.g. (1 word), "
+        "(2 words), (3 words, with hyphen), (with unit), (with symbol), (2 decimal places), "
+        "(abbreviation), depending on the expected answer."
+    ),
     "multi_select": "Generate {count} multiple-select questions where 2 or more answers are correct. Mark all correct answers.",
     "ordering": "Generate {count} sequencing questions where the student arranges steps in the correct order. Provide 4-6 steps each.",
 }
@@ -114,9 +121,11 @@ def _normalize_question(raw_question: dict[str, Any], index: int) -> QuizQuestio
 
     if question_type == "mcq":
         raw_options = raw_question.get("options")
-        options: list[str] = [str(o) for o in raw_options] if isinstance(raw_options, list) else []
+        options: list[str] = (
+            [str(o).strip() for o in raw_options] if isinstance(raw_options, list) else []
+        )
         result["options"] = options
-        result["correct_answer"] = str(raw_question.get("correct_answer") or "")
+        result["correct_answer"] = str(raw_question.get("correct_answer") or "").strip()
 
     elif question_type == "true_false":
         correct = raw_question.get("correct_answer")
@@ -143,7 +152,13 @@ def _normalize_question(raw_question: dict[str, Any], index: int) -> QuizQuestio
         raw_steps = raw_question.get("steps")
         result["steps"] = [str(s) for s in raw_steps] if isinstance(raw_steps, list) else []
         raw_order = raw_question.get("correct_order")
-        result["correct_order"] = [int(i) for i in raw_order] if isinstance(raw_order, list) else []
+        if isinstance(raw_order, list):
+            try:
+                result["correct_order"] = [int(i) for i in raw_order]
+            except (ValueError, TypeError):
+                result["correct_order"] = []
+        else:
+            result["correct_order"] = []
 
     return result
 
@@ -159,14 +174,23 @@ def _validate_questions(questions: list[QuizQuestion]) -> list[str]:
                 errors.append(
                     f"MCQ question {q['id']} must have exactly 4 options, got {len(opts)}"
                 )
-            if q.get("correct_answer") not in opts:
-                errors.append(f"MCQ question {q['id']} correct_answer not in options")
+            answer = str(q.get("correct_answer") or "").strip()
+            if answer and answer not in opts:
+                opts_lower = [o.strip().lower() for o in opts]
+                if answer.lower() not in opts_lower:
+                    errors.append(f"MCQ question {q['id']} correct_answer not in options")
         elif qtype == "true_false":
             if not isinstance(q.get("correct_answer"), bool):
                 errors.append(f"True/false question {q['id']} correct_answer must be boolean")
         elif qtype == "identification":
-            if not q.get("correct_answer"):
+            answer = q.get("correct_answer", "")
+            if not answer:
                 errors.append(f"Identification question {q['id']} has empty correct_answer")
+            elif len(str(answer).split()) > 5:
+                errors.append(
+                    f"Identification question {q['id']} correct_answer too long "
+                    f"({len(str(answer).split())} words, max 5)"
+                )
         elif qtype == "multi_select":
             correct = q.get("correct_answers", [])
             if len(correct) < 2:
@@ -201,11 +225,30 @@ def _build_generation_prompt(
             instructions.append(TYPE_PROMPTS[type_id].format(count=count))
 
     instructions.append("")
+
+    # Few-shot examples for identification — enforce single-word/short answers with hints
+    has_identification = distribution.get("identification", 0) > 0
+    if has_identification:
+        instructions.append(
+            "IDENTIFICATION correct_answer RULES (strict):\n"
+            '  - CORRECT: "branch", "fetch", "merge conflict", "remote repository" (1-3 words)\n'
+            '  - WRONG: "A way to combine changes from different branches" (full sentence — never do this)\n'
+            "  - GOOD: The ____ command displays the commit history. (1 word)\n"
+            '    -> correct_answer: "log"\n'
+            "  - GOOD: The ____ protocol encrypts web traffic. (1 word, abbreviation (4 letters))\n"
+            '    -> correct_answer: "HTTPS"\n'
+            "  - GOOD: The speed of light is approximately ____ m/s. (1 word, 3 digits)\n"
+            '    -> correct_answer: "299792458"\n'
+            "  - GOOD: The value of pi to two decimal places is ____. (2 words, with decimal)\n"
+            '    -> correct_answer: "3.14"\n'
+            '  - WRONG: "What does git log do?" -> "Displays a list of all commits in the repository"\n'
+        )
+
     instructions.append(
         "Return valid JSON only — an array of question objects. "
         "Each object must include: id, type, question, topic, explanation, "
         "and type-specific fields (options/correct_answer for mcq, "
-        "correct_answer boolean for true_false, correct_answer string for identification, "
+        "correct_answer boolean for true_false, correct_answer string for identification (1-3 words only), "
         "options/correct_answers array for multi_select, steps/correct_order array for ordering)."
     )
 

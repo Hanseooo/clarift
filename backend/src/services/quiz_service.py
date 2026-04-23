@@ -54,7 +54,7 @@ class QuizRequest(BaseModel):
 
 def resolve_quiz_settings(
     request_settings: QuizSettings | None,
-    applicability_flags: dict,
+    applicability_flags: dict[str, object] | None,
 ) -> list[str]:
     """
     Returns the list of question types to include in this quiz.
@@ -65,9 +65,16 @@ def resolve_quiz_settings(
     3. If auto_mode=False: use user-selected types, but still exclude inapplicable ones
     4. Always exclude inapplicable types regardless of user selection
     """
-    applicable = {
-        type_id for type_id, flag in applicability_flags.items() if flag.get("applicable")
-    }
+
+    if applicability_flags is None:
+        return []
+
+    def _is_applicable(flag: object) -> bool:
+        if isinstance(flag, dict):
+            return bool(flag.get("applicable", False))
+        return bool(flag)
+
+    applicable = {type_id for type_id, flag in applicability_flags.items() if _is_applicable(flag)}
 
     if not request_settings or request_settings.auto_mode:
         return list(applicable)
@@ -170,8 +177,8 @@ async def create_quiz_job(
             detail="Document summary not ready yet. Generate a summary first.",
         )
 
-    applicability_flags = summary.quiz_type_flags or {}
-    resolved_types = resolve_quiz_settings(request.settings, applicability_flags)
+    raw_flags: dict[str, object] | None = summary.quiz_type_flags
+    resolved_types = resolve_quiz_settings(request.settings, raw_flags or {})
 
     if not resolved_types:
         raise HTTPException(
@@ -232,6 +239,7 @@ async def create_quiz_job(
             user_id=str(user_id),
             document_id=str(request.document_id),
             question_count=total_questions,
+            question_distribution=distribution,
             auto_mode=auto_mode,
         )
     except Exception:
@@ -327,7 +335,7 @@ async def submit_quiz_attempt(
             continue
         topic = str(question.get("topic") or "General")
         expected = str(question.get("correct_answer") or "")
-        is_correct = selected == expected
+        is_correct = selected.strip().lower() == expected.strip().lower()
         if is_correct:
             correct_answers += 1
 
@@ -372,8 +380,8 @@ async def submit_quiz_attempt(
     weak_result = await db.execute(
         select(UserTopicPerformance).where(
             UserTopicPerformance.user_id == user_id,
-            UserTopicPerformance.attempts >= 5,
-            UserTopicPerformance.quiz_count >= 2,
+            UserTopicPerformance.attempts >= 2,
+            UserTopicPerformance.quiz_count >= 1,
             (UserTopicPerformance.correct * 1.0 / UserTopicPerformance.attempts) < 0.7,
         )
     )

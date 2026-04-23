@@ -3,15 +3,61 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import math
 import uuid
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.chains.summary_chain import SummaryChainInput, SummaryChainOutput, run_summary_chain
 from src.db.models import DocumentChunk, User
+
+logger = logging.getLogger(__name__)
+
+
+def _dot_product(a: list[float], b: list[float]) -> float:
+    return sum(x * y for x, y in zip(a, b, strict=True))
+
+
+def _mmr_select(
+    candidates: list[tuple[str, list[float]]],
+    query_embedding: list[float],
+    k: int,
+    lambda_param: float = 0.5,
+) -> list[str]:
+    """Select k diverse chunks using Maximum Marginal Relevance."""
+    if not candidates:
+        return []
+
+    k = min(k, len(candidates))
+    query_sims = [_dot_product(emb, query_embedding) for _, emb in candidates]
+
+    selected_indices: list[int] = []
+    candidate_indices = list(range(len(candidates)))
+
+    for _ in range(k):
+        best_score = float("-inf")
+        best_idx = -1
+
+        for ci in candidate_indices:
+            score = lambda_param * query_sims[ci]
+            if selected_indices:
+                max_sim = max(
+                    _dot_product(candidates[ci][1], candidates[si][1]) for si in selected_indices
+                )
+                score -= (1 - lambda_param) * max_sim
+
+            if score > best_score:
+                best_score = score
+                best_idx = ci
+
+        selected_indices.append(best_idx)
+        candidate_indices.remove(best_idx)
+
+    return [candidates[i][0] for i in selected_indices]
 
 
 async def generate_summary_for_document(
@@ -21,10 +67,7 @@ async def generate_summary_for_document(
     document_id: uuid.UUID,
     format_value: str,
 ) -> SummaryChainOutput:
-    """Fetch secure chunk context and generate summary content with the LLM chain."""
-    import logging
-
-    logger = logging.getLogger(__name__)
+    """Fetch diverse chunk context and generate summary content with the LLM chain."""
     logger.info(
         f"Starting generate_summary_for_document for user {user_id}, document {document_id}"
     )
@@ -32,7 +75,7 @@ async def generate_summary_for_document(
     embeddings = GoogleGenerativeAIEmbeddings(
         model="models/gemini-embedding-001",
         task_type="retrieval_document",
-        output_dimensionality=768,  # Explicit for Matryoshka (prevents 3072-dim default)
+        output_dimensionality=768,
     )
     retrieval_query = (
         "Generate a complete study summary highlighting key concepts, "
@@ -43,31 +86,53 @@ async def generate_summary_for_document(
         wait=wait_exponential(multiplier=2, min=4, max=30), stop=stop_after_attempt(5), reraise=True
     )
     async def embed_with_retry(query):
-        logger.info("Calling embeddings.aembed_query for retrieval query")
         result = await embeddings.aembed_query(query)
-        logger.info("Successfully generated embeddings")
         return result
 
-    logger.info("Generating embeddings for retrieval query")
     query_embedding = await embed_with_retry(retrieval_query)
-    logger.info("Successfully generated query embedding")
 
     # Throttle between embedding and LLM calls to avoid rate limits
     await asyncio.sleep(1)
 
-    logger.info(f"Querying document chunks for user {user_id}, document {document_id}")
-    chunks_result = await db.execute(
-        select(DocumentChunk.content)
+    # Count total chunks to adaptively scale retrieval
+    count_result = await db.execute(
+        select(func.count(DocumentChunk.id)).where(
+            DocumentChunk.user_id == user_id,
+            DocumentChunk.document_id == document_id,
+            DocumentChunk.embedding.is_not(None),
+        )
+    )
+    total_with_embeddings = count_result.scalar_one() or 0
+
+    # Adaptive chunk count: more content = more chunks, capped at 10
+    k = min(10, max(5, math.ceil(total_with_embeddings * 0.15)))
+
+    logger.info(
+        "Total %d chunks with embeddings, adaptive k=%d for user %s",
+        total_with_embeddings,
+        k,
+        user_id,
+    )
+
+    # Fetch k*3 candidates for MMR diversity selection
+    candidates_result = await db.execute(
+        select(DocumentChunk.content, DocumentChunk.embedding)
         .where(
             DocumentChunk.user_id == user_id,
             DocumentChunk.document_id == document_id,
             DocumentChunk.embedding.is_not(None),
         )
         .order_by(DocumentChunk.embedding.cosine_distance(query_embedding))
-        .limit(5)
+        .limit(k * 3)
     )
-    chunks = [row[0] for row in chunks_result.all() if row[0]]
-    logger.info(f"Found {len(chunks)} chunks with embeddings")
+    raw_candidates = [(row[0], row[1]) for row in candidates_result.all() if row[0] and row[1]]
+
+    chunks: list[str] = []
+    if raw_candidates:
+        chunks = _mmr_select(raw_candidates, query_embedding, k)
+        logger.info(
+            f"MMR selected {len(chunks)} diverse chunks from {len(raw_candidates)} candidates"
+        )
 
     if not chunks:
         logger.info("No chunks with embeddings found, trying fallback query")
@@ -83,13 +148,10 @@ async def generate_summary_for_document(
         chunks = [row[0] for row in fallback_result.all() if row[0]]
         logger.info(f"Found {len(chunks)} chunks via fallback")
 
-    logger.info(f"Querying user preferences for user {user_id}")
     user_result = await db.execute(select(User.user_preferences).where(User.id == user_id))
     user_prefs = user_result.scalar_one_or_none()
-    logger.info(f"User preferences: {user_prefs}")
 
     chain_input = SummaryChainInput(format=format_value, chunks=chunks, user_preferences=user_prefs)
     logger.info(f"Calling run_summary_chain with {len(chunks)} chunks")
     result = await run_summary_chain(chain_input)
-    logger.info("Successfully completed run_summary_chain")
     return result

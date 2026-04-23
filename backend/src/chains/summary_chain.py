@@ -14,11 +14,12 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Iterable
-from typing import Optional, TypedDict
+from typing import Any, Optional, TypedDict
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
+from src.chains.content_analysis_chain import ContentAnalysisChainInput, run_content_analysis_chain
 from src.chains.retry import is_retryable_error
 from src.core.config import settings
 
@@ -39,7 +40,7 @@ class SummaryChainOutput(TypedDict):
     content: str
     diagram_syntax: Optional[str]
     diagram_type: Optional[str]
-    quiz_type_flags: dict[str, bool]
+    quiz_type_flags: dict[str, Any]
 
 
 def _normalize_llm_text(raw_content: object) -> str:
@@ -136,7 +137,7 @@ Format: Use clean, well-structured Markdown with proper spacing."""
     # Throttle between LLM calls to avoid rate limits (similar to embeddings worker)
     await asyncio.sleep(2)
 
-    # Step 4: Generate diagram syntax (simplified)
+    # Step 4 & 5: Generate diagram and analyze content in parallel
     diagram_prompt = f"""Based on the key concepts and relationships from this summary, generate Mermaid.js diagram syntax.
 
 Summary: {summary_content}
@@ -145,18 +146,16 @@ Focus on the main entities and their connections.
 
 Return only the Mermaid syntax, no extra text."""
 
-    diagram_syntax = await _invoke_with_retry(llm, diagram_prompt)
-    diagram_type = "mermaid"
+    diagram_task = _invoke_with_retry(llm, diagram_prompt)
+    analysis_task = run_content_analysis_chain(ContentAnalysisChainInput(chunks=input["chunks"]))
 
-    # Step 5: Flag quiz‑worthy sections (simplified)
-    quiz_flags = {
-        "multiple_choice": True,
-        "fill_in_blanks": bool(summary_content),
-    }
+    diagram_syntax, analysis_result = await asyncio.gather(diagram_task, analysis_task)
+    diagram_type = "mermaid"
+    quiz_type_flags: dict[str, Any] = dict(analysis_result)
 
     return {
         "content": summary_content,
         "diagram_syntax": diagram_syntax,
         "diagram_type": diagram_type,
-        "quiz_type_flags": quiz_flags,
+        "quiz_type_flags": quiz_type_flags,
     }

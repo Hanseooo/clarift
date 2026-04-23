@@ -294,17 +294,18 @@ async def run_quiz_job(
     user_id: str,
     document_id: str,
     question_count: int = 5,
+    question_distribution: dict | None = None,
     auto_mode: bool = True,
 ):
     """
-    Generate quiz for a document: retrieve user-scoped chunks, run quiz chain, save results.
+    Generate quiz for a document: retrieve summary content, run quiz chain, save results.
     """
     from langchain_google_genai.chat_models import ChatGoogleGenerativeAIError
     from sqlalchemy import update
     from sqlalchemy.future import select
 
     from src.chains.quiz_chain import QuizChainInput
-    from src.db.models import DocumentChunk, Job, Quiz
+    from src.db.models import Job, Quiz, Summary
     from src.db.session import AsyncSessionLocal
 
     logger = logging.getLogger(__name__)
@@ -324,16 +325,17 @@ async def run_quiz_job(
             )
             await session.commit()
 
-            # Fetch user-scoped chunks for the document
-            chunk_result = await session.execute(
-                select(DocumentChunk.content)
-                .where(
-                    DocumentChunk.user_id == uuid.UUID(user_id),
-                    DocumentChunk.document_id == uuid.UUID(document_id),
+            # Fetch the summary content for the document
+            summary_result = await session.execute(
+                select(Summary.content).where(
+                    Summary.user_id == uuid.UUID(user_id),
+                    Summary.document_id == uuid.UUID(document_id),
                 )
-                .limit(5)
             )
-            chunks = [row[0] for row in chunk_result.all()]
+            summary_row = summary_result.scalar_one_or_none()
+            if not summary_row:
+                raise ValueError(f"Summary not found for document {document_id}")
+            chunks = [summary_row]
 
             # Run quiz chain with timeout (5 minutes)
             try:
@@ -344,7 +346,7 @@ async def run_quiz_job(
                             user_id=user_id,
                             question_count=question_count,
                             auto_mode=auto_mode,
-                            question_distribution={},
+                            question_distribution=question_distribution or {"mcq": question_count},
                             chunks=chunks,
                         )
                     ),
