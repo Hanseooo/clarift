@@ -118,11 +118,9 @@ function MCQQuestion({
 }
 
 function TrueFalseQuestion({
-  question,
   value,
   onChange,
 }: {
-  question: QuizQuestion;
   value: string;
   onChange: (answer: string) => void;
 }) {
@@ -151,11 +149,9 @@ function TrueFalseQuestion({
 }
 
 function IdentificationQuestion({
-  question,
   value,
   onChange,
 }: {
-  question: QuizQuestion;
   value: string;
   onChange: (answer: string) => void;
 }) {
@@ -358,7 +354,6 @@ export function AttemptWizard({ quizId, questions }: AttemptWizardProps) {
 
         {currentQuestion.type === "true_false" && (
           <TrueFalseQuestion
-            question={currentQuestion}
             value={currentAnswer}
             onChange={handleAnswer}
           />
@@ -366,7 +361,6 @@ export function AttemptWizard({ quizId, questions }: AttemptWizardProps) {
 
         {currentQuestion.type === "identification" && (
           <IdentificationQuestion
-            question={currentQuestion}
             value={currentAnswer}
             onChange={handleAnswer}
           />

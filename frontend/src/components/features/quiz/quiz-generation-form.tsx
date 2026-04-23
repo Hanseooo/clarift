@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { QuizSettingsPanel } from "@/components/features/quiz/quiz-settings-panel";
 import { useJobStatus } from "@/hooks/use-job-status";
 import { client } from "@/lib/api";
-import type { QuizTypeFlags } from "@/db/schema";
 
 type DocumentOption = {
   id: string;
@@ -41,8 +40,6 @@ export function QuizGenerationForm({ documents, token }: QuizGenerationFormProps
   const [quizId, setQuizId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
 
-  const [applicabilityFlags, setApplicabilityFlags] = useState<QuizTypeFlags | null>(null);
-
   const handleComplete = (result: Record<string, unknown>) => {
     if (result.quiz_id) {
       setQuizId(result.quiz_id as string);
@@ -55,7 +52,7 @@ export function QuizGenerationForm({ documents, token }: QuizGenerationFormProps
     setStep("error");
   };
 
-  const { status, step: jobStep, message, progress, error: jobError } = useJobStatus({
+  const { step: jobStep, message, progress, error: jobError } = useJobStatus({
     jobId,
     token,
     onComplete: handleComplete,
@@ -147,7 +144,7 @@ export function QuizGenerationForm({ documents, token }: QuizGenerationFormProps
   if (step === "settings") {
     return (
       <QuizSettingsPanel
-        applicabilityFlags={applicabilityFlags}
+        applicabilityFlags={null}
         onGenerate={handleGenerate}
       />
     );
