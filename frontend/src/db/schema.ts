@@ -146,6 +146,14 @@ export const jobs = pgTable("jobs", {
 // ─── Type Exports ─────────────────────────────────────────────────────────────
 // Use these for typing Drizzle query results
 
+export type QuizTypeFlags = {
+  mcq:            { applicable: true;  reason: string }
+  true_false:     { applicable: boolean; reason: string }
+  identification: { applicable: boolean; reason: string }
+  multi_select:   { applicable: boolean; reason: string }
+  ordering:       { applicable: boolean; reason: string }
+}
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type Document = typeof documents.$inferSelect
