@@ -59,13 +59,14 @@ export function SSEProgress({
 }: SSEProgressProps) {
   const [status, setStatus] = useState<"pending" | "processing" | "completed" | "failed" | "timeout">("pending")
   const [progress, setProgress] = useState(0)
-  const [isConnected, setIsConnected] = useState(true)
   const [isReconnecting, setIsReconnecting] = useState(false)
   const [eventType, setEventType] = useState<"document_upload" | "quiz" | "summary">("document_upload")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [reconnectTrigger, setReconnectTrigger] = useState(0)
   const eventSourceRef = useRef<EventSource | null>(null)
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hasCompletedRef = useRef(false)
+  const isReconnectingRef = useRef(false)
   const onCompleteRef = useRef(onComplete)
   const onErrorRef = useRef(onError)
 
@@ -74,13 +75,12 @@ export function SSEProgress({
     onErrorRef.current = onError
   }, [onComplete, onError])
 
-  const connect = useCallback(() => {
+  const createConnection = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
     }
 
-    setIsReconnecting(false)
-    setIsConnected(true)
+    isReconnectingRef.current = false
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
     const url = `${baseUrl}/api/v1/jobs/${jobId}/stream?token=${encodeURIComponent(accessToken)}`
@@ -93,23 +93,23 @@ export function SSEProgress({
         setEventType(data.type)
         setStatus(data.status as "pending" | "processing" | "completed" | "failed" | "timeout")
 
-        const currentProgress = progress
         const newProgress = data.progress
-        if (newProgress > currentProgress && newProgress - currentProgress > 30) {
-          let step = currentProgress
-          const animate = () => {
-            step += 5
-            if (step < newProgress) {
-              setProgress(step)
-              requestAnimationFrame(animate)
-            } else {
-              setProgress(newProgress)
+        setProgress((prev) => {
+          if (newProgress > prev && newProgress - prev > 30) {
+            let step = prev
+            const animate = () => {
+              step += 5
+              if (step < newProgress) {
+                setProgress(step)
+                requestAnimationFrame(animate)
+              } else {
+                setProgress(newProgress)
+              }
             }
+            requestAnimationFrame(animate)
           }
-          requestAnimationFrame(animate)
-        } else {
-          setProgress(newProgress)
-        }
+          return newProgress
+        })
 
         if (data.status === "completed" && data.result && !hasCompletedRef.current) {
           hasCompletedRef.current = true
@@ -131,20 +131,20 @@ export function SSEProgress({
     }
 
     es.onerror = () => {
-      setIsConnected(false)
+      isReconnectingRef.current = true
       setIsReconnecting(true)
       es.close()
 
       reconnectTimeoutRef.current = setTimeout(() => {
-        if (!hasCompletedRef.current && status !== "completed" && status !== "failed") {
-          connect()
+        if (!hasCompletedRef.current) {
+          setReconnectTrigger((n) => n + 1)
         }
       }, 2000)
     }
-  }, [jobId, accessToken, progress, status])
+  }, [jobId, accessToken])
 
   useEffect(() => {
-    connect()
+    createConnection()
 
     return () => {
       if (eventSourceRef.current) {
@@ -154,7 +154,7 @@ export function SSEProgress({
         clearTimeout(reconnectTimeoutRef.current)
       }
     }
-  }, [connect])
+  }, [createConnection, reconnectTrigger])
 
   const label = stepLabel || STATUS_LABELS[eventType]?.[status] || ""
 
@@ -173,10 +173,12 @@ export function SSEProgress({
 
   const handleRetry = () => {
     hasCompletedRef.current = false
+    isReconnectingRef.current = false
     setErrorMessage(null)
     setStatus("pending")
     setProgress(0)
-    connect()
+    setIsReconnecting(false)
+    setReconnectTrigger((n) => n + 1)
   }
 
   return (
