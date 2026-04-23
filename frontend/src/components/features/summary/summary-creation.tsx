@@ -6,6 +6,8 @@ import { useAuth } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
 import { createAuthenticatedClient } from "@/lib/api";
+import { OverrideSettingsModal } from "@/components/features/generation/override-settings-modal";
+import { OverridePreferences } from "@/types/preferences";
 
 type DocumentOption = {
   id: string;
@@ -14,6 +16,7 @@ type DocumentOption = {
 
 type SummaryCreationProps = {
   documents: DocumentOption[];
+  initialPreferences?: OverridePreferences;
   onSummaryCreated?: () => void;
 };
 
@@ -23,7 +26,7 @@ type CreateSummaryResponse = {
   message: string;
 };
 
-export function SummaryCreation({ documents, onSummaryCreated }: SummaryCreationProps) {
+export function SummaryCreation({ documents, initialPreferences, onSummaryCreated }: SummaryCreationProps) {
   const router = useRouter();
   const { getToken } = useAuth();
   const [documentId, setDocumentId] = useState(documents[0]?.id ?? "");
@@ -31,6 +34,7 @@ export function SummaryCreation({ documents, onSummaryCreated }: SummaryCreation
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [overridePreferences, setOverridePreferences] = useState<OverridePreferences | null>(null);
 
   const startSSE = async (jobId: string, token: string) => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -95,10 +99,21 @@ export function SummaryCreation({ documents, onSummaryCreated }: SummaryCreation
         body: {
           document_id: documentId,
           format,
+          override_preferences: overridePreferences ?? undefined,
         },
       });
 
-      if (error || !data) {
+      if (error) {
+        const errorMessage =
+          typeof error === "object" && error !== null && "message" in error
+            ? String(error.message)
+            : typeof error === "object"
+              ? JSON.stringify(error)
+              : String(error);
+        throw new Error(errorMessage);
+      }
+
+      if (!data) {
         throw new Error("Failed to create summary");
       }
 
@@ -136,18 +151,24 @@ export function SummaryCreation({ documents, onSummaryCreated }: SummaryCreation
         </select>
       </label>
 
-      <label className="block space-y-2">
+      <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">Format</span>
-        <select
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          value={format}
-          onChange={(event) => setFormat(event.target.value as "bullet" | "outline" | "paragraph")}
-        >
-          <option value="bullet">Bullet</option>
-          <option value="outline">Outline</option>
-          <option value="paragraph">Paragraph</option>
-        </select>
-      </label>
+        <OverrideSettingsModal
+          initialPreferences={initialPreferences}
+          onSave={async (preferences) => {
+            setOverridePreferences(preferences);
+          }}
+        />
+      </div>
+      <select
+        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+        value={format}
+        onChange={(event) => setFormat(event.target.value as "bullet" | "outline" | "paragraph")}
+      >
+        <option value="bullet">Bullet</option>
+        <option value="outline">Outline</option>
+        <option value="paragraph">Paragraph</option>
+      </select>
 
       <Button className="w-full" disabled={isLoading || !documentId} onClick={onCreateSummary}>
         {isLoading ? "Generating..." : "Generate Summary"}

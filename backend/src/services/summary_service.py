@@ -6,6 +6,7 @@ import asyncio
 import logging
 import math
 import uuid
+from typing import cast
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from sqlalchemy import func, select
@@ -66,6 +67,7 @@ async def generate_summary_for_document(
     user_id: uuid.UUID,
     document_id: uuid.UUID,
     format_value: str,
+    override_preferences: dict | None = None,
 ) -> SummaryChainOutput:
     """Fetch diverse chunk context and generate summary content with the LLM chain."""
     logger.info(
@@ -148,10 +150,17 @@ async def generate_summary_for_document(
         chunks = [row[0] for row in fallback_result.all() if row[0]]
         logger.info(f"Found {len(chunks)} chunks via fallback")
 
-    user_result = await db.execute(select(User.user_preferences).where(User.id == user_id))
-    user_prefs = user_result.scalar_one_or_none()
+    if override_preferences:
+        preferences_to_use: dict | None = override_preferences
+        logger.info(f"Using override preferences for user {user_id}")
+    else:
+        user_result = await db.execute(select(User.user_preferences).where(User.id == user_id))
+        preferences_to_use = cast(dict | None, user_result.scalar_one_or_none())
+        logger.info(f"Using database preferences for user {user_id}")
 
-    chain_input = SummaryChainInput(format=format_value, chunks=chunks, user_preferences=user_prefs)
+    chain_input = SummaryChainInput(
+        format=format_value, chunks=chunks, user_preferences=preferences_to_use
+    )
     logger.info(f"Calling run_summary_chain with {len(chunks)} chunks")
     result = await run_summary_chain(chain_input)
     return result

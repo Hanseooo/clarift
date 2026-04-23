@@ -4,7 +4,7 @@ Summaries router for generating structured summaries.
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -20,11 +20,19 @@ from src.worker import get_arq_pool
 router = APIRouter(prefix="/api/v1/summaries", tags=["summaries"])
 
 
+class OverridePreferences(BaseModel):
+    education_level: Optional[str] = None
+    output_formats: Optional[list[str]] = None
+    explanation_styles: Optional[list[str]] = None
+    custom_instructions: Optional[str] = None
+
+
 class CreateSummaryRequest(BaseModel):
     """Request body for creating a summary."""
 
     document_id: str
     format: str = "bullet"  # bullet, outline, paragraph
+    override_preferences: Optional[OverridePreferences] = None
 
 
 class CreateSummaryResponse(BaseModel):
@@ -163,6 +171,7 @@ async def create_summary(
         str(user.id),
         str(document.id),
         request.format,
+        request.override_preferences,
     )
 
     return {

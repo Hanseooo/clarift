@@ -896,6 +896,16 @@
             "type": "string",
             "title": "Format",
             "default": "bullet"
+          },
+          "override_preferences": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OverridePreferences"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -1004,6 +1014,62 @@
         ],
         "title": "LessonResponse",
         "description": "Response containing a generated mini-lesson."
+      },
+      "OverridePreferences": {
+        "properties": {
+          "education_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Education Level"
+          },
+          "output_formats": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Formats"
+          },
+          "explanation_styles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation Styles"
+          },
+          "custom_instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Instructions"
+          }
+        },
+        "type": "object",
+        "title": "OverridePreferences"
       },
       "PracticeDetailResponse": {
         "properties": {
@@ -1223,9 +1289,7 @@
           "quiz_type_flags": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "type": "boolean"
-                },
+                "additionalProperties": true,
                 "type": "object"
               },
               {

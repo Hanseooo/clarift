@@ -162,7 +162,13 @@ async def process_document(ctx, document_id: str, job_id: str):
 
 
 async def run_summary_job(
-    ctx, summary_id: str, job_id: str, user_id: str, document_id: str, format_value: str
+    ctx,
+    summary_id: str,
+    job_id: str,
+    user_id: str,
+    document_id: str,
+    format_value: str,
+    override_preferences: dict | None = None,
 ):
     """
     Generate summary for a document: retrieve chunks, run summary chain, save results.
@@ -190,6 +196,7 @@ async def run_summary_job(
                         user_id=uuid.UUID(user_id),
                         document_id=uuid.UUID(document_id),
                         format_value=format_value,
+                        override_preferences=override_preferences,
                     ),
                     timeout=300.0,  # 5 minutes
                 )
