@@ -7,8 +7,9 @@ import uuid
 from typing import Any, TypedDict
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
+from src.chains import is_retryable_error
 from src.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -24,7 +25,12 @@ class PracticeChainOutput(TypedDict):
     drills: list[dict[str, Any]]
 
 
-@retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
+@retry(
+    wait=wait_exponential(min=1, max=8),
+    stop=stop_after_attempt(3),
+    retry=retry_if_exception(is_retryable_error),
+    reraise=True,
+)
 async def _validate_topics_with_llm(topics: list[str]) -> list[str]:
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash-lite",
@@ -50,8 +56,8 @@ async def run_practice_chain(input: PracticeChainInput) -> PracticeChainOutput:
     topics = input["weak_topics"] or ["General"]
     try:
         topics = await _validate_topics_with_llm(topics)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Topic normalization failed, using raw topics: %s", exc)
+    except Exception:  # noqa: BLE001
+        logger.warning("Topic normalization failed, using raw topics")
 
     drills: list[dict[str, Any]] = []
     difficulties = ["easy", "medium", "hard"]

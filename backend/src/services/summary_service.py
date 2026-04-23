@@ -10,8 +10,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from src.chains.summary_chain import SummaryChainInput, SummaryChainOutput, run_summary_chain
 from src.db.models import DocumentChunk, User
-from src.services.summary_chain import SummaryChainInput, SummaryChainOutput, run_summary_chain
 
 
 async def generate_summary_for_document(

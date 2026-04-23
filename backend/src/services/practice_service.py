@@ -10,11 +10,12 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
+from src.chains import is_retryable_error
+from src.chains.practice_chain import PracticeChainInput, run_practice_chain
 from src.core.config import settings
 from src.db.models import PracticeSession, UserTopicPerformance
-from src.services.practice_chain import PracticeChainInput, run_practice_chain
 from src.services.retrieval_service import get_user_chunks
 
 logger = logging.getLogger(__name__)
@@ -99,7 +100,12 @@ async def create_practice_session(
     }
 
 
-@retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
+@retry(
+    wait=wait_exponential(min=1, max=8),
+    stop=stop_after_attempt(3),
+    retry=retry_if_exception(is_retryable_error),
+    reraise=True,
+)
 async def _generate_lesson_with_llm(topics: list[str], context: str) -> str:
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash-lite",

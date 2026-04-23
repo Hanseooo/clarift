@@ -12,9 +12,9 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import enforce_quota, get_current_user
+from src.chains.quiz_chain import QuizChainInput, run_quiz_chain
 from src.db.models import Quiz, QuizAttempt, UserTopicPerformance
 from src.db.session import get_db
-from src.services.quiz_chain import QuizChainInput, run_quiz_chain
 
 router = APIRouter(prefix="/api/v1/quizzes", tags=["quizzes"])
 

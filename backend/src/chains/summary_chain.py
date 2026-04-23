@@ -17,9 +17,9 @@ from collections.abc import Iterable
 from typing import Optional, TypedDict
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_google_genai.chat_models import ChatGoogleGenerativeAIError
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
+from src.chains import is_retryable_error
 from src.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -48,15 +48,6 @@ def _normalize_llm_text(raw_content: object) -> str:
     if isinstance(raw_content, Iterable):
         return "".join(str(part) for part in raw_content).strip()
     return str(raw_content).strip()
-
-
-def is_retryable_error(exception):
-    """Check if an exception is retryable (not a quota error)."""
-    if isinstance(exception, ChatGoogleGenerativeAIError):
-        error_str = str(exception).lower()
-        if "quota" in error_str or "resource_exhausted" in error_str or "rate limit" in error_str:
-            return False
-    return True
 
 
 @retry(

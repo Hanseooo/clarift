@@ -12,9 +12,9 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import enforce_quota, get_current_user
+from src.chains.practice_chain import PracticeChainInput, run_practice_chain
 from src.db.models import PracticeSession, UserTopicPerformance
 from src.db.session import get_db
-from src.services.practice_chain import PracticeChainInput, run_practice_chain
 
 router = APIRouter(prefix="/api/v1/practice", tags=["practice"])
 

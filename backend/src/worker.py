@@ -291,9 +291,9 @@ async def run_quiz_job(
     from sqlalchemy import update
     from sqlalchemy.future import select
 
+    from src.chains.quiz_chain import QuizChainInput, run_quiz_chain
     from src.db.models import Job, Quiz
     from src.db.session import AsyncSessionLocal
-    from src.services.quiz_chain import QuizChainInput, run_quiz_chain
 
     logger = logging.getLogger(__name__)
     logger.info(f"Starting run_quiz_job for quiz {quiz_id}, job {job_id}")

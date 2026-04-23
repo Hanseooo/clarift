@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from src.services.quiz_service import (
     QuizSettings,
     QuizTypeSettings,
