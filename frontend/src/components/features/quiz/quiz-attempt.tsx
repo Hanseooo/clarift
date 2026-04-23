@@ -38,9 +38,13 @@ export function QuizAttempt({ quiz }: QuizAttemptProps) {
   const answered = useMemo(() => Object.keys(answers).length, [answers]);
 
   const onSubmit = async () => {
+    const serializedAnswers: Record<string, string> = {};
+    for (const [key, value] of Object.entries(answers)) {
+      serializedAnswers[key] = Array.isArray(value) ? JSON.stringify(value) : value;
+    }
     const response = await mutateAsync({
       quiz_id: quiz.id,
-      answers,
+      answers: serializedAnswers,
     });
     setResult({ score: response.score, weak_topics: response.weak_topics });
   };
