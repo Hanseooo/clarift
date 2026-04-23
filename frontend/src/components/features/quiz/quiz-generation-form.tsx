@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QuizSettingsPanel } from "@/components/features/quiz/quiz-settings-panel";
 import { useJobStatus } from "@/hooks/use-job-status";
-import { client, createAuthenticatedClient } from "@/lib/api";
+import { createAuthenticatedClient } from "@/lib/api";
 
 type DocumentOption = {
   id: string;
@@ -112,7 +112,8 @@ export function QuizGenerationForm({ documents, token }: QuizGenerationFormProps
         };
 
     try {
-      const { data, error: apiError } = await client.POST("/api/v1/quizzes", {
+      const authClient = createAuthenticatedClient(token);
+      const { data, error: apiError } = await authClient.POST("/api/v1/quizzes", {
         body: payload,
       });
 

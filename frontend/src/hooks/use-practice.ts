@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 
-import { client } from "@/lib/api-client";
+import { createAuthenticatedClient } from "@/lib/api";
 
 type CreatePracticeInput = {
   weak_topics: string[];
@@ -12,12 +13,19 @@ type CreatePracticeInput = {
 export function useWeakAreas() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
 
   const fetchWeakAreas = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: apiError } = await client.GET("/api/v1/practice/weak-areas");
+      const token = await getToken();
+      if (!token) {
+        throw new Error("You must be logged in to fetch weak areas.");
+      }
+
+      const authClient = createAuthenticatedClient(token);
+      const { data, error: apiError } = await authClient.GET("/api/v1/practice/weak-areas");
       if (apiError || !data) {
         throw new Error("Failed to fetch weak areas");
       }
@@ -30,7 +38,7 @@ export function useWeakAreas() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [getToken]);
 
   return { fetchWeakAreas, isLoading, error };
 }
@@ -38,12 +46,19 @@ export function useWeakAreas() {
 export function useCreatePractice() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
 
   const mutateAsync = useCallback(async (payload: CreatePracticeInput) => {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: apiError } = await client.POST("/api/v1/practice", {
+      const token = await getToken();
+      if (!token) {
+        throw new Error("You must be logged in to create a practice session.");
+      }
+
+      const authClient = createAuthenticatedClient(token);
+      const { data, error: apiError } = await authClient.POST("/api/v1/practice", {
         body: {
           weak_topics: payload.weak_topics,
           drill_count: payload.drill_count ?? 5,
@@ -61,7 +76,7 @@ export function useCreatePractice() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [getToken]);
 
   return { mutateAsync, isLoading, error };
 }
@@ -86,12 +101,19 @@ type LessonOutput = {
 export function useGenerateLesson() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
 
   const mutateAsync = useCallback(async (payload: LessonInput): Promise<LessonOutput> => {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: apiError } = await client.POST("/api/v1/practice/lesson", {
+      const token = await getToken();
+      if (!token) {
+        throw new Error("You must be logged in to generate a lesson.");
+      }
+
+      const authClient = createAuthenticatedClient(token);
+      const { data, error: apiError } = await authClient.POST("/api/v1/practice/lesson", {
         body: {
           topics: payload.topics,
         },
@@ -108,7 +130,7 @@ export function useGenerateLesson() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [getToken]);
 
   return { mutateAsync, isLoading, error };
 }
