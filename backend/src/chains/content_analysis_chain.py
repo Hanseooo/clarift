@@ -9,7 +9,7 @@ from typing import TypedDict
 from langchain_google_genai import ChatGoogleGenerativeAI
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from src.chains import is_retryable_error
+from src.chains.retry import is_retryable_error
 from src.core.config import settings
 
 logger = logging.getLogger(__name__)

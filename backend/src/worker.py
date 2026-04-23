@@ -292,7 +292,7 @@ async def run_quiz_job(
     from sqlalchemy.future import select
 
     from src.chains.quiz_chain import QuizChainInput, run_quiz_chain
-    from src.db.models import Job, Quiz
+    from src.db.models import DocumentChunk, Job, Quiz
     from src.db.session import AsyncSessionLocal
 
     logger = logging.getLogger(__name__)
@@ -312,6 +312,17 @@ async def run_quiz_job(
             )
             await session.commit()
 
+            # Fetch user-scoped chunks for the document
+            chunk_result = await session.execute(
+                select(DocumentChunk.content)
+                .where(
+                    DocumentChunk.user_id == uuid.UUID(user_id),
+                    DocumentChunk.document_id == uuid.UUID(document_id),
+                )
+                .limit(5)
+            )
+            chunks = [row[0] for row in chunk_result.all()]
+
             # Run quiz chain with timeout (5 minutes)
             try:
                 chain_output = await asyncio.wait_for(
@@ -321,6 +332,8 @@ async def run_quiz_job(
                             user_id=user_id,
                             question_count=question_count,
                             auto_mode=auto_mode,
+                            question_distribution={},
+                            chunks=chunks,
                         )
                     ),
                     timeout=300.0,

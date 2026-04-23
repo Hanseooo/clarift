@@ -12,8 +12,8 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from src.chains import is_retryable_error
 from src.chains.practice_chain import PracticeChainInput, run_practice_chain
+from src.chains.retry import is_retryable_error
 from src.core.config import settings
 from src.db.models import PracticeSession, UserTopicPerformance
 from src.services.retrieval_service import get_user_chunks

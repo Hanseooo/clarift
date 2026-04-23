@@ -19,7 +19,7 @@ from typing import Any, TypedDict
 from langchain_google_genai import ChatGoogleGenerativeAI
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from src.chains import is_retryable_error
+from src.chains.retry import is_retryable_error
 from src.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -39,6 +39,7 @@ class QuizChainInput(TypedDict):
     question_count: int
     auto_mode: bool
     question_distribution: dict[str, int]
+    chunks: list[str]
 
 
 class QuizQuestion(TypedDict, total=False):
@@ -234,8 +235,8 @@ def _parse_llm_questions(raw_content: object) -> list[QuizQuestion]:
 
 
 @retry(
-    wait=wait_exponential(min=4, max=30),
-    stop=stop_after_attempt(5),
+    wait=wait_exponential(min=1, max=8),
+    stop=stop_after_attempt(3),
     retry=retry_if_exception(is_retryable_error),
     reraise=True,
 )
@@ -274,9 +275,10 @@ async def run_quiz_chain(input: QuizChainInput) -> QuizChainOutput:
 
     distribution = input.get("question_distribution", {"mcq": input["question_count"]})
     question_count = input["question_count"]
+    chunks = input.get("chunks", [])
 
     try:
-        questions = await _generate_questions_from_llm([], distribution)
+        questions = await _generate_questions_from_llm(chunks, distribution)
         if not questions:
             questions, question_types = _fallback_questions(question_count)
         else:
@@ -285,7 +287,7 @@ async def run_quiz_chain(input: QuizChainInput) -> QuizChainOutput:
                 logger.warning("Validation errors on first pass: %s", errors)
                 error_ctx = "; ".join(errors)
                 questions = await _generate_questions_from_llm(
-                    [], distribution, error_context=error_ctx
+                    chunks, distribution, error_context=error_ctx
                 )
                 errors = _validate_questions(questions)
                 if errors:
