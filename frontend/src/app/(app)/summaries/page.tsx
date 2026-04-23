@@ -1,5 +1,8 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { db } from "@/db";
+import { eq } from "drizzle-orm";
+import { users } from "@/db/schema";
 
 import { SummaryCreation } from "@/components/features/summary/summary-creation";
 import { SummaryList } from "@/components/features/summary/summary-list";
@@ -34,13 +37,22 @@ export default async function SummariesPage() {
   }
 
   const apiClient = createAuthenticatedClient(token);
-  const [documentsResponse, summariesResponse] = await Promise.all([
+  const [documentsResponse, summariesResponse, userRecord] = await Promise.all([
     apiClient.GET("/api/v1/documents"),
     apiClient.GET("/api/v1/summaries"),
+    db.query.users.findFirst({
+      where: eq(users.clerkUserId, user.id),
+    }),
   ]);
 
   const documents = (documentsResponse.data as DocumentOption[] | undefined) ?? [];
   const summaries = (summariesResponse.data as SummaryItem[] | undefined) ?? [];
+  const initialPreferences = (userRecord?.userPreferences as {
+    education_level?: string;
+    output_formats?: string[];
+    explanation_styles?: string[];
+    custom_instructions?: string;
+  }) ?? {};
 
   return (
     <main className="min-h-screen bg-background p-4 md:p-8">
@@ -54,7 +66,7 @@ export default async function SummariesPage() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           <SummaryList summaries={summaries} />
-          <SummaryCreation documents={documents} />
+          <SummaryCreation documents={documents} initialPreferences={initialPreferences} />
         </div>
       </div>
     </main>
