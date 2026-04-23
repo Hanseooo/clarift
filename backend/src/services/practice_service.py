@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import Any
 
+from langchain_google_genai import ChatGoogleGenerativeAI
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from tenacity import retry, stop_after_attempt, wait_exponential
 
+from src.core.config import settings
 from src.db.models import PracticeSession, UserTopicPerformance
 from src.services.practice_chain import PracticeChainInput, run_practice_chain
 from src.services.retrieval_service import get_user_chunks
+
+logger = logging.getLogger(__name__)
 
 
 async def get_weak_areas(
@@ -62,6 +68,7 @@ async def create_practice_session(
 
     if not weak_topics:
         weak_topics = ["General"]
+        logger.warning("No weak topics found for user %s, falling back to General", user_id)
 
     chain_input = PracticeChainInput(
         weak_topics=weak_topics,
@@ -92,6 +99,25 @@ async def create_practice_session(
     }
 
 
+@retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
+async def _generate_lesson_with_llm(topics: list[str], context: str) -> str:
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash-lite",
+        google_api_key=settings.GOOGLE_API_KEY,
+        temperature=0.3,
+    )
+    prompt = (
+        f"You are a tutor for Filipino students. Write a concise 2-paragraph lesson on: {', '.join(topics)}.\n\n"
+        f"Use only this source material:\n{context}\n\n"
+        "If the source material does not cover the topics, say so briefly and explain what the student should review."
+    )
+    response = await llm.ainvoke(prompt)
+    raw = response.content
+    if isinstance(raw, str):
+        return raw
+    return "".join(str(part) for part in raw)
+
+
 async def generate_mini_lesson(
     db: AsyncSession,
     user_id: uuid.UUID,
@@ -99,18 +125,28 @@ async def generate_mini_lesson(
 ) -> dict[str, Any]:
     """
     Generate a mini-lesson for the given topics.
-    Retrieves relevant chunks and generates lesson content.
+    Retrieves relevant chunks scoped to the topics and generates lesson content via LLM.
     """
     chunks = await get_user_chunks(db, user_id=user_id, document_id=None, limit=10)
 
     topic_context = []
     for chunk in chunks:
-        topic_context.append(chunk["content"])
+        content = chunk["content"]
+        if any(topic.lower() in content.lower() for topic in topics):
+            topic_context.append(content)
 
-    lesson_content = "\n\n".join(topic_context) if topic_context else "No relevant content found."
+    if not topic_context:
+        lesson_content = "No relevant content found for the specified topics."
+    else:
+        combined_context = "\n\n".join(topic_context)
+        try:
+            lesson_content = await _generate_lesson_with_llm(topics, combined_context)
+        except Exception:  # noqa: BLE001
+            logger.warning("LLM lesson generation failed, falling back to raw context")
+            lesson_content = combined_context
 
     return {
         "topics": topics,
         "lesson": lesson_content,
-        "chunk_count": len(chunks),
+        "chunk_count": len(topic_context),
     }

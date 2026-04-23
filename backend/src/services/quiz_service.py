@@ -2,18 +2,20 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import Any
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel, model_validator
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.models import Document, Job, Quiz, Summary
-from src.services.retrieval_service import get_user_chunks
+from src.db.models import Document, DocumentChunk, Job, Quiz, Summary
 from src.worker import get_arq_pool
+
+logger = logging.getLogger(__name__)
 
 
 class QuizTypeSettings(BaseModel):
@@ -169,52 +171,73 @@ async def create_quiz_job(
             detail="No applicable question types for this document.",
         )
 
-    chunks = await get_user_chunks(
-        db, user_id=user_id, document_id=str(request.document_id), limit=100
+    auto_mode = request.settings.auto_mode if request.settings else True
+
+    chunk_count_result = await db.execute(
+        select(func.count(DocumentChunk.id)).where(
+            DocumentChunk.user_id == user_id,
+            DocumentChunk.document_id == request.document_id,
+        )
     )
-    chunk_count = len(chunks)
+    chunk_count = chunk_count_result.scalar_one()
     total_questions = calculate_question_count(chunk_count, len(resolved_types))
     distribution = distribute_questions(total_questions, resolved_types)
 
-    quiz_stmt = (
-        insert(Quiz)
-        .values(
-            document_id=request.document_id,
-            user_id=user_id,
-            questions=[],
-            question_types=resolved_types,
+    try:
+        quiz_stmt = (
+            insert(Quiz)
+            .values(
+                document_id=request.document_id,
+                user_id=user_id,
+                questions=[],
+                question_types=resolved_types,
+                question_count=total_questions,
+                auto_mode=auto_mode,
+            )
+            .returning(Quiz)
+        )
+        quiz_result = await db.execute(quiz_stmt)
+        quiz = quiz_result.scalar_one()
+
+        job_stmt = (
+            insert(Job)
+            .values(
+                user_id=user_id,
+                type="quiz",
+                status="pending",
+            )
+            .returning(Job)
+        )
+        job_result = await db.execute(job_stmt)
+        job = job_result.scalar_one()
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
+
+    try:
+        pool = await get_arq_pool()
+        await pool.enqueue_job(
+            "run_quiz_job",
+            quiz_id=str(quiz.id),
+            job_id=str(job.id),
+            user_id=str(user_id),
+            document_id=str(request.document_id),
             question_count=total_questions,
-            auto_mode=request.settings.auto_mode if request.settings else True,
+            auto_mode=auto_mode,
         )
-        .returning(Quiz)
-    )
-    quiz_result = await db.execute(quiz_stmt)
-    quiz = quiz_result.scalar_one()
-    await db.commit()
-
-    job_stmt = (
-        insert(Job)
-        .values(
-            user_id=user_id,
-            type="quiz",
-            status="pending",
-        )
-        .returning(Job)
-    )
-    job_result = await db.execute(job_stmt)
-    job = job_result.scalar_one()
-    await db.commit()
-
-    pool = await get_arq_pool()
-    await pool.enqueue_job(
-        "run_quiz_job",
-        quiz_id=str(quiz.id),
-        job_id=str(job.id),
-        user_id=str(user_id),
-        document_id=str(request.document_id),
-        question_count=total_questions,
-        auto_mode=request.settings.auto_mode if request.settings else True,
-    )
+    except Exception:
+        logger.exception("ARQ enqueue failed for quiz job %s, cleaning up DB records", job.id)
+        try:
+            await db.execute(select(Quiz).where(Quiz.id == quiz.id).with_for_update())
+            await db.execute(select(Job).where(Job.id == job.id).with_for_update())
+            await db.execute(Quiz.__table__.delete().where(Quiz.id == quiz.id))
+            await db.execute(Job.__table__.delete().where(Job.id == job.id))
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            logger.exception("Compensating delete failed for quiz %s job %s", quiz.id, job.id)
+        raise
 
     return {
         "job_id": str(job.id),
