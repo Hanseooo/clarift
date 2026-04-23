@@ -1,0 +1,218 @@
+"use client";
+
+import { useState } from "react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const EDUCATION_LEVELS = [
+  "High School",
+  "College Undergraduate",
+  "College Graduate",
+  "Postgraduate",
+  "Other"
+];
+
+const OUTPUT_FORMATS = [
+  "Bullet Points",
+  "Paragraphs",
+  "Q&A",
+  "Flashcards",
+  "Summaries"
+];
+
+const EXPLANATION_STYLES = [
+  "Simple & Direct",
+  "Detailed & Academic",
+  "Analogy-based",
+  "Socratic (Ask me questions)"
+];
+
+type OverridePreferences = {
+  education_level?: string;
+  output_formats?: string[];
+  explanation_styles?: string[];
+  custom_instructions?: string;
+};
+
+type OverrideSettingsModalProps = {
+  initialPreferences?: OverridePreferences;
+  onSave: (preferences: OverridePreferences) => Promise<void>;
+  isSaving?: boolean;
+  error?: string;
+};
+
+export function OverrideSettingsModal({
+  initialPreferences,
+  onSave,
+  isSaving = false,
+  error,
+}: OverrideSettingsModalProps) {
+  const [open, setOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [educationLevel, setEducationLevel] = useState<string>(
+    initialPreferences?.education_level || ""
+  );
+  const [outputFormats, setOutputFormats] = useState<string[]>(
+    initialPreferences?.output_formats || []
+  );
+  const [explanationStyles, setExplanationStyles] = useState<string[]>(
+    initialPreferences?.explanation_styles || []
+  );
+  const [customInstructions, setCustomInstructions] = useState(
+    initialPreferences?.custom_instructions || ""
+  );
+
+  const handleFormatChange = (format: string) => {
+    setOutputFormats((prev) =>
+      prev.includes(format) ? prev.filter((f) => f !== format) : [...prev, format]
+    );
+  };
+
+  const handleStyleChange = (style: string) => {
+    setExplanationStyles((prev) =>
+      prev.includes(style) ? prev.filter((s) => s !== style) : [...prev, style]
+    );
+  };
+
+  const handleSave = async () => {
+    setSaveError(null);
+    try {
+      await onSave({
+        education_level: educationLevel || undefined,
+        output_formats: outputFormats.length > 0 ? outputFormats : undefined,
+        explanation_styles: explanationStyles.length > 0 ? explanationStyles : undefined,
+        custom_instructions: customInstructions || undefined,
+      });
+      setOpen(false);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to apply overrides. Please try again.");
+    }
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      setSaveError(null);
+      setEducationLevel(initialPreferences?.education_level || "");
+      setOutputFormats(initialPreferences?.output_formats || []);
+      setExplanationStyles(initialPreferences?.explanation_styles || []);
+      setCustomInstructions(initialPreferences?.custom_instructions || "");
+    }
+    setOpen(isOpen);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          Override Settings
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Override Settings</DialogTitle>
+          <DialogDescription>
+            Customize preferences for this generation only. Your global preferences will remain unchanged.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          {(error ?? saveError) && (
+            <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+              <p className="text-xs text-destructive">{error ?? saveError}</p>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label htmlFor="education-level" className="text-sm font-medium text-foreground">
+              Education Level
+            </label>
+            <Select value={educationLevel} onValueChange={setEducationLevel}>
+              <SelectTrigger id="education-level">
+                <SelectValue placeholder="Select your level" />
+              </SelectTrigger>
+              <SelectContent>
+                {EDUCATION_LEVELS.map((level) => (
+                  <SelectItem key={level} value={level}>
+                    {level}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Preferred Output Formats
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {OUTPUT_FORMATS.map((format) => (
+                <label key={format} className="flex items-center space-x-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={outputFormats.includes(format)}
+                    onChange={() => handleFormatChange(format)}
+                    className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                  />
+                  <span className="text-zinc-700 dark:text-zinc-300">{format}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Explanation Styles
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {EXPLANATION_STYLES.map((style) => (
+                <label key={style} className="flex items-center space-x-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={explanationStyles.includes(style)}
+                    onChange={() => handleStyleChange(style)}
+                    className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                  />
+                  <span className="text-zinc-700 dark:text-zinc-300">{style}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="custom-instructions" className="text-sm font-medium text-foreground">
+              Custom Instructions (Optional)
+            </label>
+            <textarea
+              id="custom-instructions"
+              value={customInstructions}
+              onChange={(e) => setCustomInstructions(e.target.value)}
+              placeholder="E.g., Keep it extremely concise."
+              className="w-full min-h-[80px] rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-50"
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSaving ? "Applying..." : "Apply Overrides"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
