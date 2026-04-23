@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { AppShell } from "@/components/app-shell";
 
 export default async function AppLayout({
   children,
@@ -30,5 +31,5 @@ export default async function AppLayout({
     redirect("/onboarding");
   }
 
-  return <>{children}</>;
+  return <AppShell>{children}</AppShell>;
 }
