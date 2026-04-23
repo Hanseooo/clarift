@@ -8,9 +8,10 @@ import { useCreatePractice } from "@/hooks/use-practice";
 
 type PracticeCreationProps = {
   selectedTopics: string[];
+  onStartLesson: () => void;
 };
 
-export function PracticeCreation({ selectedTopics }: PracticeCreationProps) {
+export function PracticeCreation({ selectedTopics, onStartLesson }: PracticeCreationProps) {
   const router = useRouter();
   const [drillCount, setDrillCount] = useState(5);
   const { mutateAsync, isLoading, error } = useCreatePractice();
@@ -30,6 +31,14 @@ export function PracticeCreation({ selectedTopics }: PracticeCreationProps) {
     <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
       <h2 className="text-xl font-semibold text-foreground">Start Practice</h2>
       <p className="text-sm text-muted-foreground">Selected topics: {selectedTopics.join(", ") || "None"}</p>
+
+      <Button
+        className="w-full"
+        disabled={!selectedTopics.length}
+        onClick={onStartLesson}
+      >
+        Generate Lesson & Drill
+      </Button>
 
       <label className="block space-y-2">
         <span className="text-sm font-medium text-foreground">Drill count</span>

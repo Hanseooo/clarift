@@ -140,8 +140,8 @@ export interface paths {
          * Create Quiz
          * @description Request a quiz for a given document.
          *
-         *     Creates a pending Quiz record, then triggers the quiz chain.
-         *     Returns the quiz ID and weak topics.
+         *     Delegates to the quiz service layer which handles validation,
+         *     record creation, and ARQ job enqueueing. Returns a job_id for SSE streaming.
          */
         post: operations["create_quiz_api_v1_quizzes_post"];
         delete?: never;
@@ -180,10 +180,32 @@ export interface paths {
          * Submit Attempt
          * @description Submit a quiz attempt and get results.
          *
-         *     Creates a QuizAttempt record, calculates score, updates topic performance.
-         *     Returns score and weak topics.
+         *     Delegates to the quiz service layer which handles validation,
+         *     score calculation, topic performance updates, and weak topic detection.
          */
         post: operations["submit_attempt_api_v1_quizzes_attempts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/practice/lesson": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Lesson
+         * @description Generate a concise mini-lesson for the given topics.
+         *
+         *     Retrieves relevant user-scoped chunks and generates a 2-paragraph explanation.
+         */
+        post: operations["generate_lesson_api_v1_practice_lesson_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -203,7 +225,8 @@ export interface paths {
          * Create Practice
          * @description Request targeted practice drills for weak topics.
          *
-         *     Creates a PracticeSession record and returns generated drills.
+         *     Delegates to the practice service layer which handles chain invocation
+         *     and session record creation.
          */
         post: operations["create_practice_api_v1_practice_post"];
         delete?: never;
@@ -386,15 +409,15 @@ export interface components {
         };
         /**
          * CreateQuizResponse
-         * @description Response after creating a quiz.
+         * @description Response after creating a quiz job.
          */
         CreateQuizResponse: {
+            /** Job Id */
+            job_id: string;
             /** Quiz Id */
             quiz_id: string;
             /** Message */
             message: string;
-            /** Weak Topics */
-            weak_topics: string[];
         };
         /**
          * CreateSummaryRequest
@@ -433,6 +456,24 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * LessonRequest
+         * @description Request body for generating a mini-lesson.
+         */
+        LessonRequest: {
+            /** Topics */
+            topics: string[];
+        };
+        /**
+         * LessonResponse
+         * @description Response containing a generated mini-lesson.
+         */
+        LessonResponse: {
+            /** Lesson */
+            lesson: string;
+            /** Chunks Used */
+            chunks_used: number;
         };
         /** PracticeDetailResponse */
         PracticeDetailResponse: {
@@ -869,6 +910,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubmitAttemptResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_lesson_api_v1_practice_lesson_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LessonRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonResponse"];
                 };
             };
             /** @description Validation Error */

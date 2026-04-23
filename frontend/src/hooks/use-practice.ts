@@ -73,3 +73,42 @@ export function useSubmitPracticeAnswer() {
     error: null as string | null,
   };
 }
+
+type LessonInput = {
+  topics: string[];
+};
+
+type LessonOutput = {
+  lesson: string;
+  chunks_used: number;
+};
+
+export function useGenerateLesson() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const mutateAsync = useCallback(async (payload: LessonInput): Promise<LessonOutput> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data, error: apiError } = await client.POST("/api/v1/practice/lesson", {
+        body: {
+          topics: payload.topics,
+        },
+      });
+      if (apiError || !data) {
+        throw new Error("Failed to generate lesson");
+      }
+      return data as LessonOutput;
+    } catch (caughtError) {
+      const message =
+        caughtError instanceof Error ? caughtError.message : "Failed to generate lesson";
+      setError(message);
+      throw caughtError;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutateAsync, isLoading, error };
+}
