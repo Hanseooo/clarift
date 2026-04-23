@@ -98,15 +98,23 @@ def _normalize_question(raw_question: dict[str, Any], index: int) -> QuizQuestio
 
 
 @retry(wait=wait_exponential(min=4, max=30), stop=stop_after_attempt(5), reraise=True)
-async def _generate_questions_from_llm(question_count: int) -> list[QuizQuestion]:
+async def _generate_questions_from_llm(
+    question_count: int, chunks: list[str] | None = None
+) -> list[QuizQuestion]:
+    # TODO (Task 1): When service layer is implemented, fetch user-scoped chunks
+    # from the DB and pass them here. Inject chunk content into the prompt for
+    # context-aware quiz generation.
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash-lite",
         google_api_key=settings.GOOGLE_API_KEY,
         temperature=0.2,
     )
 
+    context = "\n\n".join(chunks) if chunks else "No document context provided."
     prompt = (
-        "Return JSON only. Generate quiz questions as an array of objects with keys: "
+        "Return JSON only. Generate quiz questions based on the following study material.\n\n"
+        f"Study material:\n{context}\n\n"
+        "Generate quiz questions as an array of objects with keys: "
         "id, question, options (string array), correct_answer, topic. "
         "Create a mix of multiple_choice, true_false, and fill_in styles. "
         f"Count: {question_count}."

@@ -88,7 +88,7 @@ async def stream_job_progress(
     )
 
 
-def _estimate_progress(job: Job) -> float | None:
+def _estimate_progress(job: Job) -> float:
     """
     Heuristic to map job status to a progress percentage (0‑100).
     Quiz jobs have more granular steps than summary jobs.
@@ -113,4 +113,4 @@ def _estimate_progress(job: Job) -> float | None:
     }
 
     job_mapping = mapping.get(job.type, summary_mapping)
-    return job_mapping.get(job.status)
+    return job_mapping.get(job.status, 0.0)

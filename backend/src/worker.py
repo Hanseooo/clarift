@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import uuid
 
 from arq.connections import RedisSettings, create_pool
 from arq.worker import func
@@ -10,30 +11,40 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from src.core.config import settings
 from src.services.summary_service import GoogleGenerativeAIEmbeddings  # Adjust import as needed
 
-# from src.db.session import get_db_session  # Uncomment if needed for DB
-
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# --- Matryoshka/Gemini explicit dimensionality contract ---
-# Gemini Embeddings API defaults can change (3072-dim by default as of 2026) and will BREAK Neon/pgvector if not set.
-# ENSURE output_dimensionality=768 is ALWAYS set, & all downstream vector DB fields expect 768.
+
+async def _update_job_status(db_session, job_id: str, status: str, result=None, error=None):
+    """Helper to update job status, reducing duplication across error handlers."""
+    from sqlalchemy import update
+
+    from src.db.models import Job
+
+    values = {"status": status}
+    if result is not None:
+        values["result"] = result
+    if error is not None:
+        values["error"] = error
+    await db_session.execute(update(Job).where(Job.id == uuid.UUID(job_id)).values(values))
+    await db_session.commit()
 
 
 async def process_chunks(ctx, chunks, batch_size):
     embeddings_client = ctx["embeddings_client"]
     vectors = []
+
+    @retry(
+        wait=wait_exponential(multiplier=2, min=4, max=30),
+        stop=stop_after_attempt(5),
+        reraise=True,
+    )
+    async def embed_batch(b):
+        return await embeddings_client.aembed_documents(b)
+
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i : i + batch_size]
-
-        @retry(
-            wait=wait_exponential(multiplier=2, min=4, max=30),
-            stop=stop_after_attempt(5),
-            reraise=True,
-        )
-        async def embed_batch(b):
-            return await embeddings_client.aembed_documents(b)
 
         try:
             batch_vectors = await embed_batch(batch)
@@ -58,7 +69,6 @@ async def on_startup(ctx):
         output_dimensionality=768,
     )
     logger.info("ARQ Worker startup: Embeddings client (explicit 768-dim Matryoshka) initialized.")
-    # ctx['db_pool'] = await get_db_session()  # Uncomment if DB needed
 
 
 async def process_document(ctx, document_id: str, job_id: str):
@@ -157,9 +167,6 @@ async def run_summary_job(
     """
     Generate summary for a document: retrieve chunks, run summary chain, save results.
     """
-    import asyncio
-    import uuid
-
     from langchain_google_genai.chat_models import ChatGoogleGenerativeAIError
     from sqlalchemy import update
 
@@ -280,10 +287,9 @@ async def run_quiz_job(
     """
     Generate quiz for a document: retrieve user-scoped chunks, run quiz chain, save results.
     """
-    import uuid
-
     from langchain_google_genai.chat_models import ChatGoogleGenerativeAIError
     from sqlalchemy import update
+    from sqlalchemy.future import select
 
     from src.db.models import Job, Quiz
     from src.db.session import AsyncSessionLocal
@@ -294,6 +300,12 @@ async def run_quiz_job(
 
     try:
         async with AsyncSessionLocal() as session:
+            # Validate quiz exists before proceeding
+            result = await session.execute(select(Quiz).where(Quiz.id == uuid.UUID(quiz_id)))
+            quiz = result.scalar_one_or_none()
+            if not quiz:
+                raise ValueError(f"Quiz {quiz_id} not found")
+
             # Update job status to processing
             await session.execute(
                 update(Job).where(Job.id == uuid.UUID(job_id)).values(status="processing")
@@ -352,28 +364,17 @@ async def run_quiz_job(
 
         logger.error(f"AI error generating quiz {quiz_id}: {error_msg}", exc_info=True)
         async with AsyncSessionLocal() as session:
-            await session.execute(
-                update(Job)
-                .where(Job.id == uuid.UUID(job_id))
-                .values(status="failed", error=error_msg)
-            )
-            await session.commit()
+            await _update_job_status(session, job_id, "failed", error=error_msg)
 
     except TimeoutError as e:
         logger.error(f"Timeout generating quiz {quiz_id}: {str(e)}", exc_info=True)
         async with AsyncSessionLocal() as session:
-            await session.execute(
-                update(Job).where(Job.id == uuid.UUID(job_id)).values(status="failed", error=str(e))
-            )
-            await session.commit()
+            await _update_job_status(session, job_id, "failed", error=str(e))
 
     except Exception as e:
         logger.error(f"Error generating quiz {quiz_id}: {str(e)}", exc_info=True)
         async with AsyncSessionLocal() as session:
-            await session.execute(
-                update(Job).where(Job.id == uuid.UUID(job_id)).values(status="failed", error=str(e))
-            )
-            await session.commit()
+            await _update_job_status(session, job_id, "failed", error=str(e))
 
 
 class WorkerSettings:
