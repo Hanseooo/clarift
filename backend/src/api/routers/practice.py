@@ -13,9 +13,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.deps import enforce_quota, get_current_user
 from src.db.models import PracticeSession, UserTopicPerformance
 from src.db.session import get_db
-from src.services.practice_service import create_practice_session
+from src.services.practice_service import create_practice_session, generate_mini_lesson
 
 router = APIRouter(prefix="/api/v1/practice", tags=["practice"])
+
+
+class LessonRequest(BaseModel):
+    """Request body for generating a mini-lesson."""
+
+    topics: list[str]
+
+
+class LessonResponse(BaseModel):
+    """Response containing a generated mini-lesson."""
+
+    lesson: str
+    chunks_used: int
 
 
 class CreatePracticeRequest(BaseModel):
@@ -38,6 +51,36 @@ class PracticeDetailResponse(BaseModel):
     weak_topics: list[str]
     drills: list[dict]
     created_at: str
+
+
+@router.post("/lesson", response_model=LessonResponse)
+async def generate_lesson(
+    request: LessonRequest,
+    _quota: None = Depends(enforce_quota("practice")),
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Generate a concise mini-lesson for the given topics.
+
+    Retrieves relevant user-scoped chunks and generates a 2-paragraph explanation.
+    """
+    if not request.topics:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="topics must not be empty",
+        )
+
+    result = await generate_mini_lesson(
+        db,
+        user_id=user.id,
+        topics=request.topics,
+    )
+
+    return LessonResponse(
+        lesson=result["lesson"],
+        chunks_used=result["chunk_count"],
+    )
 
 
 @router.post("", response_model=CreatePracticeResponse)

@@ -306,7 +306,7 @@
           "quizzes"
         ],
         "summary": "Create Quiz",
-        "description": "Request a quiz for a given document.\n\nCreates a pending Quiz record, then triggers the quiz chain.\nReturns the quiz ID and weak topics.",
+        "description": "Request a quiz for a given document.\n\nDelegates to the quiz service layer which handles validation,\nrecord creation, and ARQ job enqueueing. Returns a job_id for SSE streaming.",
         "operationId": "create_quiz_api_v1_quizzes_post",
         "requestBody": {
           "content": {
@@ -400,7 +400,7 @@
           "quizzes"
         ],
         "summary": "Submit Attempt",
-        "description": "Submit a quiz attempt and get results.\n\nCreates a QuizAttempt record, calculates score, updates topic performance.\nReturns score and weak topics.",
+        "description": "Submit a quiz attempt and get results.\n\nDelegates to the quiz service layer which handles validation,\nscore calculation, topic performance updates, and weak topic detection.",
         "operationId": "submit_attempt_api_v1_quizzes_attempts_post",
         "requestBody": {
           "content": {
@@ -441,13 +441,60 @@
         ]
       }
     },
+    "/api/v1/practice/lesson": {
+      "post": {
+        "tags": [
+          "practice"
+        ],
+        "summary": "Generate Lesson",
+        "description": "Generate a concise mini-lesson for the given topics.\n\nRetrieves relevant user-scoped chunks and generates a 2-paragraph explanation.",
+        "operationId": "generate_lesson_api_v1_practice_lesson_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/practice": {
       "post": {
         "tags": [
           "practice"
         ],
         "summary": "Create Practice",
-        "description": "Request targeted practice drills for weak topics.\n\nCreates a PracticeSession record and returns generated drills.",
+        "description": "Request targeted practice drills for weak topics.\n\nDelegates to the practice service layer which handles chain invocation\nand session record creation.",
         "operationId": "create_practice_api_v1_practice_post",
         "requestBody": {
           "content": {
@@ -817,6 +864,10 @@
       },
       "CreateQuizResponse": {
         "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
           "quiz_id": {
             "type": "string",
             "title": "Quiz Id"
@@ -824,23 +875,16 @@
           "message": {
             "type": "string",
             "title": "Message"
-          },
-          "weak_topics": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Weak Topics"
           }
         },
         "type": "object",
         "required": [
+          "job_id",
           "quiz_id",
-          "message",
-          "weak_topics"
+          "message"
         ],
         "title": "CreateQuizResponse",
-        "description": "Response after creating a quiz."
+        "description": "Response after creating a quiz job."
       },
       "CreateSummaryRequest": {
         "properties": {
@@ -924,6 +968,42 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "LessonRequest": {
+        "properties": {
+          "topics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Topics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topics"
+        ],
+        "title": "LessonRequest",
+        "description": "Request body for generating a mini-lesson."
+      },
+      "LessonResponse": {
+        "properties": {
+          "lesson": {
+            "type": "string",
+            "title": "Lesson"
+          },
+          "chunks_used": {
+            "type": "integer",
+            "title": "Chunks Used"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lesson",
+          "chunks_used"
+        ],
+        "title": "LessonResponse",
+        "description": "Response containing a generated mini-lesson."
       },
       "PracticeDetailResponse": {
         "properties": {

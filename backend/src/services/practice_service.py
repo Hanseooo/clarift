@@ -71,10 +71,13 @@ async def create_practice_session(
         weak_topics = ["General"]
         logger.warning("No weak topics found for user %s, falling back to General", user_id)
 
+    chunks = await get_user_chunks(db, user_id=user_id, document_id=None, limit=10)
+
     chain_input = PracticeChainInput(
         weak_topics=weak_topics,
         drill_count=drill_count,
         user_id=str(user_id),
+        chunks=chunks,
     )
     chain_output = await run_practice_chain(chain_input)
     drills = chain_output["drills"]
