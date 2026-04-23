@@ -8,13 +8,12 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import enforce_quota, get_current_user
-from src.chains.practice_chain import PracticeChainInput, run_practice_chain
 from src.db.models import PracticeSession, UserTopicPerformance
 from src.db.session import get_db
+from src.services.practice_service import create_practice_session
 
 router = APIRouter(prefix="/api/v1/practice", tags=["practice"])
 
@@ -51,7 +50,8 @@ async def create_practice(
     """
     Request targeted practice drills for weak topics.
 
-    Creates a PracticeSession record and returns generated drills.
+    Delegates to the practice service layer which handles chain invocation
+    and session record creation.
     """
     # Validate drill_count
     if request.drill_count < 1 or request.drill_count > 20:
@@ -60,32 +60,16 @@ async def create_practice(
             detail="drill_count must be between 1 and 20",
         )
 
-    chain_input = PracticeChainInput(
+    result = await create_practice_session(
+        db,
+        user.id,
         weak_topics=request.weak_topics,
         drill_count=request.drill_count,
-        user_id=str(user.id),
     )
-    chain_output = await run_practice_chain(chain_input)
-    drills = chain_output["drills"]
-
-    # Create PracticeSession record
-    practice_stmt = (
-        insert(PracticeSession)
-        .values(
-            user_id=user.id,
-            weak_topics=request.weak_topics,
-            drills=drills,
-        )
-        .returning(PracticeSession)
-    )
-    result = await db.execute(practice_stmt)
-    practice = result.scalar_one()
-
-    await db.commit()
 
     return CreatePracticeResponse(
-        practice_id=str(practice.id),
-        drills=drills,
+        practice_id=result["session_id"],
+        drills=result["drills"],
         message="Practice session created.",
     )
 

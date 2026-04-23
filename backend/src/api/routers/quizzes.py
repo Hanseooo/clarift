@@ -12,9 +12,9 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import enforce_quota, get_current_user
-from src.chains.quiz_chain import QuizChainInput, run_quiz_chain
 from src.db.models import Quiz, QuizAttempt, UserTopicPerformance
 from src.db.session import get_db
+from src.services.quiz_service import QuizRequest, create_quiz_job
 
 router = APIRouter(prefix="/api/v1/quizzes", tags=["quizzes"])
 
@@ -28,11 +28,11 @@ class CreateQuizRequest(BaseModel):
 
 
 class CreateQuizResponse(BaseModel):
-    """Response after creating a quiz."""
+    """Response after creating a quiz job."""
 
+    job_id: str
     quiz_id: str
     message: str
-    weak_topics: list[str]
 
 
 class QuizItemResponse(BaseModel):
@@ -124,8 +124,8 @@ async def create_quiz(
     """
     Request a quiz for a given document.
 
-    Creates a pending Quiz record, then triggers the quiz chain.
-    Returns the quiz ID and weak topics.
+    Delegates to the quiz service layer which handles validation,
+    record creation, and ARQ job enqueueing. Returns a job_id for SSE streaming.
     """
     # Validate question_count
     if request.question_count < 1 or request.question_count > 20:
@@ -134,48 +134,16 @@ async def create_quiz(
             detail="question_count must be between 1 and 20",
         )
 
-    # Create pending Quiz record
-    quiz_stmt = (
-        insert(Quiz)
-        .values(
-            document_id=uuid.UUID(request.document_id),
-            user_id=user.id,
-            questions=[],  # placeholder, will be filled by chain
-            question_types=[],
-            question_count=request.question_count,
-            auto_mode=request.auto_mode,
-        )
-        .returning(Quiz)
+    service_request = QuizRequest(
+        document_id=uuid.UUID(request.document_id),
     )
-    result = await db.execute(quiz_stmt)
-    quiz = result.scalar_one()
 
-    await db.commit()
-
-    # Call quiz chain (stub)
-    chain_input = QuizChainInput(
-        document_id=request.document_id,
-        user_id=str(user.id),
-        question_count=request.question_count,
-        auto_mode=request.auto_mode,
-    )
-    chain_output = await run_quiz_chain(chain_input)
-
-    update_stmt = (
-        update(Quiz)
-        .where(Quiz.id == quiz.id)
-        .values(
-            questions=chain_output["questions"],
-            question_types=chain_output["question_types"],
-        )
-    )
-    await db.execute(update_stmt)
-    await db.commit()
+    result = await create_quiz_job(db, user.id, service_request)
 
     return CreateQuizResponse(
-        quiz_id=str(quiz.id),
-        message="Quiz generation started.",
-        weak_topics=chain_output["weak_topics"],
+        job_id=result["job_id"],
+        quiz_id=result["quiz_id"],
+        message="Quiz generation started. Stream progress via /api/v1/jobs/{job_id}/stream.",
     )
 
 
