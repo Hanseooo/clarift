@@ -4,7 +4,7 @@ Summaries router for generating structured summaries.
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -25,6 +25,7 @@ class CreateSummaryRequest(BaseModel):
 
     document_id: str
     format: str = "bullet"  # bullet, outline, paragraph
+    override_preferences: Optional[dict] = None
 
 
 class CreateSummaryResponse(BaseModel):
@@ -163,6 +164,7 @@ async def create_summary(
         str(user.id),
         str(document.id),
         request.format,
+        request.override_preferences,
     )
 
     return {

@@ -66,6 +66,7 @@ async def generate_summary_for_document(
     user_id: uuid.UUID,
     document_id: uuid.UUID,
     format_value: str,
+    override_preferences: dict | None = None,
 ) -> SummaryChainOutput:
     """Fetch diverse chunk context and generate summary content with the LLM chain."""
     logger.info(
