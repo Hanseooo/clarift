@@ -3,6 +3,47 @@
 ## Overview
 This feature implements the core interactive learning tools of the MVP: generating quizzes from documents, providing an engaging one-question-per-page attempt flow, detailed grading with AI explanations and mastery graphs, and a targeted practice loop that includes remedial lessons for weak areas.
 
+## Backend Architecture
+
+### ARQ Worker & Job Processing
+- **Async Job Pattern:** Quiz generation runs as an async ARQ job with SSE streaming, following the same pattern as document upload and summary generation.
+- **Worker Function:** `run_quiz_job` in `backend/src/worker.py` with tenacity retry (exponential backoff, stop after 5 attempts).
+- **Throttling:** `asyncio.sleep(2)` between LLM calls to avoid Gemini rate limits.
+- **Job Records:** Creates `Job` record with status updates (pending → processing → completed/failed) for real‑time progress tracking via SSE.
+- **Security:** All vector queries filter by `user_id` before similarity search.
+
+### Service Layer
+- **Quiz Service:** `backend/src/services/quiz_service.py` mediates between route and chain:
+  - `resolve_quiz_settings()`: Implements logic from `docs/dev/quiz‑settings.md` for auto/manual mode and question type distribution.
+  - `calculate_question_count()`: Scales total questions with chunk count (5–25 questions).
+  - `distribute_questions()`: Allocates questions across selected types (MCQ gets ~50%).
+  - `create_quiz_job()`: Validates input, creates Job record, enqueues ARQ job, returns job ID.
+  - `get_quiz_by_id()`: Retrieves quiz with user‑ownership check.
+- **Practice Service:** `backend/src/services/practice_service.py` for practice session management.
+
+### Chain Layer
+- **Chain Directory:** All AI chains moved to `backend/src/chains/` (per architecture docs).
+- **Quiz Chain:** `backend/src/chains/quiz_chain.py` implements the 5‑step process from `docs/dev/quiz.md`:
+  1. Retrieve top 5 document chunks (user‑scoped vector search).
+  2. Extract key factual statements using LLM.
+  3. Generate questions based on facts and resolved question distribution.
+  4. Validate questions for correctness and diversity (retry on failure).
+  5. Output structured `QuizChainOutput` (validated Pydantic model).
+- **Content Analysis Chain:** `backend/src/chains/content_analysis_chain.py` determines quiz‑type applicability flags (true/false, identification, multi‑select, ordering) and stores them in the `summaries` table.
+- **Practice Chain:** `backend/src/chains/practice_chain.py` generates remedial mini‑lessons and practice drills for weak topics.
+
+### Error Handling & Retry
+- **Tenacity Retry:** All Gemini calls use `@retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3))`.
+- **Retryable Errors:** `is_retryable_error()` helper excludes quota/RESOURCE_EXHAUSTED errors.
+- **Comprehensive Logging:** Job status updates on failure, detailed error context for debugging.
+
+### Route Updates
+- **Quiz Router:** `backend/src/api/routers/quizzes.py` updated to:
+  - Use `quiz_service.create_quiz_job()` instead of direct chain call.
+  - Maintain quota enforcement via `enforce_quota("quiz")` dependency.
+  - Return job ID for SSE streaming (`/api/v1/jobs/{job_id}/stream`).
+- **Practice Router:** `backend/src/api/routers/practice.py` updated to use service layer.
+
 ## Quiz Attempt Flow (The "Taking" Experience)
 - **UI Layout:** A "One Question Per Page" carousel wizard. 
 - **Navigation:** Users click "Next" or "Previous" to navigate between questions. A progress bar (e.g., "Question 3 of 10") sits at the top.
