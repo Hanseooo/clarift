@@ -7,13 +7,17 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import enforce_quota, get_current_user
-from src.db.models import Quiz
 from src.db.session import get_db
-from src.services.quiz_service import QuizRequest, create_quiz_job, submit_quiz_attempt
+from src.services.quiz_service import (
+    QuizRequest,
+    create_quiz_job,
+    get_quiz_by_id,
+    list_quizzes_by_user,
+    submit_quiz_attempt,
+)
 
 router = APIRouter(prefix="/api/v1/quizzes", tags=["quizzes"])
 
@@ -73,10 +77,7 @@ async def list_quizzes(
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Quiz).where(Quiz.user_id == user.id).order_by(Quiz.created_at.desc())
-    )
-    quizzes = result.scalars().all()
+    quizzes = await list_quizzes_by_user(db, user.id)
     return [
         QuizItemResponse(
             id=str(quiz.id),
@@ -95,12 +96,7 @@ async def get_quiz(
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Quiz).where(Quiz.id == uuid.UUID(quiz_id), Quiz.user_id == user.id)
-    )
-    quiz = result.scalar_one_or_none()
-    if quiz is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
+    quiz = await get_quiz_by_id(db, user.id, uuid.UUID(quiz_id))
 
     return QuizDetailResponse(
         id=str(quiz.id),

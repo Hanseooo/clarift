@@ -275,6 +275,18 @@ async def run_summary_job(
             await session.commit()
 
 
+@retry(
+    wait=wait_exponential(multiplier=2, min=4, max=30),
+    stop=stop_after_attempt(5),
+    reraise=True,
+)
+async def _run_quiz_chain(input_data):
+    """Retry-wrapped helper for the LLM/chain portion of quiz generation."""
+    from src.chains.quiz_chain import run_quiz_chain
+
+    return await run_quiz_chain(input_data)
+
+
 async def run_quiz_job(
     ctx,
     quiz_id: str,
@@ -291,7 +303,7 @@ async def run_quiz_job(
     from sqlalchemy import update
     from sqlalchemy.future import select
 
-    from src.chains.quiz_chain import QuizChainInput, run_quiz_chain
+    from src.chains.quiz_chain import QuizChainInput
     from src.db.models import DocumentChunk, Job, Quiz
     from src.db.session import AsyncSessionLocal
 
@@ -326,7 +338,7 @@ async def run_quiz_job(
             # Run quiz chain with timeout (5 minutes)
             try:
                 chain_output = await asyncio.wait_for(
-                    run_quiz_chain(
+                    _run_quiz_chain(
                         QuizChainInput(
                             document_id=document_id,
                             user_id=user_id,

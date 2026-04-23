@@ -424,7 +424,7 @@ export function AttemptWizard({ quizId, questions }: AttemptWizardProps) {
             isLoading ? (
               "Submitting..."
             ) : (
-              "Submit"
+              "Submit Quiz"
             )
           ) : (
             <>

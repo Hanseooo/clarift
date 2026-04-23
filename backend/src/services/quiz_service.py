@@ -256,6 +256,19 @@ async def create_quiz_job(
     }
 
 
+async def list_quizzes_by_user(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+) -> list[Quiz]:
+    """
+    List all quizzes for a user, ordered by creation date descending.
+    """
+    result = await db.execute(
+        select(Quiz).where(Quiz.user_id == user_id).order_by(Quiz.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
 async def get_quiz_by_id(
     db: AsyncSession,
     user_id: uuid.UUID,
