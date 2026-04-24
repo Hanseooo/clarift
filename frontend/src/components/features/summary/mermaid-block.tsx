@@ -6,7 +6,16 @@ interface MermaidBlockProps {
   chart: string;
 }
 
-let mermaidPromise: Promise<any> | null = null;
+interface MermaidAPI {
+  initialize: (config: Record<string, unknown>) => void;
+  run: (options: { nodes: HTMLElement[] }) => Promise<void>;
+}
+
+interface MermaidModule {
+  default: MermaidAPI;
+}
+
+let mermaidPromise: Promise<MermaidModule> | null = null;
 
 async function getMermaid() {
   if (!mermaidPromise) {
