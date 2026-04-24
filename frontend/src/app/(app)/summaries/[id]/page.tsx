@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PaginatedReader } from "@/components/features/summary/paginated-reader";
 import { MarkdownEditor } from "@/components/features/editor/markdown-editor";
-import { MermaidDiagram } from "@/components/features/summary/mermaid-diagram";
 import { updateSummaryContent } from "@/app/actions/summaries";
 import { createAuthenticatedClient } from "@/lib/api";
 
@@ -107,14 +106,6 @@ export default async function SummaryDetailPage({
           />
         ) : (
           <PaginatedReader content={summary.content} />
-        )}
-
-        {/* Mermaid diagram */}
-        {summary.diagram_syntax && (
-          <MermaidDiagram
-            syntax={summary.diagram_syntax}
-            type={summary.diagram_type}
-          />
         )}
 
         {/* Quiz type flags */}

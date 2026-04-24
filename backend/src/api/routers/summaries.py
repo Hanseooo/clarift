@@ -46,8 +46,6 @@ class SummaryResponse(BaseModel):
     document_id: str
     format: str
     content: str
-    diagram_syntax: str | None
-    diagram_type: str | None
     quiz_type_flags: dict[str, Any] | None
     created_at: str
 
@@ -58,8 +56,6 @@ def _to_summary_response(summary: Summary) -> SummaryResponse:
         document_id=str(summary.document_id),
         format=summary.format,
         content=summary.content,
-        diagram_syntax=summary.diagram_syntax,
-        diagram_type=summary.diagram_type,
         quiz_type_flags=summary.quiz_type_flags,
         created_at=datetime.fromisoformat(str(summary.created_at)).isoformat(),
     )

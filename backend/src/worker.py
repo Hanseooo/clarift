@@ -214,8 +214,6 @@ async def run_summary_job(
                 .where(Summary.id == uuid.UUID(summary_id))
                 .values(
                     content=chain_output["content"],
-                    diagram_syntax=chain_output["diagram_syntax"],
-                    diagram_type=chain_output["diagram_type"],
                     quiz_type_flags=chain_output["quiz_type_flags"],
                 )
             )
@@ -246,7 +244,7 @@ async def run_summary_job(
             await session.execute(
                 update(Summary)
                 .where(Summary.id == uuid.UUID(summary_id))
-                .values(content="", diagram_syntax=None, diagram_type=None, quiz_type_flags=None)
+                .values(content="", quiz_type_flags=None)
             )
             await session.execute(
                 update(Job)
@@ -261,7 +259,7 @@ async def run_summary_job(
             await session.execute(
                 update(Summary)
                 .where(Summary.id == uuid.UUID(summary_id))
-                .values(content="", diagram_syntax=None, diagram_type=None, quiz_type_flags=None)
+                .values(content="", quiz_type_flags=None)
             )
             await session.execute(
                 update(Job).where(Job.id == uuid.UUID(job_id)).values(status="failed", error=str(e))
@@ -274,7 +272,7 @@ async def run_summary_job(
             await session.execute(
                 update(Summary)
                 .where(Summary.id == uuid.UUID(summary_id))
-                .values(content="", diagram_syntax=None, diagram_type=None, quiz_type_flags=None)
+                .values(content="", quiz_type_flags=None)
             )
             await session.execute(
                 update(Job).where(Job.id == uuid.UUID(job_id)).values(status="failed", error=str(e))

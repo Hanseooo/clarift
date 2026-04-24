@@ -121,8 +121,6 @@ class Summary(Base):
     )
     format: Mapped[str] = mapped_column(Text, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    diagram_syntax: Mapped[str | None] = mapped_column(Text, nullable=True)
-    diagram_type: Mapped[str | None] = mapped_column(Text, nullable=True)
     quiz_type_flags: Mapped[JSONB | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[TIMESTAMP] = mapped_column(
         TIMESTAMP(timezone=True),

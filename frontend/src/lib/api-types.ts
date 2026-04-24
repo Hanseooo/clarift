@@ -568,10 +568,6 @@ export interface components {
             format: string;
             /** Content */
             content: string;
-            /** Diagram Syntax */
-            diagram_syntax: string | null;
-            /** Diagram Type */
-            diagram_type: string | null;
             /** Quiz Type Flags */
             quiz_type_flags: {
                 [key: string]: unknown;
