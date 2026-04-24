@@ -51,20 +51,18 @@ export default async function SummariesPage() {
   const initialPreferences = (userRecord?.userPreferences as OverridePreferences) ?? {};
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-3xl font-semibold text-foreground">Summaries</h1>
-          <p className="text-sm text-muted-foreground">
-            Generate and review study summaries from your uploaded documents.
-          </p>
-        </header>
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-semibold text-foreground">Summaries</h1>
+        <p className="text-sm text-muted-foreground">
+          Generate and review study summaries from your uploaded documents.
+        </p>
+      </header>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <SummaryList summaries={summaries} />
-          <SummaryCreation documents={documents} initialPreferences={initialPreferences} />
-        </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SummaryList summaries={summaries} />
+        <SummaryCreation documents={documents} initialPreferences={initialPreferences} />
       </div>
-    </main>
+    </div>
   );
 }

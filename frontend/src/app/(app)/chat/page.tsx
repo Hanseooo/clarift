@@ -33,25 +33,23 @@ export default async function ChatPage(
   const initialDocumentId = typeof searchParams.document === 'string' ? searchParams.document : undefined;
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-3xl font-semibold text-foreground">Grounded Chat</h1>
-          <p className="text-sm text-muted-foreground">
-            Ask questions using only your uploaded notes and review citations.
-          </p>
-        </header>
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-semibold text-foreground">Grounded Chat</h1>
+        <p className="text-sm text-muted-foreground">
+          Ask questions using only your uploaded notes and review citations.
+        </p>
+      </header>
 
-        {documents.length ? (
-          <ChatPageClient documents={documents} initialDocumentId={initialDocumentId} />
-        ) : (
-          <section className="rounded-2xl border border-border bg-card p-5">
-            <p className="text-sm text-muted-foreground">
-              No documents uploaded yet. Upload notes first to use grounded chat.
-            </p>
-          </section>
-        )}
-      </div>
-    </main>
+      {documents.length ? (
+        <ChatPageClient documents={documents} initialDocumentId={initialDocumentId} />
+      ) : (
+        <section className="rounded-2xl border border-border bg-card p-5">
+          <p className="text-sm text-muted-foreground">
+            No documents uploaded yet. Upload notes first to use grounded chat.
+          </p>
+        </section>
+      )}
+    </div>
   );
 }

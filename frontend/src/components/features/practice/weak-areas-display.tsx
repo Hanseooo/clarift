@@ -44,13 +44,13 @@ export function WeakAreasDisplay({
               </div>
               <span className="text-xs text-muted-foreground">{item.attempts} attempts</span>
             </div>
-            <div className="h-2 w-full rounded-full bg-amber-100">
+            <div className="h-2 w-full rounded-full bg-accent-100">
               <div
-                className="h-2 rounded-full bg-amber-500"
+                className="h-2 rounded-full bg-accent-500"
                 style={{ width: `${Math.max(0, Math.min(100, item.accuracy))}%` }}
               />
             </div>
-            <p className="text-xs text-amber-900">Accuracy {item.accuracy}%</p>
+            <p className="text-xs text-accent-800">Accuracy {item.accuracy}%</p>
           </label>
         );
       })}

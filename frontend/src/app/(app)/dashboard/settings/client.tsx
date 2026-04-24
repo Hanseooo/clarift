@@ -18,7 +18,7 @@ export function SettingsClient({
   return (
     <div>
       {showSuccessToast && (
-        <div className="mb-4 p-4 text-sm text-green-700 bg-green-100 rounded-md dark:bg-green-900/30 dark:text-green-400">
+        <div className="mb-4 p-4 text-sm text-success-800 bg-success-100 rounded-md dark:bg-success-900/30 dark:text-success-300">
           Preferences saved successfully!
         </div>
       )}

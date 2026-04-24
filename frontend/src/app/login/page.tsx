@@ -57,8 +57,8 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className="text-xs text-muted-foreground pt-8">
-          <p>Built for Filipino students preparing for board exams.</p>
-          <p className="mt-1">Nursing • CPA • Engineering • Medicine</p>
+          <p>Built for students to study effectively</p>
+          <p className="mt-1">AI-powered learning for better retention and performance</p>
         </div>
       </div>
     </div>

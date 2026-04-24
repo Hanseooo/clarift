@@ -32,11 +32,9 @@ export default async function QuizzesPage() {
       | undefined) ?? [];
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-2">
-        <QuizList quizzes={quizzes} />
-        <QuizCreation documents={documents} />
-      </div>
-    </main>
+    <div className="grid gap-6 lg:grid-cols-2">
+      <QuizList quizzes={quizzes} />
+      <QuizCreation documents={documents} />
+    </div>
   );
 }

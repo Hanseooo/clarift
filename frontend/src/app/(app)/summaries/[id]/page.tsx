@@ -54,8 +54,7 @@ export default async function SummaryDetailPage({
   }
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mx-auto max-w-4xl space-y-6">
+    <div className="max-w-4xl space-y-6">
         <header className="space-y-4">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="sm" asChild>
@@ -128,7 +127,7 @@ export default async function SummaryDetailPage({
                   key={key}
                   className={`rounded-lg border p-3 text-center ${
                     value
-                      ? "border-green-500 bg-green-50 dark:bg-green-950/30"
+                      ? "border-success-500 bg-success-100"
                       : "border-border bg-muted"
                   }`}
                 >
@@ -143,7 +142,6 @@ export default async function SummaryDetailPage({
             </div>
           </div>
         )}
-      </div>
-    </main>
+    </div>
   );
 }

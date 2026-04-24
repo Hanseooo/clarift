@@ -80,9 +80,9 @@ export function PracticeAttempt({ drills }: PracticeAttemptProps) {
             Check Answer
           </Button>
         ) : (
-          <div className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3">
-            <p className="text-sm text-amber-900">Correct answer: {current.correct_answer ?? "N/A"}</p>
-            <p className="text-sm text-amber-800">{current.explanation ?? "No explanation provided."}</p>
+          <div className="space-y-2 rounded-xl border border-warning-300 bg-warning-100 p-3">
+            <p className="text-sm text-warning-800">Correct answer: {current.correct_answer ?? "N/A"}</p>
+            <p className="text-sm text-warning-800">{current.explanation ?? "No explanation provided."}</p>
             <Button
               onClick={() => {
                 if (!isLast) {

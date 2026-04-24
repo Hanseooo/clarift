@@ -75,8 +75,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
     .map((t) => t.topic);
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mx-auto max-w-3xl space-y-8">
+    <div className="max-w-3xl space-y-8">
         <section className="space-y-6">
           <div className="text-center space-y-2">
             <p className="text-sm text-muted-foreground">Quiz Results</p>
@@ -91,14 +90,14 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
         </section>
 
         {weakTopics.length > 0 && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 dark:bg-amber-950/30 dark:border-amber-800">
-            <p className="text-sm text-amber-800 dark:text-amber-200 mb-3">
+          <div className="rounded-xl border border-warning-300 bg-warning-100 p-4">
+            <p className="text-sm text-warning-800 mb-3">
               Weak areas detected: {weakTopics.join(", ")}
             </p>
             <Button
               asChild
               variant="outline"
-              className="border-amber-400 text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-100 dark:hover:bg-amber-900"
+              className="border-warning-400 text-warning-900 hover:bg-warning-100"
             >
               <Link href={`/practice?topics=${weakTopics.join(",")}`}>
                 Start Targeted Practice
@@ -125,8 +124,8 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                 <div
                   className={`rounded-lg px-3 py-2 text-sm ${
                     q.is_correct
-                      ? "bg-green-50 text-green-900 dark:bg-green-950/30 dark:text-green-200"
-                      : "bg-red-50 text-red-900 dark:bg-red-950/30 dark:text-red-200"
+                      ? "bg-success-100 text-success-800"
+                      : "bg-danger-100 text-danger-800"
                   }`}
                 >
                   <span className="font-medium">Your answer: </span>
@@ -154,7 +153,6 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
             <Link href="/quizzes">Back to Quizzes</Link>
           </Button>
         </div>
-      </div>
-    </main>
+    </div>
   );
 }

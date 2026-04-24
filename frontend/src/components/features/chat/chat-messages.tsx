@@ -30,7 +30,7 @@ export function ChatMessages({ messages, isSearching, error }: ChatMessagesProps
             {message.citations?.length ? (
               <div className="mt-2 flex flex-wrap gap-2">
                 {message.citations.map((citation, index) => (
-                  <span key={`${message.id}-${index}`} className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-900">
+                  <span key={`${message.id}-${index}`} className="rounded-full bg-accent-100 px-2 py-1 text-xs text-accent-800">
                     {citation.chunk_id ?? "chunk"}
                   </span>
                 ))}

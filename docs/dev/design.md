@@ -737,6 +737,62 @@ Option card (format selector, style selector):
     transition: opacity 150ms ease (fade in on select)
 ```
 
+### Landing Page Components
+
+**Gradient text heading (hero):**
+```
+  bg-gradient-to-r from-brand-500 via-brand-400 to-brand-600
+  bg-clip-text text-transparent
+  font-weight: 700 (exception to the 500 rule — landing only)
+  Size: text-5xl mobile, text-7xl tablet, text-8xl+ desktop
+  Optional: subtle glow behind text via blurred gradient div
+```
+
+**Animated underline (hero heading accent):**
+```
+  height: 3–4px
+  background: linear-gradient(to right, brand-500, brand-400)
+  border-radius: 999px
+  Animation: width 0→100% over 1s, easeOut, delay 0.5s after heading appears
+```
+
+**Floating bubbles (ambient background):**
+```
+  Large blurred circles (64–256px) with low opacity (0.04–0.10)
+  Colors: brand-500/10, accent-500/8, brand-400/8
+  Animation: slow drift (18–22s loop), translateX/Y ±20–30px, scale 0.9–1.15
+  position: absolute, pointer-events: none
+  Apply ONLY to marketing pages — never in app shell
+```
+
+**Shimmer button (CTA hover effect):**
+```
+  Base: standard primary button (bg-brand-500, text-white)
+  Overlay: linear-gradient(to right, transparent, white/20, transparent)
+  Animation: translateX(-100% → 100%) on hover, duration 600ms, ease-out
+  Trigger: group-hover on parent button
+```
+
+**Mock device frame (browser chrome for demo UIs):**
+```
+  Container:
+    border: 1px border-default
+    border-radius: 12px (outer), 0 (inner content top if chrome present)
+    background: surface-card
+    box-shadow: large (shadow-2xl or equivalent)
+  
+  Browser chrome (optional top bar):
+    height: 44px
+    background: surface-subtle with 50% opacity
+    border-bottom: 1px border-default
+    Traffic lights: 3 circles (12px), danger-500, warning-500, success-500
+    URL bar: centered, surface-subtle bg, border-default border, rounded-md
+    
+  Content area:
+    padding: 16–24px
+    Renders mock UI components inside
+```
+
 ---
 
 ## Motion & Interaction
@@ -805,6 +861,28 @@ Practice / milestone moments:
   Subtle scale: card scales 1.0 → 1.01 → 1.0 over 400ms on completion
   Never animate on every action — reserve for genuine achievements
 ```
+
+### Marketing vs. App Animation Boundary
+
+Clarift has two distinct animation contexts. The rules above apply to **app pages**. Landing/marketing pages have different permission:
+
+**Marketing pages (`/`, `/login`, `/onboarding`) — EXPRESSIVE motion allowed:**
+- Ambient floating elements (bubbles, gradients)
+- Staggered entrance animations (word-by-word reveals, cascading fades)
+- Gradient text and animated underlines
+- Decorative shimmer effects on CTAs
+- Scroll-driven transitions with directional motion (slide + scale)
+- Purpose: create energy, communicate product personality, drive conversion
+
+**App pages (`/dashboard`, `/documents`, `/quizzes`, `/chat`, etc.) — FUNCTIONAL motion only:**
+- State changes (loading → loaded, selected → correct/wrong)
+- Micro-interactions (button press, option select, tab switch)
+- Progress indicators (SSE bars, skeletons, spinners)
+- Score reveals and weak-area highlights
+- Purpose: communicate state, reduce perceived wait time, guide attention
+- NO ambient animation, NO decorative motion, NO entertainment
+
+**Rule of thumb:** If a student is actively working (studying, quizzing, chatting), motion must serve a task. If a student is deciding whether to sign up, motion can sell the product.
 
 ---
 

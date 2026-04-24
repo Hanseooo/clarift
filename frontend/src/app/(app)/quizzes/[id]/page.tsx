@@ -31,10 +31,8 @@ export default async function QuizAttemptPage({ params }: QuizPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mx-auto max-w-4xl">
-        <QuizAttempt quiz={{ id: data.id, questions: data.questions as never[] }} />
-      </div>
-    </main>
+    <div className="max-w-4xl">
+      <QuizAttempt quiz={{ id: data.id, questions: data.questions as never[] }} />
+    </div>
   );
 }

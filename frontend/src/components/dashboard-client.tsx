@@ -135,11 +135,11 @@ export function DashboardClient({ userEmail, documents }: DashboardClientProps) 
   const getStatusIcon = (status: JobStatus["status"]) => {
     switch (status) {
       case "completed":
-        return <CheckCircle className="size-5 text-green-500" />;
+        return <CheckCircle className="size-5 text-success-500" />;
       case "failed":
         return <XCircle className="size-5 text-destructive" />;
       case "processing":
-        return <RefreshCw className="size-5 text-blue-500 animate-spin" />;
+        return <RefreshCw className="size-5 text-brand-500 animate-spin" />;
       default:
         return <Clock className="size-5 text-muted-foreground" />;
     }
@@ -229,11 +229,11 @@ export function DashboardClient({ userEmail, documents }: DashboardClientProps) 
                               className={cn(
                                 "px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap",
                                 job.status === "completed"
-                                  ? "bg-green-500/10 text-green-700"
+                                  ? "bg-success-100 text-success-800"
                                   : job.status === "failed"
                                   ? "bg-destructive/10 text-destructive"
                                   : job.status === "processing"
-                                  ? "bg-blue-500/10 text-blue-700"
+                                  ? "bg-brand-100 text-brand-700"
                                   : "bg-muted text-muted-foreground"
                               )}
                             >
@@ -335,9 +335,9 @@ export function DashboardClient({ userEmail, documents }: DashboardClientProps) 
                             className={cn(
                               "px-2 py-1 rounded-full text-xs font-medium",
                               doc.status === "ready" || doc.status === "completed"
-                                ? "bg-green-500/10 text-green-700"
+                                ? "bg-success-100 text-success-800"
                                 : doc.status === "processing"
-                                ? "bg-yellow-500/10 text-yellow-700"
+                                ? "bg-warning-100 text-warning-800"
                                 : doc.status === "failed"
                                 ? "bg-destructive/10 text-destructive"
                                 : "bg-muted text-muted-foreground"

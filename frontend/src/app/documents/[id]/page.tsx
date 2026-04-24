@@ -74,12 +74,12 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     isViewable
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                      ? "bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300"
                       : document.status === "processing"
-                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
+                        ? "bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300"
                         : document.status === "failed"
-                          ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-                          : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
+                          ? "bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-300"
+                          : "bg-surface-subtle text-text-secondary dark:bg-surface-subtle dark:text-text-secondary"
                   }`}
                 >
                   {document.status}
@@ -159,12 +159,12 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
                 <span
                   className={`mt-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     isViewable
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                      ? "bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300"
                       : document.status === "processing"
-                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
+                        ? "bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300"
                         : document.status === "failed"
-                          ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-                          : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
+                          ? "bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-300"
+                          : "bg-surface-subtle text-text-secondary dark:bg-surface-subtle dark:text-text-secondary"
                   }`}
                 >
                   {document.status}

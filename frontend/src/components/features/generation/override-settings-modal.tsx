@@ -156,9 +156,9 @@ export function OverrideSettingsModal({
                     type="checkbox"
                     checked={outputFormats.includes(format)}
                     onChange={() => handleFormatChange(format)}
-                    className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                    className="rounded border-border-default text-text-primary focus:ring-brand-500"
                   />
-                  <span className="text-zinc-700 dark:text-zinc-300">{format}</span>
+                  <span className="text-text-secondary">{format}</span>
                 </label>
               ))}
             </div>
@@ -175,9 +175,9 @@ export function OverrideSettingsModal({
                     type="checkbox"
                     checked={explanationStyles.includes(style)}
                     onChange={() => handleStyleChange(style)}
-                    className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                    className="rounded border-border-default text-text-primary focus:ring-brand-500"
                   />
-                  <span className="text-zinc-700 dark:text-zinc-300">{style}</span>
+                  <span className="text-text-secondary">{style}</span>
                 </label>
               ))}
             </div>
@@ -192,7 +192,7 @@ export function OverrideSettingsModal({
               value={customInstructions}
               onChange={(e) => setCustomInstructions(e.target.value)}
               placeholder="E.g., Keep it extremely concise."
-              className="w-full min-h-[80px] rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-50"
+              className="w-full min-h-[80px] rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>

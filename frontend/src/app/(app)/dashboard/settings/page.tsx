@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { users } from "@/db/schema";
 import { SettingsClient } from "./client";
+import { ThemeSettings } from "@/components/theme-settings";
 
 export default async function SettingsPage() {
   const { userId } = await auth();
@@ -29,17 +30,21 @@ export default async function SettingsPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+    <div className="max-w-3xl space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-text-primary">
           Global Settings
         </h1>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-text-secondary">
           Update your global study preferences to tailor your learning experience.
         </p>
       </div>
 
-      <SettingsClient preferences={preferences} />
+      <ThemeSettings />
+
+      <div className="border-t border-border-default pt-8">
+        <SettingsClient preferences={preferences} />
+      </div>
     </div>
   );
 }

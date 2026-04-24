@@ -31,10 +31,8 @@ export default async function PracticeDetailPage({ params }: PracticeDetailPageP
   }
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mx-auto max-w-4xl">
-        <PracticeAttempt drills={response.data.drills as never[]} />
-      </div>
-    </main>
+    <div className="max-w-4xl">
+      <PracticeAttempt drills={response.data.drills as never[]} />
+    </div>
   );
 }
