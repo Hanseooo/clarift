@@ -1,12 +1,9 @@
 """
-Summary chain (5‑step) for generating structured summaries and diagrams.
+Summary chain for generating structured summaries and quiz analysis.
 
-Steps:
-1. Extract key concepts
-2. Identify relationships
-3. Generate structured summary
-4. Generate diagram syntax (Mermaid/Graphviz)
-5. Flag quiz‑worthy sections
+Process:
+1. Generate a structured Markdown summary from text chunks.
+2. Analyze content to flag quiz‑worthy sections.
 """
 
 from __future__ import annotations
@@ -38,8 +35,6 @@ class SummaryChainOutput(TypedDict):
     """Output from the summary chain."""
 
     content: str
-    diagram_syntax: Optional[str]
-    diagram_type: Optional[str]
     quiz_type_flags: dict[str, Any]
 
 
@@ -64,9 +59,10 @@ async def _invoke_with_retry(llm: ChatGoogleGenerativeAI, prompt: str) -> str:
 
 async def run_summary_chain(input: SummaryChainInput) -> SummaryChainOutput:
     """
-    Execute the 5‑step summary chain.
+    Execute the summary chain.
 
-    This implementation uses Gemini via LangChain to generate a structured summary.
+    This implementation uses Gemini via LangChain to generate a structured summary
+    and analyze content for quiz opportunities.
     """
     logger.info("Running summary chain")
 
@@ -81,7 +77,7 @@ async def run_summary_chain(input: SummaryChainInput) -> SummaryChainOutput:
     if not context_text:
         raise ValueError("No chunks available for summary generation")
 
-    # Step 1-3: Generate structured summary in Markdown format
+    # Generate structured summary in Markdown format
     summary_prompt = f"""You are a study assistant. Create a comprehensive study summary of the following text.
 
 Text: {context_text}
@@ -106,6 +102,16 @@ Generate a structured summary using advanced Markdown formatting:
 - Explain relationships between concepts
 - Include examples where helpful
 - End with a summary paragraph
+
+If the content naturally lends itself to a visual diagram (flowcharts, relationships, hierarchies),
+include a Mermaid.js diagram inside a fenced code block like this:
+
+```mermaid
+graph TD
+    A[Start] --> B[End]
+```
+
+Otherwise, do not include a diagram.
 
 Format: Use clean, well-structured Markdown with proper spacing."""
 
@@ -137,25 +143,13 @@ Format: Use clean, well-structured Markdown with proper spacing."""
     # Throttle between LLM calls to avoid rate limits (similar to embeddings worker)
     await asyncio.sleep(2)
 
-    # Step 4 & 5: Generate diagram and analyze content in parallel
-    diagram_prompt = f"""Based on the key concepts and relationships from this summary, generate Mermaid.js diagram syntax.
-
-Summary: {summary_content}
-
-Focus on the main entities and their connections.
-
-Return only the Mermaid syntax, no extra text."""
-
-    diagram_task = _invoke_with_retry(llm, diagram_prompt)
-    analysis_task = run_content_analysis_chain(ContentAnalysisChainInput(chunks=input["chunks"]))
-
-    diagram_syntax, analysis_result = await asyncio.gather(diagram_task, analysis_task)
-    diagram_type = "mermaid"
+    # Analyze content for quiz-worthiness
+    analysis_result = await run_content_analysis_chain(
+        ContentAnalysisChainInput(chunks=input["chunks"])
+    )
     quiz_type_flags: dict[str, Any] = dict(analysis_result)
 
     return {
         "content": summary_content,
-        "diagram_syntax": diagram_syntax,
-        "diagram_type": diagram_type,
         "quiz_type_flags": quiz_type_flags,
     }
