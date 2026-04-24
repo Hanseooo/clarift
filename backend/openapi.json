@@ -1264,28 +1264,6 @@
             "type": "string",
             "title": "Content"
           },
-          "diagram_syntax": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Diagram Syntax"
-          },
-          "diagram_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Diagram Type"
-          },
           "quiz_type_flags": {
             "anyOf": [
               {
@@ -1309,8 +1287,6 @@
           "document_id",
           "format",
           "content",
-          "diagram_syntax",
-          "diagram_type",
           "quiz_type_flags",
           "created_at"
         ],
