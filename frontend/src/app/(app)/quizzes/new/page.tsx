@@ -23,17 +23,15 @@ export default async function QuizNewPage() {
     (documentsResponse.data as Array<{ id: string; title: string }> | undefined) ?? [];
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-xl font-semibold text-foreground">Generate Quiz</h1>
-          <p className="text-sm text-muted-foreground">
-            Select a document and configure your quiz settings.
-          </p>
-        </header>
+    <div className="max-w-2xl space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-xl font-semibold text-foreground">Generate Quiz</h1>
+        <p className="text-sm text-muted-foreground">
+          Select a document and configure your quiz settings.
+        </p>
+      </header>
 
-        <QuizGenerationForm documents={documents} token={token} />
-      </div>
-    </main>
+      <QuizGenerationForm documents={documents} token={token} />
+    </div>
   );
 }

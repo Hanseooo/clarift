@@ -28,16 +28,14 @@ export default async function PracticePage() {
   const weakAreas = (response.data as { weak_topics?: WeakAreaItem[] } | undefined)?.weak_topics ?? [];
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-3xl font-semibold text-foreground">Targeted Practice</h1>
-          <p className="text-sm text-muted-foreground">
-            Focus on topics where your recent quiz performance is lowest.
-          </p>
-        </header>
-        <PracticePageClient initialWeakAreas={weakAreas} />
-      </div>
-    </main>
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-semibold text-foreground">Targeted Practice</h1>
+        <p className="text-sm text-muted-foreground">
+          Focus on topics where your recent quiz performance is lowest.
+        </p>
+      </header>
+      <PracticePageClient initialWeakAreas={weakAreas} />
+    </div>
   );
 }

@@ -32,6 +32,10 @@ export function ShaderBackground() {
     resize()
     window.addEventListener("resize", resize)
 
+    // Detect dark mode for adjusted opacity
+    const isDarkMode = () => document.documentElement.classList.contains("dark")
+    const getOpacity = (base: number) => isDarkMode() ? Math.min(base * 1.8, 0.15) : base
+
     const blobs = [
       { x: 0.3, y: 0.3, radius: 0.4, color: "99, 102, 241", speed: 0.0005, offset: 0 },
       { x: 0.7, y: 0.5, radius: 0.35, color: "129, 140, 248", speed: 0.0007, offset: 2 },
@@ -47,8 +51,8 @@ export function ShaderBackground() {
         const r = Math.min(width, height) * blob.radius
 
         const gradient = ctx.createRadialGradient(bx, by, 0, bx, by, r)
-        gradient.addColorStop(0, `rgba(${blob.color}, 0.08)`)
-        gradient.addColorStop(0.5, `rgba(${blob.color}, 0.04)`)
+        gradient.addColorStop(0, `rgba(${blob.color}, ${getOpacity(0.08)})`)
+        gradient.addColorStop(0.5, `rgba(${blob.color}, ${getOpacity(0.04)})`)
         gradient.addColorStop(1, `rgba(${blob.color}, 0)`)
 
         ctx.fillStyle = gradient

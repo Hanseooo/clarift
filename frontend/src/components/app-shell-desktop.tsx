@@ -12,6 +12,7 @@ import {
   Settings2,
 } from "lucide-react"
 import { AppShellLogo } from "./app-shell-logo"
+import { ThemeToggle } from "./theme-toggle"
 
 const routes = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -55,8 +56,9 @@ export function AppShellDesktop() {
       </nav>
 
       {/* User button */}
-      <div className="p-3 border-t border-border-default">
+      <div className="p-3 border-t border-border-default flex items-center justify-between">
         <UserButton />
+        <ThemeToggle />
       </div>
     </aside>
   )

@@ -248,6 +248,18 @@
   --sidebar-accent-foreground: #F0EFFF;
   --sidebar-border: #2D2C45;
   --sidebar-ring: #6366F1;
+
+  /* Tailwind v4 theme color overrides */
+  --color-surface-page: #0F0E1A;
+  --color-surface-card: #1A1929;
+  --color-surface-subtle: #21203A;
+  --color-surface-overlay: rgba(99, 102, 241, 0.08);
+  --color-border-default: #2D2C45;
+  --color-border-strong: #3D3C58;
+  --color-text-primary: #F0EFFF;
+  --color-text-secondary: #9896B8;
+  --color-text-tertiary: #6B6888;
+  --color-text-on-brand: #FFFFFF;
 }
 
 /* Page background noise texture (barely perceptible warmth) */
@@ -447,5 +459,34 @@
   }
   .shake-wrong {
     animation: shake 300ms ease;
+  }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skeleton,
+  .spinner,
+  .sse-progress-indeterminate,
+  .thinking-dot,
+  .score-ring-glow,
+  .shake-wrong {
+    animation: none !important;
+  }
+
+  /* Keep functional state indicators visible without animation */
+  .skeleton {
+    background: var(--surface-subtle);
+  }
+  .spinner {
+    border-top-color: var(--brand-500);
   }
 }

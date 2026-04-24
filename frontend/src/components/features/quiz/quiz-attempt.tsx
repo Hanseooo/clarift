@@ -212,9 +212,9 @@ export function QuizAttempt({ quiz }: QuizAttemptProps) {
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       {result ? (
-        <section className="rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-2">
-          <p className="font-semibold text-amber-900">Score: {result.score}%</p>
-          <p className="text-sm text-amber-800">Weak topics: {result.weak_topics.join(", ") || "None"}</p>
+        <section className="rounded-xl border border-warning-300 bg-warning-100 p-4 space-y-2">
+          <p className="font-semibold text-warning-800">Score: {result.score}%</p>
+          <p className="text-sm text-warning-800">Weak topics: {result.weak_topics.join(", ") || "None"}</p>
         </section>
       ) : null}
     </section>

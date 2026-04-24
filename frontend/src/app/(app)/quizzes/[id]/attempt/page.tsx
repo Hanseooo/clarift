@@ -44,17 +44,15 @@ export default async function QuizAttemptPage({ params }: AttemptPageProps) {
   }>) ?? [];
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mx-auto max-w-2xl">
-        <header className="mb-6 space-y-1">
-          <h1 className="text-xl font-semibold text-foreground">Quiz</h1>
-          <p className="text-sm text-muted-foreground">
-            {questions.length} questions · Answer each to complete
-          </p>
-        </header>
+    <div className="max-w-2xl">
+      <header className="mb-6 space-y-1">
+        <h1 className="text-xl font-semibold text-foreground">Quiz</h1>
+        <p className="text-sm text-muted-foreground">
+          {questions.length} questions · Answer each to complete
+        </p>
+      </header>
 
-        <AttemptWizard quizId={data.id} questions={questions} />
-      </div>
-    </main>
+      <AttemptWizard quizId={data.id} questions={questions} />
+    </div>
   );
 }

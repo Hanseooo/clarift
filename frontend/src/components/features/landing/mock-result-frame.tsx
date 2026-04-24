@@ -28,7 +28,7 @@ export function MockResultFrame() {
       <div className="flex-1 rounded-2xl border border-border-default bg-surface-card p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <h3 className="text-sm font-semibold text-text-primary">Summary</h3>
-          <span className="rounded-full border border-brand-200 bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-500">
+          <span className="rounded-full border border-brand-500/30 bg-brand-500/10 px-2 py-0.5 text-xs font-medium text-brand-500">
             Outline
           </span>
         </div>
@@ -50,7 +50,7 @@ export function MockResultFrame() {
       <div className="flex-1 rounded-2xl border border-border-default bg-surface-card p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <h3 className="text-sm font-semibold text-text-primary">Quiz</h3>
-          <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-800">
+          <span className="rounded-full bg-brand-500/10 px-2 py-0.5 text-xs font-medium text-brand-400">
             MCQ
           </span>
         </div>

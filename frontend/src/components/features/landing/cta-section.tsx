@@ -5,7 +5,7 @@ export function CTASection() {
   return (
     <section className="relative py-20 md:py-28 px-4 overflow-hidden">
       {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-surface-page via-brand-500/[0.02] to-surface-page" />
+      <div className="absolute inset-0 bg-gradient-to-b from-surface-page via-brand-500/[0.02] to-surface-page dark:via-brand-500/[0.05]" />
       
       <div className="relative z-10 mx-auto max-w-[640px] text-center space-y-6">
         <h2 className="text-2xl md:text-3xl font-bold text-text-primary">
@@ -23,7 +23,7 @@ export function CTASection() {
           >
             <Link href="/login">
               <span className="relative z-10">Start Studying Free</span>
-              <div className="absolute inset-0 -translate-x-full group-hover:animate-shimmer bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              <div className="absolute inset-0 -translate-x-full group-hover:animate-shimmer bg-gradient-to-r from-transparent via-text-on-brand/20 to-transparent" />
             </Link>
           </Button>
         </div>

@@ -101,24 +101,24 @@ export function OnboardingForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-xl mx-auto p-6 bg-white dark:bg-zinc-950 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-xl mx-auto p-6 bg-surface-card rounded-lg shadow-sm border border-border-default">
       <div>
-        <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-zinc-50">Study Preferences</h2>
+        <h2 className="text-2xl font-bold mb-6 text-text-primary">Study Preferences</h2>
         {error && (
-          <div className="p-3 mb-4 text-sm text-red-500 bg-red-50 dark:bg-red-950/50 rounded-md">
+          <div className="p-3 mb-4 text-sm text-danger-700 bg-danger-100 rounded-md dark:bg-danger-900/30 dark:text-danger-300">
             {error}
           </div>
         )}
       </div>
 
       <div className="space-y-3">
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className="block text-sm font-medium text-text-secondary">
           Education Level
         </label>
         <select
           value={educationLevel}
           onChange={(e) => setEducationLevel(e.target.value)}
-          className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-50"
+          className="w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           <option value="" disabled>Select your level</option>
           {EDUCATION_LEVELS.map((level) => (
@@ -130,7 +130,7 @@ export function OnboardingForm({
       </div>
 
       <div className="space-y-3">
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className="block text-sm font-medium text-text-secondary">
           Preferred Output Formats
         </label>
         <div className="grid grid-cols-2 gap-2">
@@ -140,16 +140,16 @@ export function OnboardingForm({
                 type="checkbox"
                 checked={outputFormats.includes(format)}
                 onChange={() => handleFormatChange(format)}
-                className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                className="rounded border-border-default text-brand-500 focus:ring-brand-500"
               />
-              <span className="text-zinc-700 dark:text-zinc-300">{format}</span>
+              <span className="text-text-secondary">{format}</span>
             </label>
           ))}
         </div>
       </div>
 
       <div className="space-y-3">
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className="block text-sm font-medium text-text-secondary">
           Explanation Styles
         </label>
         <div className="grid grid-cols-2 gap-2">
@@ -159,23 +159,23 @@ export function OnboardingForm({
                 type="checkbox"
                 checked={explanationStyles.includes(style)}
                 onChange={() => handleStyleChange(style)}
-                className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                className="rounded border-border-default text-brand-500 focus:ring-brand-500"
               />
-              <span className="text-zinc-700 dark:text-zinc-300">{style}</span>
+              <span className="text-text-secondary">{style}</span>
             </label>
           ))}
         </div>
       </div>
 
       <div className="space-y-3">
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className="block text-sm font-medium text-text-secondary">
           Custom Instructions (Optional)
         </label>
         <textarea
           value={customInstructions}
           onChange={(e) => setCustomInstructions(e.target.value)}
           placeholder="E.g., I have ADHD, please keep it extremely concise."
-          className="w-full min-h-[100px] rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-50"
+          className="w-full min-h-[100px] rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
       </div>
 

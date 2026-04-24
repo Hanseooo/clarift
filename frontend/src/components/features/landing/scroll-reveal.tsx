@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef } from "react"
-import { motion, useScroll, useTransform, MotionValue } from "framer-motion"
+import { motion, useScroll, useTransform, MotionValue, useReducedMotion } from "framer-motion"
 import { MockUploadFrame } from "./mock-upload-frame"
 import { MockProcessingFrame } from "./mock-processing-frame"
 import { MockResultFrame } from "./mock-result-frame"
@@ -78,19 +78,53 @@ function ProgressIndicator({ scrollYProgress }: { scrollYProgress: MotionValue<n
   )
 }
 
+function ReducedMotionScrollReveal() {
+  return (
+    <section className="relative py-24 bg-surface-subtle">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="text-center mb-16">
+          <h2 className="text-xl md:text-2xl font-semibold text-text-primary">
+            Watch your notes become study material
+          </h2>
+          <p className="mt-2 text-sm text-text-secondary">
+            Upload, process, and get structured summaries with quizzes automatically.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="space-y-4">
+            <MockDeviceFrame className="w-full">
+              <MockUploadFrame />
+            </MockDeviceFrame>
+            <p className="text-sm text-center text-text-secondary font-medium">1. Upload</p>
+          </div>
+          <div className="space-y-4">
+            <MockDeviceFrame className="w-full">
+              <MockProcessingFrame />
+            </MockDeviceFrame>
+            <p className="text-sm text-center text-text-secondary font-medium">2. Process</p>
+          </div>
+          <div className="space-y-4">
+            <MockDeviceFrame className="w-full">
+              <MockResultFrame />
+            </MockDeviceFrame>
+            <p className="text-sm text-center text-text-secondary font-medium">3. Study</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export function ScrollReveal() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const shouldReduceMotion = useReducedMotion()
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   })
 
-  // Background color shift
-  const bgColor = useTransform(
-    scrollYProgress,
-    [0, 0.5, 1],
-    ["#F8F7FF", "#F1F0FE", "#F8F7FF"]
-  )
+
 
   const frame1 = useFrameState(scrollYProgress, 0, 0.35, true, false)
   const frame2 = useFrameState(scrollYProgress, 0.25, 0.70, false, false)
@@ -102,11 +136,15 @@ export function ScrollReveal() {
     { state: frame3, component: <MockResultFrame /> },
   ]
 
+  if (shouldReduceMotion) {
+    return <ReducedMotionScrollReveal />
+  }
+
   return (
     <motion.section
       ref={containerRef}
-      className="relative"
-      style={{ height: "300vh", backgroundColor: bgColor }}
+      className="relative bg-surface-page"
+      style={{ height: "300vh" }}
     >
       {/* Section header */}
       <div className="sticky top-0 pt-24 pb-8 text-center z-10">
