@@ -10,21 +10,21 @@ interface Feature {
 const features: Feature[] = [
   {
     icon: FileUp,
-    title: "Board exam prep in minutes, not hours",
+    title: "Learn smarter, not harder",
     description:
-      "Upload your notes and let AI extract what matters. No more re-reading 200-page chapters.",
+      "Upload your notes and let AI extract what matters. Chat with AI based on your notes.",
   },
   {
     icon: Target,
     title: "Know exactly what to study",
     description:
-      "We track your weak spots across quizzes so you never waste time on what you already know.",
+      "Track your weak spots across quizzes so you never waste time on what you already know.",
   },
   {
     icon: CheckSquare,
-    title: "Practice like it's the real exam",
+    title: "Practice Effectively with Drills",
     description:
-      "MCQ, True/False, Identification — question types that match your actual board exam format.",
+      "MCQ, True/False, Identification - get personalized quizzes that target your weak areas for maximum improvement.",
   },
   {
     icon: TrendingUp,

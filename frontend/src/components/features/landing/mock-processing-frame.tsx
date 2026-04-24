@@ -4,7 +4,7 @@ import { FileText } from "lucide-react"
 
 export function MockProcessingFrame() {
   return (
-    <div className="w-full max-w-md rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm">
+    <div className="w-full">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-subtle">
           <FileText className="size-5 text-text-secondary" />

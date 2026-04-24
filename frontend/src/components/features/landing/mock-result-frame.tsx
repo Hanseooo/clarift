@@ -23,7 +23,7 @@ function LetterBadge({
 
 export function MockResultFrame() {
   return (
-    <div className="flex w-full max-w-2xl flex-col gap-4 md:flex-row">
+    <div className="flex w-full flex-col gap-4 md:flex-row">
       {/* Left panel — Summary */}
       <div className="flex-1 rounded-2xl border border-border-default bg-surface-card p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2">

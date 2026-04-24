@@ -1247,4 +1247,38 @@ git commit -m "feat(frontend): complete foundation design system implementation"
 
 ---
 
+## Phase 2: Foundation Hardening (Post-Initial Implementation)
+
+The initial foundation (tokens, app shell, shared components) is **COMPLETE** as of the landing page implementation. Phase 2 addresses gaps discovered during feature development.
+
+### Phase 2 Tasks
+
+#### P2-1: Add missing shared components
+- [ ] **Create `components/ui/avatar.tsx`** — User avatar with fallback initials
+- [ ] **Create `components/ui/alert.tsx`** — Alert/notification banner (success, warning, error variants)
+- [ ] **Create `components/ui/tabs.tsx`** — Tab navigation (used in dashboard sub-pages)
+- [ ] **Create `components/ui/dialog.tsx`** — Modal/dialog (shadcn base already exists, verify styling)
+- [ ] **Create `components/ui/dropdown-menu.tsx`** — Dropdown menus for actions
+- [ ] **Add `floating-bubbles.tsx` to shared inventory** — Currently landing-only, but pattern may be reused
+- [ ] **Add `mock-device-frame.tsx` to shared inventory** — Reusable for any demo/preview UI
+
+#### P2-2: Token audit and cleanup
+- [ ] Replace all `zinc-*` colors with brand tokens (see `token-cleanup.md`)
+- [ ] Replace all `green-*` / `blue-*` / `gray-*` / `yellow-*` with semantic tokens
+- [ ] Audit `dark:` prefixes for consistency — all should use design tokens, not arbitrary colors
+- [ ] Verify no hardcoded hex codes outside `globals.css`
+
+#### P2-3: Spacing system enforcement
+- [ ] Audit all pages for consistent page padding (`p-4 md:p-8` or `py-6 md:py-8`)
+- [ ] Audit max-width containers — app pages should use `max-w-[768px]` or `max-w-6xl`
+- [ ] Ensure mobile bottom bar offset (`pb-[56px]`) is present on all app pages
+- [ ] Document the two spacing contexts: marketing (generous, 960px max) vs app (focused, 768px max)
+
+#### P2-4: Animation consistency
+- [ ] Audit all Framer Motion usage — ensure marketing pages use expressive motion, app pages use functional motion only
+- [ ] Add `prefers-reduced-motion` support where missing
+- [ ] Document animation decision tree in `design.md`
+
+---
+
 **Plan complete.** Ready to execute?

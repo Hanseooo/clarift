@@ -4,7 +4,7 @@ import { Upload } from "lucide-react"
 
 export function MockUploadFrame() {
   return (
-    <div className="w-full max-w-md rounded-2xl border border-border-default bg-surface-card p-6 shadow-sm md:p-8">
+    <div className="w-full">
       <div className="flex flex-col items-center gap-4">
         <div className="flex h-16 w-16 items-center justify-center rounded-full border border-brand-500/20 bg-brand-500/10">
           <Upload className="size-7 text-brand-500" />
