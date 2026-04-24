@@ -18,6 +18,7 @@ type SummaryCreationProps = {
   documents: DocumentOption[];
   initialPreferences?: OverridePreferences;
   onSummaryCreated?: () => void;
+  preselectedDocumentId?: string;
 };
 
 type CreateSummaryResponse = {
@@ -26,10 +27,15 @@ type CreateSummaryResponse = {
   message: string;
 };
 
-export function SummaryCreation({ documents, initialPreferences, onSummaryCreated }: SummaryCreationProps) {
+export function SummaryCreation({ documents, initialPreferences, onSummaryCreated, preselectedDocumentId }: SummaryCreationProps) {
   const router = useRouter();
   const { getToken } = useAuth();
-  const [documentId, setDocumentId] = useState(documents[0]?.id ?? "");
+  const [documentId, setDocumentId] = useState(() => {
+    if (preselectedDocumentId && documents.some((d) => d.id === preselectedDocumentId)) {
+      return preselectedDocumentId;
+    }
+    return documents[0]?.id ?? "";
+  });
   const [format, setFormat] = useState<"bullet" | "outline" | "paragraph">("bullet");
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);

@@ -1,20 +1,23 @@
 "use client";
 
+"use client";
+
 import { useState } from "react";
+import Link from "next/link";
 import MDEditor from "@uiw/react-md-editor";
-import { Save } from "lucide-react";
+import { Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type MarkdownEditorProps = {
   initialContent: string;
   onSave: (content: string) => Promise<void>;
-  onCancel?: () => void;
+  onCancelHref?: string;
 };
 
 export function MarkdownEditor({
   initialContent,
   onSave,
-  onCancel,
+  onCancelHref,
 }: MarkdownEditorProps) {
   const [content, setContent] = useState(initialContent);
   const [isSaving, setIsSaving] = useState(false);
@@ -31,16 +34,19 @@ export function MarkdownEditor({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">Edit Summary</h3>
+        <h3 className="text-lg font-semibold text-text-primary">Edit Summary</h3>
         <div className="flex items-center gap-2">
-          {onCancel && (
+          {onCancelHref && (
             <Button
               variant="outline"
-              onClick={onCancel}
               disabled={isSaving}
               type="button"
+              asChild
             >
-              Cancel
+              <Link href={onCancelHref}>
+                <X className="mr-2 h-4 w-4" />
+                Cancel
+              </Link>
             </Button>
           )}
           <Button
@@ -55,7 +61,7 @@ export function MarkdownEditor({
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-background overflow-hidden">
+      <div className="rounded-xl border border-border-default bg-surface-card overflow-hidden">
         <MDEditor
           value={content}
           onChange={(value) => setContent(value || "")}
@@ -66,7 +72,7 @@ export function MarkdownEditor({
         />
       </div>
 
-      <div className="text-xs text-muted-foreground">
+      <div className="text-xs text-text-tertiary">
         <p>
           • Use Markdown syntax for formatting (headers, lists, bold, italic,
           etc.)

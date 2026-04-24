@@ -32,9 +32,18 @@ export default async function QuizzesPage() {
       | undefined) ?? [];
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <QuizList quizzes={quizzes} />
-      <QuizCreation documents={documents} />
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-semibold text-text-primary">Quizzes</h1>
+        <p className="text-sm text-text-secondary mt-1">
+          Test your understanding with auto-generated questions
+        </p>
+      </div>
+      
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <QuizList quizzes={quizzes} />
+        <QuizCreation documents={documents} />
+      </div>
     </div>
   );
 }

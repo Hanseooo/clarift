@@ -12,11 +12,13 @@ import { cn } from "@/lib/utils";
 interface DeleteDocumentButtonProps {
   documentId: string;
   className?: string;
+  fullWidth?: boolean;
 }
 
 export function DeleteDocumentButton({
   documentId,
   className,
+  fullWidth = false,
 }: DeleteDocumentButtonProps) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
@@ -39,14 +41,17 @@ export function DeleteDocumentButton({
     <AlertDialogPrimitive.Root open={open} onOpenChange={setOpen}>
       <AlertDialogPrimitive.Trigger asChild>
         <Button
-          variant="ghost"
-          size="icon"
+          variant={fullWidth ? "outline" : "ghost"}
+          size={fullWidth ? "default" : "icon"}
           className={cn(
-            "bg-[#FEE2E2] text-[#991B1B] hover:bg-[#EF4444] hover:text-white dark:bg-[#FEE2E2] dark:text-[#991B1B] dark:hover:bg-[#EF4444] dark:hover:text-white",
+            fullWidth
+              ? "w-full justify-start h-10 bg-danger-100 text-danger-800 hover:bg-danger-500 hover:text-white border-danger-200"
+              : "bg-danger-100 text-danger-800 hover:bg-danger-500 hover:text-white",
             className
           )}
         >
-          <Trash2 className="size-4" />
+          <Trash2 className={cn("size-4", fullWidth && "mr-2")} />
+          {fullWidth && "Delete Document"}
         </Button>
       </AlertDialogPrimitive.Trigger>
 

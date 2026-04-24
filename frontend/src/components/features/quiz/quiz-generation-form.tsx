@@ -29,14 +29,20 @@ type QuizSettings = {
 interface QuizGenerationFormProps {
   documents: DocumentOption[];
   token: string;
+  preselectedDocumentId?: string;
 }
 
 type Step = "select" | "settings" | "generating" | "complete" | "error";
 
-export function QuizGenerationForm({ documents, token }: QuizGenerationFormProps) {
+export function QuizGenerationForm({ documents, token, preselectedDocumentId }: QuizGenerationFormProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("select");
-  const [selectedDocId, setSelectedDocId] = useState<string>(documents[0]?.id ?? "");
+  const [selectedDocId, setSelectedDocId] = useState<string>(() => {
+    if (preselectedDocumentId && documents.some((d) => d.id === preselectedDocumentId)) {
+      return preselectedDocumentId;
+    }
+    return documents[0]?.id ?? "";
+  });
   const [jobId, setJobId] = useState<string | null>(null);
   const [quizId, setQuizId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");

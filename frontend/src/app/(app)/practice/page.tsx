@@ -30,9 +30,9 @@ export default async function PracticePage() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-3xl font-semibold text-foreground">Targeted Practice</h1>
-        <p className="text-sm text-muted-foreground">
-          Focus on topics where your recent quiz performance is lowest.
+        <h1 className="text-xl font-semibold text-text-primary">Targeted Practice</h1>
+        <p className="text-sm text-text-secondary">
+          Focus on what you need to improve most
         </p>
       </header>
       <PracticePageClient initialWeakAreas={weakAreas} />

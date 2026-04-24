@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { FileText } from "lucide-react";
 
 import { ChatPageClient } from "@/components/features/chat/chat-page-client";
 import { createAuthenticatedClient } from "@/lib/api";
@@ -35,8 +36,8 @@ export default async function ChatPage(
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-3xl font-semibold text-foreground">Grounded Chat</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-xl font-semibold text-text-primary">Grounded Chat</h1>
+        <p className="text-sm text-text-secondary">
           Ask questions using only your uploaded notes and review citations.
         </p>
       </header>
@@ -44,11 +45,17 @@ export default async function ChatPage(
       {documents.length ? (
         <ChatPageClient documents={documents} initialDocumentId={initialDocumentId} />
       ) : (
-        <section className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">
-            No documents uploaded yet. Upload notes first to use grounded chat.
+        <div className="text-center py-12 bg-surface-card border border-border-default rounded-xl">
+          <div className="size-12 rounded-xl bg-surface-subtle flex items-center justify-center mx-auto mb-3">
+            <FileText className="size-6 text-text-tertiary" />
+          </div>
+          <h3 className="text-sm font-medium text-text-primary mb-1">
+            No documents yet
+          </h3>
+          <p className="text-xs text-text-tertiary">
+            Upload notes first to use grounded chat.
           </p>
-        </section>
+        </div>
       )}
     </div>
   );

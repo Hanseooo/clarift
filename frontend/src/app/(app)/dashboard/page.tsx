@@ -1,20 +1,30 @@
-import { redirect } from "next/navigation";
-import { currentUser } from "@clerk/nextjs/server";
-import { DashboardClient } from "@/components/dashboard-client";
-import { getDocuments } from "@/app/actions/documents";
+import { redirect } from "next/navigation"
+import { currentUser } from "@clerk/nextjs/server"
+import { DashboardOverview } from "@/components/features/dashboard/dashboard-overview"
+import { getDocuments } from "@/app/actions/documents"
 
 export default async function DashboardPage() {
-  const user = await currentUser();
+  const user = await currentUser()
   if (!user) {
-    redirect("/login");
+    redirect("/login")
   }
 
-  const documents = await getDocuments();
+  const rawDocuments = await getDocuments()
+
+  const documents = rawDocuments.map((doc) => ({
+    ...doc,
+    status: doc.status as "pending" | "processing" | "ready" | "failed",
+  }))
+
+  // TODO: Fetch usage data from API when endpoint is available
+  // For now, show dashboard without quota meters
+  const usage = undefined
 
   return (
-    <DashboardClient
-      userEmail={user.emailAddresses[0]?.emailAddress || "user"}
+    <DashboardOverview
+      userName={user.firstName || user.emailAddresses[0]?.emailAddress || "Student"}
       documents={documents}
+      usage={usage}
     />
-  );
+  )
 }
