@@ -170,6 +170,21 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Clerk theming variables (light mode default) */
+  --clerk-color-primary: #6366F1;
+  --clerk-color-danger: #EF4444;
+  --clerk-color-success: #10B981;
+  --clerk-color-warning: #F59E0B;
+  --clerk-color-background: #FFFFFF;
+  --clerk-color-foreground: #1A1833;
+  --clerk-color-muted-foreground: #6B6888;
+  --clerk-color-border: #E5E4F0;
+  --clerk-color-input-background: #F1F0FE;
+  --clerk-color-input-foreground: #1A1833;
+  --clerk-color-ring: #6366F1;
+  --clerk-border-radius: 0.5rem;
+  --clerk-font-family: var(--font-sans), 'Inter', system-ui, sans-serif;
 }
 
 /* Light mode (default) */
@@ -260,6 +275,14 @@
   --color-text-secondary: #9896B8;
   --color-text-tertiary: #6B6888;
   --color-text-on-brand: #FFFFFF;
+
+  /* Clerk theming variables (dark mode) */
+  --clerk-color-background: #1A1929;
+  --clerk-color-foreground: #F0EFFF;
+  --clerk-color-muted-foreground: #9896B8;
+  --clerk-color-border: #2D2C45;
+  --clerk-color-input-background: #21203A;
+  --clerk-color-input-foreground: #F0EFFF;
 }
 
 /* Page background noise texture (barely perceptible warmth) */

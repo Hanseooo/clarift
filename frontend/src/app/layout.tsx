@@ -31,7 +31,27 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-surface-page text-text-primary antialiased">
         <ThemeProvider>
-          <ClerkProvider>{children}</ClerkProvider>
+          <ClerkProvider
+            appearance={{
+              variables: {
+                colorPrimary: "var(--clerk-color-primary)",
+                colorDanger: "var(--clerk-color-danger)",
+                colorSuccess: "var(--clerk-color-success)",
+                colorWarning: "var(--clerk-color-warning)",
+                colorBackground: "var(--clerk-color-background)",
+                colorForeground: "var(--clerk-color-foreground)",
+                colorMutedForeground: "var(--clerk-color-muted-foreground)",
+                colorBorder: "var(--clerk-color-border)",
+                colorInputBackground: "var(--clerk-color-input-background)",
+                colorInputForeground: "var(--clerk-color-input-foreground)",
+                colorRing: "var(--clerk-color-ring)",
+                borderRadius: "var(--clerk-border-radius)",
+                fontFamily: "var(--clerk-font-family)",
+              },
+            }}
+          >
+            {children}
+          </ClerkProvider>
         </ThemeProvider>
       </body>
     </html>
