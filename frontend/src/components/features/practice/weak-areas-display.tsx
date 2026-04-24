@@ -1,59 +1,90 @@
-"use client";
+"use client"
 
-type WeakAreaItem = {
-  topic: string;
-  accuracy: number;
-  attempts: number;
-  quiz_count: number;
-};
+import { Target } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-type WeakAreasDisplayProps = {
-  weakAreas: WeakAreaItem[];
-  selectedTopics: string[];
-  onToggleTopic: (topic: string) => void;
-};
+interface WeakAreaItem {
+  topic: string
+  accuracy: number
+  attempts: number
+  quiz_count: number
+}
+
+interface WeakAreasDisplayProps {
+  weakAreas: WeakAreaItem[]
+  selectedTopics: string[]
+  onToggleTopic: (topic: string) => void
+}
 
 export function WeakAreasDisplay({
   weakAreas,
   selectedTopics,
   onToggleTopic,
 }: WeakAreasDisplayProps) {
-  if (!weakAreas.length) {
+  if (weakAreas.length === 0) {
     return (
-      <section className="rounded-2xl border border-border bg-card p-5">
-        <p className="text-sm text-muted-foreground">No weak areas detected yet.</p>
-      </section>
-    );
+      <div className="text-center py-12">
+        <div className="size-12 rounded-xl bg-surface-subtle flex items-center justify-center mx-auto mb-3">
+          <Target className="size-6 text-text-tertiary" />
+        </div>
+        <h3 className="text-sm font-medium text-text-primary mb-1">
+          No weak areas yet
+        </h3>
+        <p className="text-xs text-text-tertiary">
+          Complete a few quizzes to discover your gaps.
+        </p>
+      </div>
+    )
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5 space-y-3">
-      <h2 className="text-xl font-semibold text-foreground">Weak Areas</h2>
-      {weakAreas.map((item) => {
-        const selected = selectedTopics.includes(item.topic);
+    <div className="space-y-2">
+      {weakAreas.map((area) => {
+        const isSelected = selectedTopics.includes(area.topic)
         return (
-          <label key={item.topic} className="block rounded-xl border border-border p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <input
-                  checked={selected}
-                  type="checkbox"
-                  onChange={() => onToggleTopic(item.topic)}
+          <button
+            key={area.topic}
+            onClick={() => onToggleTopic(area.topic)}
+            className={cn(
+              "w-full bg-surface-card border border-border-default rounded-xl p-3.5 flex items-center gap-3 text-left transition-colors-fast",
+              isSelected && "border-accent-500 bg-accent-500/4"
+            )}
+          >
+            {/* Icon ring — amber per design.md */}
+            <div
+              className={cn(
+                "size-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors-fast",
+                isSelected
+                  ? "bg-accent-500/15 border border-accent-500/20"
+                  : "bg-accent-500/10 border border-accent-500/10"
+              )}
+            >
+              <Target className="size-[18px] text-accent-500" />
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-text-primary mb-1">
+                {area.topic}
+              </p>
+              <div className="h-[3px] bg-border-default rounded-full overflow-hidden mb-1">
+                <div
+                  className="h-full bg-accent-500 rounded-full"
+                  style={{ width: `${area.accuracy}%` }}
                 />
-                <span className="font-medium text-foreground">{item.topic}</span>
               </div>
-              <span className="text-xs text-muted-foreground">{item.attempts} attempts</span>
+              <p className="text-[11px] text-text-tertiary">
+                {area.attempts} attempts across {area.quiz_count} quizzes
+              </p>
             </div>
-            <div className="h-2 w-full rounded-full bg-accent-100">
-              <div
-                className="h-2 rounded-full bg-accent-500"
-                style={{ width: `${Math.max(0, Math.min(100, item.accuracy))}%` }}
-              />
-            </div>
-            <p className="text-xs text-accent-800">Accuracy {item.accuracy}%</p>
-          </label>
-        );
+
+            {/* Percentage */}
+            <span className="text-base font-bold text-accent-500 flex-shrink-0">
+              {area.accuracy}%
+            </span>
+          </button>
+        )
       })}
-    </section>
-  );
+    </div>
+  )
 }

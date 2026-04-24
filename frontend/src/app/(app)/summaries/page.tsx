@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { users } from "@/db/schema";
 
 import { SummaryCreation } from "@/components/features/summary/summary-creation";
-import { SummaryList } from "@/components/features/summary/summary-list";
+import { SummariesClient } from "@/components/features/summary/summaries-client";
 import { createAuthenticatedClient } from "@/lib/api";
 import { OverridePreferences } from "@/types/preferences";
 
@@ -25,7 +25,11 @@ type SummaryItem = {
   created_at: string;
 };
 
-export default async function SummariesPage() {
+type SummariesPageProps = {
+  searchParams: Promise<{ document_id?: string }>;
+};
+
+export default async function SummariesPage({ searchParams }: SummariesPageProps) {
   const user = await currentUser();
   if (!user) {
     redirect("/login");
@@ -36,6 +40,8 @@ export default async function SummariesPage() {
   if (!token) {
     redirect("/login");
   }
+
+  const { document_id } = await searchParams;
 
   const apiClient = createAuthenticatedClient(token);
   const [documentsResponse, summariesResponse, userRecord] = await Promise.all([
@@ -51,18 +57,20 @@ export default async function SummariesPage() {
   const initialPreferences = (userRecord?.userPreferences as OverridePreferences) ?? {};
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-3xl font-semibold text-foreground">Summaries</h1>
-        <p className="text-sm text-muted-foreground">
-          Generate and review study summaries from your uploaded documents.
-        </p>
-      </header>
+    <div className="space-y-8">
+      <SummariesClient summaries={summaries} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SummaryList summaries={summaries} />
-        <SummaryCreation documents={documents} initialPreferences={initialPreferences} />
-      </div>
+      {/* Creation section */}
+      <section className="pt-4 border-t border-border-default">
+        <h2 className="text-sm font-medium text-text-secondary mb-3 uppercase tracking-wide">
+          Create Summary
+        </h2>
+        <SummaryCreation
+          documents={documents}
+          initialPreferences={initialPreferences}
+          preselectedDocumentId={document_id}
+        />
+      </section>
     </div>
   );
 }

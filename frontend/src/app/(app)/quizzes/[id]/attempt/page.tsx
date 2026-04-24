@@ -1,6 +1,9 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
 import { AttemptWizard } from "@/components/features/quiz/attempt-wizard";
 import { createAuthenticatedClient } from "@/lib/api";
 
@@ -44,8 +47,15 @@ export default async function QuizAttemptPage({ params }: AttemptPageProps) {
   }>) ?? [];
 
   return (
-    <div className="max-w-2xl">
-      <header className="mb-6 space-y-1">
+    <div className="max-w-2xl space-y-6">
+      <Button variant="outline" size="sm" asChild className="w-fit">
+        <Link href="/quizzes">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Quizzes
+        </Link>
+      </Button>
+
+      <header className="space-y-1">
         <h1 className="text-xl font-semibold text-foreground">Quiz</h1>
         <p className="text-sm text-muted-foreground">
           {questions.length} questions · Answer each to complete

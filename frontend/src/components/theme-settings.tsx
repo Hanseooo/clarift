@@ -27,8 +27,8 @@ export function ThemeSettings() {
     return (
       <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-medium text-foreground">Appearance</h3>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h3 className="text-lg font-medium text-text-primary">Appearance</h3>
+          <p className="text-sm text-text-secondary mt-1">
             Choose your preferred theme for the Clarift interface.
           </p>
         </div>
@@ -53,8 +53,8 @@ export function ThemeSettings() {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-medium text-foreground">Appearance</h3>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h3 className="text-lg font-medium text-text-primary">Appearance</h3>
+        <p className="text-sm text-text-secondary mt-1">
           Choose your preferred theme for the Clarift interface.
         </p>
       </div>
@@ -71,12 +71,12 @@ export function ThemeSettings() {
               className={cn(
                 "flex flex-col items-center gap-2 rounded-lg border p-4 transition-colors-fast",
                 isActive
-                  ? "border-brand-500 bg-brand-50 dark:bg-brand-900/20"
+                  ? "border-brand-500 bg-brand-500/10"
                   : "border-border-default bg-surface-card hover:bg-surface-overlay"
               )}
             >
               <Icon className={cn("size-5", isActive ? "text-brand-500" : "text-text-secondary")} />
-              <span className={cn("text-sm font-medium", isActive ? "text-brand-700 dark:text-brand-300" : "text-text-secondary")}>
+              <span className={cn("text-sm font-medium", isActive ? "text-brand-500" : "text-text-secondary")}>
                 {t.label}
               </span>
             </button>

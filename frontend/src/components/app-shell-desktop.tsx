@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
   FileText,
+  BookOpen,
   Target,
   MessageSquare,
-  Settings2,
 } from "lucide-react"
 import { AppShellLogo } from "./app-shell-logo"
 import { ThemeToggle } from "./theme-toggle"
@@ -17,9 +17,9 @@ import { ThemeToggle } from "./theme-toggle"
 const routes = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { name: "Documents", path: "/documents", icon: FileText },
+  { name: "Summaries", path: "/summaries", icon: BookOpen },
   { name: "Practice", path: "/practice", icon: Target },
   { name: "Chat", path: "/chat", icon: MessageSquare },
-  { name: "Settings", path: "/dashboard/settings", icon: Settings2 },
 ]
 
 export function AppShellDesktop() {

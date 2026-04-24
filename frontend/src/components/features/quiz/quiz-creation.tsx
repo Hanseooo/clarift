@@ -1,77 +1,105 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 
-import { Button } from "@/components/ui/button";
-import { useCreateQuiz } from "@/hooks/use-quiz";
+import { Button } from "@/components/ui/button"
+import { useCreateQuiz } from "@/hooks/use-quiz"
+import { GraduationCap } from "lucide-react"
 
 type DocumentOption = {
-  id: string;
-  title: string;
-};
+  id: string
+  title: string
+}
 
 type QuizCreationProps = {
-  documents: DocumentOption[];
-};
+  documents: DocumentOption[]
+}
 
 export function QuizCreation({ documents }: QuizCreationProps) {
-  const router = useRouter();
-  const [documentId, setDocumentId] = useState(documents[0]?.id ?? "");
-  const [questionCount, setQuestionCount] = useState(5);
-  const { mutateAsync, isLoading, error } = useCreateQuiz();
+  const router = useRouter()
+  const [documentId, setDocumentId] = useState(documents[0]?.id ?? "")
+  const [questionCount, setQuestionCount] = useState(10)
+  const { mutateAsync, isLoading, error } = useCreateQuiz()
 
   const onCreateQuiz = async () => {
     if (!documentId) {
-      return;
+      return
     }
     const response = await mutateAsync({
       document_id: documentId,
       question_count: questionCount,
       auto_mode: true,
-    });
-    router.push(`/quizzes/${response.quiz_id}`);
-  };
+    })
+    router.push(`/quizzes/${response.quiz_id}`)
+  }
+
+  if (documents.length === 0) {
+    return (
+      <div className="text-center py-8 bg-surface-subtle rounded-xl">
+        <GraduationCap className="size-8 text-text-tertiary mx-auto mb-2" />
+        <p className="text-sm text-text-secondary">
+          Upload a document first to generate a quiz
+        </p>
+      </div>
+    )
+  }
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
-      <header>
-        <h2 className="text-xl font-semibold text-foreground">Create Quiz</h2>
-        <p className="text-sm text-muted-foreground">Pick a document and generate questions.</p>
-      </header>
+    <div className="bg-surface-card border border-border-default rounded-xl p-5 space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold text-text-primary">Quick Quiz</h2>
+        <p className="text-xs text-text-tertiary mt-0.5">
+          Generate a quiz from your uploaded notes
+        </p>
+      </div>
 
-      <label className="block space-y-2">
-        <span className="text-sm font-medium text-foreground">Document</span>
+      {/* Document select */}
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-text-primary">Document</label>
         <select
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
           value={documentId}
-          onChange={(event) => setDocumentId(event.target.value)}
+          onChange={(e) => setDocumentId(e.target.value)}
+          className="w-full h-10 px-3 text-sm bg-surface-subtle border border-border-default rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition-colors-fast text-text-primary"
         >
-          {documents.map((document) => (
-            <option key={document.id} value={document.id}>
-              {document.title}
+          {documents.map((doc) => (
+            <option key={doc.id} value={doc.id}>
+              {doc.title}
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
-      <label className="block space-y-2">
-        <span className="text-sm font-medium text-foreground">Question count</span>
-        <input
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          min={1}
-          max={20}
-          type="number"
-          value={questionCount}
-          onChange={(event) => setQuestionCount(Number(event.target.value))}
-        />
-      </label>
+      {/* Question count */}
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-text-primary">Questions</label>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min={5}
+            max={30}
+            value={questionCount}
+            onChange={(e) => setQuestionCount(Number(e.target.value))}
+            className="flex-1 accent-brand-500"
+          />
+          <span className="text-sm font-medium text-text-primary w-8 text-center">
+            {questionCount}
+          </span>
+        </div>
+      </div>
 
-      <Button className="w-full" disabled={isLoading || !documentId} onClick={onCreateQuiz}>
+      {/* Error */}
+      {error ? <p className="text-xs text-danger-500">{error}</p> : null}
+
+      {/* Create button */}
+      <Button
+        variant="default"
+        disabled={!documentId || isLoading}
+        onClick={onCreateQuiz}
+        className="w-full"
+      >
         {isLoading ? "Creating..." : "Create Quiz"}
       </Button>
-
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-    </section>
-  );
+    </div>
+  )
 }
