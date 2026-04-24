@@ -28,8 +28,6 @@ async def test_run_summary_job_success():
     # Mock the generate_summary_for_document function
     mock_chain_output = {
         "content": "Mock summary content",
-        "diagram_syntax": "graph TD; A-->B",
-        "diagram_type": "mermaid",
         "quiz_type_flags": {"multiple_choice": True, "fill_in_blanks": False},
     }
 
