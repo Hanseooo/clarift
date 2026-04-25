@@ -9,6 +9,7 @@ Process:
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from collections.abc import Iterable
 from typing import Any, Optional, TypedDict
@@ -26,7 +27,6 @@ logger = logging.getLogger(__name__)
 class SummaryChainInput(TypedDict):
     """Input for the summary chain."""
 
-    format: str  # "bullet", "outline", "paragraph"
     chunks: list[str]
     user_preferences: Optional[dict]
 
@@ -34,6 +34,7 @@ class SummaryChainInput(TypedDict):
 class SummaryChainOutput(TypedDict):
     """Output from the summary chain."""
 
+    title: str
     content: str
     quiz_type_flags: dict[str, Any]
 
@@ -103,15 +104,13 @@ Generate a structured summary using advanced Markdown formatting:
 - Include examples where helpful
 - End with a summary paragraph
 
-If the content naturally lends itself to a visual diagram (flowcharts, relationships, hierarchies),
-include a Mermaid.js diagram inside a fenced code block like this:
-
-```mermaid
-graph TD
-    A[Start] --> B[End]
-```
-
-Otherwise, do not include a diagram.
+Rules:
+1. Incorporate the requested formats and styles where they naturally fit.
+2. Generate a concise, descriptive title for this summary (max 32 characters).
+3. Return ONLY valid JSON with keys: "title", "content", "quiz_type_flags".
+   - "title": string, max 32 chars
+   - "content": string, the full Markdown summary
+   - "quiz_type_flags": object with boolean flags for quiz types (mcq, true_false, identification, multi_select, ordering)
 
 Format: Use clean, well-structured Markdown with proper spacing."""
 
@@ -138,7 +137,20 @@ Format: Use clean, well-structured Markdown with proper spacing."""
             prefs_str = "; ".join(prefs)
             summary_prompt += f"\n\nApply these user preferences: {prefs_str}"
 
-    summary_content = await _invoke_with_retry(llm, summary_prompt)
+    llm_output = await _invoke_with_retry(llm, summary_prompt)
+
+    # Parse JSON response from LLM
+    title = "Untitled summary"
+    summary_content = llm_output
+    quiz_type_flags: dict[str, Any] = {}
+    try:
+        parsed = json.loads(llm_output)
+        if isinstance(parsed, dict):
+            title = str(parsed.get("title", title))[:32]
+            summary_content = str(parsed.get("content", llm_output))
+            quiz_type_flags = dict(parsed.get("quiz_type_flags", {}))
+    except json.JSONDecodeError:
+        pass
 
     # Throttle between LLM calls to avoid rate limits (similar to embeddings worker)
     await asyncio.sleep(2)
@@ -147,9 +159,11 @@ Format: Use clean, well-structured Markdown with proper spacing."""
     analysis_result = await run_content_analysis_chain(
         ContentAnalysisChainInput(chunks=input["chunks"])
     )
-    quiz_type_flags: dict[str, Any] = dict(analysis_result)
+    if not quiz_type_flags:
+        quiz_type_flags = dict(analysis_result)
 
     return {
+        "title": title,
         "content": summary_content,
         "quiz_type_flags": quiz_type_flags,
     }

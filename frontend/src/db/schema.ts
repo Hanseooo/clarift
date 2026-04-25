@@ -48,10 +48,8 @@ export const summaries = pgTable("summaries", {
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  format: text("format").notNull(),
+  title: text("title"),
   content: text("content").notNull(),
-  diagramSyntax: text("diagram_syntax"),   // null if no diagram generated
-  diagramType: text("diagram_type"),        // null if no diagram generated
   quizTypeFlags: jsonb("quiz_type_flags"),  // QuizTypeFlags | null
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
@@ -66,6 +64,7 @@ export const quizzes = pgTable("quizzes", {
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title"),
   questions: jsonb("questions").notNull(),
   questionTypes: text("question_types").array().notNull(), // types used in this quiz
   questionCount: integer("question_count").notNull(),

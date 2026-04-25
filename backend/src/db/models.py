@@ -119,7 +119,7 @@ class Summary(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
-    format: Mapped[str] = mapped_column(Text, nullable=False)
+    title: Mapped[str | None] = mapped_column(Text, nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     quiz_type_flags: Mapped[JSONB | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[TIMESTAMP] = mapped_column(
@@ -150,6 +150,7 @@ class Quiz(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
+    title: Mapped[str | None] = mapped_column(Text, nullable=True)
     questions: Mapped[JSONB] = mapped_column(JSONB, nullable=False)
     question_types: Mapped[list[str]] = mapped_column(
         ARRAY(Text),

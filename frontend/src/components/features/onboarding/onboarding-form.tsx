@@ -17,6 +17,10 @@ import { Button } from "@/components/ui/button"
 import { OptionCard } from "./option-card"
 import { updateUserPreferences } from "@/app/actions/user"
 import { cn } from "@/lib/utils"
+import {
+  OUTPUT_FORMAT_OPTIONS,
+  EXPLANATION_STYLE_OPTIONS,
+} from "@/lib/preference-options"
 
 interface OnboardingFormProps {
   initialData?: {
@@ -66,74 +70,23 @@ const educationLevels = [
   },
 ]
 
-const outputFormats = [
-  {
-    value: "Bullet Points",
-    title: "Bullet Points",
-    description: "Quick, scannable key concepts",
-    preview: "• Concept A\n• Concept B\n• Concept C",
-    icon: <AlignLeft className="size-5 text-brand-400" />,
-  },
-  {
-    value: "Paragraphs",
-    title: "Paragraphs",
-    description: "Flowing prose with clear transitions",
-    preview: "The concept of X is defined as...\nThis relates to Y because...",
-    icon: <Type className="size-5 text-brand-400" />,
-  },
-  {
-    value: "Q&A",
-    title: "Q&A",
-    description: "Question and answer format for active recall",
-    preview: "Q: What is X?\nA: X is defined as...",
-    icon: <HelpCircle className="size-5 text-brand-400" />,
-  },
-  {
-    value: "Flashcards",
-    title: "Flashcards",
-    description: "Front and back cards for spaced repetition",
-    preview: "Front: Term/Question\nBack: Definition/Answer",
-    icon: <Layers className="size-5 text-brand-400" />,
-  },
-  {
-    value: "Summaries",
-    title: "Summaries",
-    description: "Condensed overview of key material",
-    preview: "Overview of main topics\nKey conclusions",
-    icon: <FileText className="size-5 text-brand-400" />,
-  },
-]
+const outputFormatIcons: Record<string, React.ReactNode> = {
+  bullet_points: <AlignLeft className="size-5 text-brand-400" />,
+  paragraphs: <Type className="size-5 text-brand-400" />,
+  q_and_a: <HelpCircle className="size-5 text-brand-400" />,
+  examples: <Layers className="size-5 text-brand-400" />,
+  tables: <FileText className="size-5 text-brand-400" />,
+  step_by_step: <BookOpen className="size-5 text-brand-400" />,
+};
 
-const explanationStyles = [
-  {
-    value: "Simple & Direct",
-    title: "Simple & Direct",
-    description: "Plain language, no fluff",
-    preview: "X means Y. It works by...",
-    icon: <Lightbulb className="size-5 text-brand-400" />,
-  },
-  {
-    value: "Detailed & Academic",
-    title: "Detailed & Academic",
-    description: "In-depth with technical terminology",
-    preview: "According to [theory], X demonstrates...",
-    icon: <BookOpen className="size-5 text-brand-400" />,
-  },
-  {
-    value: "Analogy-based",
-    title: "Analogy-based",
-    description: "Compare complex ideas to familiar things",
-    preview: "Think of it like...",
-    icon: <Zap className="size-5 text-brand-400" />,
-  },
-  {
-    value: "Socratic (Ask me questions)",
-    title: "Socratic",
-    description: "Learn through guided questioning",
-    preview: "What would happen if...\nWhy does X behave this way?",
-    icon: <MessageCircle className="size-5 text-brand-400" />,
-  },
-]
+const explanationStyleIcons: Record<string, React.ReactNode> = {
+  simple_direct: <Lightbulb className="size-5 text-brand-400" />,
+  detailed_academic: <BookOpen className="size-5 text-brand-400" />,
+  analogy_based: <Zap className="size-5 text-brand-400" />,
+  socratic: <MessageCircle className="size-5 text-brand-400" />,
+  eli5: <HelpCircle className="size-5 text-brand-400" />,
+  mental_models: <AlignLeft className="size-5 text-brand-400" />,
+};
 
 export function OnboardingForm({ initialData, onSuccess }: OnboardingFormProps) {
   const router = useRouter()
@@ -168,8 +121,8 @@ export function OnboardingForm({ initialData, onSuccess }: OnboardingFormProps) 
     try {
       await updateUserPreferences({
         education_level: educationLevel,
-        output_formats: selectedFormats.length > 0 ? selectedFormats : ["Bullet Points"],
-        explanation_styles: selectedStyles.length > 0 ? selectedStyles : ["Simple & Direct"],
+        output_formats: selectedFormats.length > 0 ? selectedFormats : ["bullet_points"],
+        explanation_styles: selectedStyles.length > 0 ? selectedStyles : ["simple_direct"],
         custom_instructions: customInstructions || undefined,
       })
       onSuccess?.()
@@ -220,15 +173,15 @@ export function OnboardingForm({ initialData, onSuccess }: OnboardingFormProps) 
           How should summaries look?
         </legend>
         <div className="space-y-2">
-          {outputFormats.map((format) => (
+          {OUTPUT_FORMAT_OPTIONS.map((option) => (
             <OptionCard
-              key={format.value}
-              icon={format.icon}
-              title={format.title}
-              description={format.description}
-              preview={format.preview}
-              selected={selectedFormats.includes(format.value)}
-              onClick={() => setSelectedFormats((prev) => toggleArray(prev, format.value))}
+              key={option.value}
+              icon={outputFormatIcons[option.value]}
+              title={option.label}
+              description={option.description}
+              preview=""
+              selected={selectedFormats.includes(option.value)}
+              onClick={() => setSelectedFormats((prev) => toggleArray(prev, option.value))}
             />
           ))}
         </div>
@@ -240,15 +193,15 @@ export function OnboardingForm({ initialData, onSuccess }: OnboardingFormProps) 
           How should concepts be explained?
         </legend>
         <div className="space-y-2">
-          {explanationStyles.map((style) => (
+          {EXPLANATION_STYLE_OPTIONS.map((option) => (
             <OptionCard
-              key={style.value}
-              icon={style.icon}
-              title={style.title}
-              description={style.description}
-              preview={style.preview}
-              selected={selectedStyles.includes(style.value)}
-              onClick={() => setSelectedStyles((prev) => toggleArray(prev, style.value))}
+              key={option.value}
+              icon={explanationStyleIcons[option.value]}
+              title={option.label}
+              description={option.description}
+              preview=""
+              selected={selectedStyles.includes(option.value)}
+              onClick={() => setSelectedStyles((prev) => toggleArray(prev, option.value))}
             />
           ))}
         </div>

@@ -1,16 +1,17 @@
-import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { RenameTitle } from "@/components/features/rename-title";
+import { updateSummaryTitle } from "@/app/actions/summaries";
 
 interface SummaryCardProps {
   id: string;
   documentId: string;
-  format: string;
+  title: string | null;
   createdAt: string;
 }
 
-export function SummaryCard({ id, format, createdAt }: SummaryCardProps) {
+export function SummaryCard({ id, title, createdAt }: SummaryCardProps) {
   const dateStr = new Date(createdAt).toLocaleDateString("en-PH", {
     month: "short",
     day: "numeric",
@@ -18,7 +19,7 @@ export function SummaryCard({ id, format, createdAt }: SummaryCardProps) {
     minute: "2-digit",
   });
 
-  const formatLabel = format.charAt(0).toUpperCase() + format.slice(1);
+  const displayTitle = title ?? "Untitled summary";
 
   return (
     <div className="group bg-surface-card border border-border-default rounded-xl p-4 flex items-center gap-3 hover:bg-surface-overlay hover:border-border-strong transition-colors-fast">
@@ -29,18 +30,17 @@ export function SummaryCard({ id, format, createdAt }: SummaryCardProps) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <Link
-          href={`/summaries/${id}`}
-          className="text-sm font-medium text-text-primary hover:text-brand-500 transition-colors-fast truncate block"
-        >
-          {formatLabel} summary
-        </Link>
+        <RenameTitle
+          id={id}
+          currentTitle={displayTitle}
+          onSave={updateSummaryTitle}
+        />
         <p className="text-xs text-text-tertiary mt-0.5">
           {dateStr}
         </p>
       </div>
 
-      {/* Format badge */}
+      {/* Title badge */}
       <div className="flex-shrink-0">
         <Badge
           variant="secondary"
@@ -48,7 +48,7 @@ export function SummaryCard({ id, format, createdAt }: SummaryCardProps) {
             "text-[11px] font-medium bg-brand-100 text-brand-800 hover:bg-brand-100"
           )}
         >
-          {formatLabel}
+          Summary
         </Badge>
       </div>
     </div>
