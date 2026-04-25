@@ -20,7 +20,7 @@ from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
     UUID,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 
@@ -168,8 +168,10 @@ class Quiz(Base):
         server_default=func.now(),
     )
 
+    attempts: Mapped[list["QuizAttempt"]] = relationship("QuizAttempt", back_populates="quiz")
 
-# ─── Quiz Attempts ───────────────────────────────────────────────────────────
+
+# ─── Quiz Attempts ─────────────────────────────────────────────────────────--
 
 
 class QuizAttempt(Base):
@@ -204,6 +206,8 @@ class QuizAttempt(Base):
         nullable=False,
         server_default=func.now(),
     )
+
+    quiz: Mapped["Quiz"] = relationship("Quiz", back_populates="attempts")
 
 
 # ─── Topic Performance ───────────────────────────────────────────────────────

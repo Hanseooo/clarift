@@ -15,6 +15,7 @@ from src.services.quiz_service import (
     QuizRequest,
     QuizSettings,
     create_quiz_job,
+    get_attempt_by_id,
     get_quiz_by_id,
     list_quizzes_by_user,
     submit_quiz_attempt,
@@ -73,6 +74,23 @@ class SubmitAttemptResponse(BaseModel):
     score: float
     weak_topics: list[str]
     message: str
+
+
+class AttemptQuestionResponse(BaseModel):
+    id: str
+    question: str
+    user_answer: str | bool | list[str]
+    correct_answer: str | bool | list[str]
+    is_correct: bool
+    topic: str
+    explanation: str
+    type: str
+
+
+class AttemptDetailResponse(BaseModel):
+    score: float
+    per_topic: dict[str, dict[str, int]]
+    questions: list[AttemptQuestionResponse]
 
 
 @router.get("", response_model=list[QuizItemResponse])
@@ -167,4 +185,22 @@ async def submit_attempt(
         score=result["score"],
         weak_topics=result["weak_topics"],
         message="Attempt submitted successfully.",
+    )
+
+
+@router.get("/attempts/{attempt_id}", response_model=AttemptDetailResponse)
+async def get_attempt(
+    attempt_id: str,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Retrieve detailed results for a quiz attempt.
+    """
+    result = await get_attempt_by_id(db, user.id, attempt_id)
+
+    return AttemptDetailResponse(
+        score=result["score"],
+        per_topic=result["per_topic"],
+        questions=[AttemptQuestionResponse(**q) for q in result["questions"]],
     )
