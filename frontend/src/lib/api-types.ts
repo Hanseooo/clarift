@@ -339,6 +339,16 @@ export interface components {
             file: string;
         };
         /**
+         * ChatMessage
+         * @description Individual message in chat history.
+         */
+        ChatMessage: {
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+        };
+        /**
          * ChatRequest
          * @description Request body for chat endpoint.
          */
@@ -347,6 +357,11 @@ export interface components {
             document_id?: string | null;
             /** Question */
             question: string;
+            /**
+             * Messages
+             * @default []
+             */
+            messages: components["schemas"]["ChatMessage"][];
         };
         /**
          * ChatResponse

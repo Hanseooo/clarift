@@ -18,6 +18,7 @@ class ChatChainInput(TypedDict):
     document_id: str | None
     question: str
     chunks: list[dict[str, Any]]
+    messages: list[dict[str, Any]] | None
 
 
 class ChatChainOutput(TypedDict):
@@ -27,14 +28,21 @@ class ChatChainOutput(TypedDict):
 
 
 @retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
-async def _generate_grounded_answer(question: str, context: str) -> str:
+async def _generate_grounded_answer(
+    question: str, context: str, messages: list[dict[str, Any]] | None = None
+) -> str:
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash-lite",
         google_api_key=settings.GOOGLE_API_KEY,
         temperature=0.1,
     )
+    history = ""
+    if messages:
+        history = "\n".join(f"{m['role'].capitalize()}: {m['content']}" for m in messages[-8:])
+        history = f"Previous conversation:\n{history}\n\n"
     prompt = (
         f"{settings.CHAT_SYSTEM_PROMPT}\n\n"
+        f"{history}"
         f"Context:\n{context}\n\n"
         f"Question: {question}\n\n"
         f"If missing answer in context, return exactly: {settings.CHAT_FALLBACK_MESSAGE}"
@@ -66,7 +74,7 @@ async def run_chat_chain(input: ChatChainInput) -> ChatChainOutput:
         }
 
     try:
-        answer = await _generate_grounded_answer(input["question"], context)
+        answer = await _generate_grounded_answer(input["question"], context, input.get("messages"))
     except Exception as exc:  # noqa: BLE001
         logger.error("Chat chain generation failed: %s", exc)
         answer = settings.CHAT_FALLBACK_MESSAGE

@@ -7,6 +7,7 @@ import { createAuthenticatedClient } from "@/lib/api";
 type SendChatInput = {
   question: string;
   document_id?: string;
+  messages?: Array<{ role: string; content: string }>;
 };
 
 export function useSendChatMessage() {
@@ -29,6 +30,7 @@ export function useSendChatMessage() {
         body: {
           question: payload.question,
           document_id: payload.document_id,
+          messages: payload.messages ?? [],
         },
       });
       if (apiError || !data) {

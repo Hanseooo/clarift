@@ -14,11 +14,19 @@ from src.services.retrieval_service import get_user_chunks
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 
 
+class ChatMessage(BaseModel):
+    """Individual message in chat history."""
+
+    role: str
+    content: str
+
+
 class ChatRequest(BaseModel):
     """Request body for chat endpoint."""
 
     document_id: str | None = None
     question: str
+    messages: list[ChatMessage] = []
 
 
 class ChatResponse(BaseModel):
@@ -60,6 +68,7 @@ async def chat(
         document_id=request.document_id,
         question=request.question,
         chunks=chunks,
+        messages=[m.model_dump() for m in request.messages],
     )
     chain_output = await run_chat_chain(chain_input)
 

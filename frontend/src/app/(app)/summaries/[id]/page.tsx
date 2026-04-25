@@ -54,8 +54,6 @@ export default async function SummaryDetailPage({
     }
   }
 
-  const formatLabel = summary.format.charAt(0).toUpperCase() + summary.format.slice(1);
-
   return (
     <div className="max-w-[640px] mx-auto space-y-6">
       {/* Sticky header */}
@@ -68,14 +66,14 @@ export default async function SummaryDetailPage({
           </Button>
           <div className="flex-1 min-w-0">
             <h1 className="text-sm font-medium text-text-primary truncate">
-              {formatLabel} summary
+              Summary
             </h1>
           </div>
           <Badge
             variant="secondary"
             className="text-[11px] font-medium bg-brand-100 text-brand-800 hover:bg-brand-100"
           >
-            {formatLabel}
+            Summary
           </Badge>
           <Button
             variant={isEditing ? "default" : "ghost"}

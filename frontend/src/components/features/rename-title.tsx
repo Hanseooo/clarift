@@ -54,7 +54,10 @@ export function RenameTitle({ id, currentTitle, onSave }: RenameTitleProps) {
 
   return (
     <button
-      onClick={() => setIsEditing(true)}
+      onClick={(e) => {
+        e.stopPropagation();
+        setIsEditing(true);
+      }}
       className="group flex items-center gap-1"
       type="button"
     >

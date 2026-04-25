@@ -732,6 +732,25 @@
         ],
         "title": "Body_upload_document_api_v1_documents_upload_post"
       },
+      "ChatMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ChatMessage",
+        "description": "Individual message in chat history."
+      },
       "ChatRequest": {
         "properties": {
           "document_id": {
@@ -748,6 +767,14 @@
           "question": {
             "type": "string",
             "title": "Question"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "type": "array",
+            "title": "Messages",
+            "default": []
           }
         },
         "type": "object",
