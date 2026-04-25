@@ -13,6 +13,11 @@ vi.mock("recharts", () => ({
       {children}
     </div>
   ),
+  BarChart: ({ children, ...props }: { children: React.ReactNode; data?: unknown[] }) => (
+    <div data-testid="bar-chart" {...props}>
+      {children}
+    </div>
+  ),
   PolarGrid: () => <div data-testid="polar-grid" />,
   PolarAngleAxis: ({ dataKey }: { dataKey: string }) => (
     <div data-testid="polar-angle-axis" data-key={dataKey} />
@@ -20,6 +25,18 @@ vi.mock("recharts", () => ({
   Radar: ({ dataKey, name }: { dataKey: string; name: string }) => (
     <div data-testid="radar" data-key={dataKey} data-name={name} />
   ),
+  Bar: ({ children, ...props }: { children?: React.ReactNode; dataKey?: string }) => (
+    <div data-testid="bar" {...props}>
+      {children}
+    </div>
+  ),
+  Cell: () => <div data-testid="cell" />,
+  CartesianGrid: () => <div data-testid="cartesian-grid" />,
+  XAxis: ({ dataKey }: { dataKey?: string }) => (
+    <div data-testid="x-axis" data-key={dataKey} />
+  ),
+  YAxis: () => <div data-testid="y-axis" />,
+  Tooltip: () => <div data-testid="tooltip" />,
 }));
 
 describe("MasteryChart", () => {
@@ -44,15 +61,14 @@ describe("MasteryChart", () => {
       { topic: "Geography", accuracy: 90 },
       { topic: "Chemistry", accuracy: 45 },
     ];
-    const { container } = render(<MasteryChart perTopicAccuracy={data} />);
-    const radarChart = screen.getByTestId("radar-chart");
-    expect(radarChart).toBeInTheDocument();
+    render(<MasteryChart perTopicAccuracy={data} />);
+    expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
   });
 
   it("renders with single topic", () => {
     const data = [{ topic: "Math", accuracy: 100 }];
     render(<MasteryChart perTopicAccuracy={data} />);
-    expect(screen.getByTestId("radar-chart")).toBeInTheDocument();
+    expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
   });
 
   it("renders with multiple topics", () => {
