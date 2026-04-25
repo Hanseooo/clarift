@@ -1,0 +1,55 @@
+"use client";
+
+import { useState } from "react";
+import { QuestionReview } from "@/components/features/quiz/question-review";
+import { QuizResultsActions } from "@/components/features/quiz/quiz-results-actions";
+
+type QuizResultQuestion = {
+  id: string;
+  question: string;
+  user_answer: string | boolean | string[];
+  correct_answer: string | boolean | string[];
+  is_correct: boolean;
+  topic: string;
+  explanation: string;
+  type?: string;
+};
+
+interface ResultsClientProps {
+  quizId: string;
+  questions: QuizResultQuestion[];
+}
+
+export function ResultsClient({ quizId, questions }: ResultsClientProps) {
+  const [showAnswers, setShowAnswers] = useState(false);
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-text-primary">Question Review</h2>
+      </div>
+
+      <QuizResultsActions
+        quizId={quizId}
+        onReveal={() => setShowAnswers(true)}
+        isRevealed={showAnswers}
+      />
+
+      <div className="space-y-4">
+        {questions.map((q, index) => (
+          <QuestionReview
+            key={q.id}
+            index={index}
+            question={q.question}
+            userAnswer={q.user_answer}
+            correctAnswer={q.correct_answer}
+            isCorrect={q.is_correct}
+            explanation={q.explanation}
+            questionType={q.type || "mcq"}
+            showAnswers={showAnswers}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
