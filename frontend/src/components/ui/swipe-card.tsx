@@ -53,10 +53,10 @@ export function SwipeCard({
 
       const touchX = e.touches[0].clientX;
       const deltaX = touchX - startX.current;
+      currentX.current = touchX;
 
       // Only allow left swipe (negative delta)
       if (deltaX < 0) {
-        currentX.current = touchX;
         setOffset(Math.max(deltaX, -SWIPE_AUTO_TRIGGER_THRESHOLD));
         setIsRevealed(Math.abs(deltaX) >= SWIPE_REVEAL_THRESHOLD);
       }
