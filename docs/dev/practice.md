@@ -95,7 +95,7 @@ Step 3: Validate + Order
 
 ### Quota
 
-Targeted practice allows 1 session per day for Free tier. The quota dependency enforces this—Free users see an upgrade prompt if they exceed their daily session. The quota dependency enforces this — Free users see an upgrade prompt instead.
+Targeted practice allows 3 sessions per day for Free tier. The quota dependency enforces this—Free users see an upgrade prompt if they exceed their daily session. The quota dependency enforces this — Free users see an upgrade prompt instead.
 
 ---
 

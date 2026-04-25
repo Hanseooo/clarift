@@ -12,14 +12,14 @@ QUOTA_LIMITS = {
     "free": {
         "summaries": 3,       # per day
         "quizzes": 3,         # per day
-        "practice": 1,        # per day (let free users experience it)
-        "chat_per_window": 20,
+        "practice": 3,        # per day (let free users experience it)
+        "chat": 12,             # per day
     },
     "pro": {
         "summaries": 10,      # per day
         "quizzes": 15,        # per day
         "practice": 10,       # per day
-        "chat_per_window": 100,
+        "chat": 60,             # per day
     }
 }
 
@@ -185,5 +185,5 @@ UI shows:
 - `test_quota_race_condition` — concurrent requests don't exceed limit
 - `test_quota_reset_on_cron` — usage resets correctly
 - `test_chat_rolling_window` — window resets after TTL
-- `test_free_tier_practice_allowed_once` — free tier gets 1 practice/day
-- `test_free_tier_practice_blocked_after_one` — 429 on second practice attempt same day
+- `test_free_tier_practice_allowed` — free tier gets 3 practice/day
+- `test_free_tier_practice_blocked` — 429 on fourth practice attempt same day

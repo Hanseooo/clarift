@@ -12,7 +12,7 @@ Clarift is an AI-powered study engine built specifically for Filipino students a
 - **Weak Area Diagnosis**: System identifies knowledge gaps based on quiz performance
 - **Targeted Practice**: Personalized practice drills focused on specific weak topics
 - **Grounded RAG Chat**: AI chat that answers exclusively from uploaded notes, never from general knowledge
-- **Quota System**: Daily usage limits with free tier (3 summaries, 3 quizzes, 1 practice per day) and Pro tier (expanded limits)
+- **Quota System**: Daily usage limits with free tier (3 summaries, 3 quizzes, 3 practice, 12 chat per day, 8 document uploads max) and Pro tier (expanded limits)
 - **Subscription Payments**: PayMongo integration for GCash and credit card subscriptions
 
 ---

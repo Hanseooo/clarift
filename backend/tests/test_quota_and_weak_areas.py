@@ -15,8 +15,8 @@ from src.services.quota_service import TIER_LIMITS, check_quota
 
 
 def test_chat_limits_present() -> None:
-    assert TIER_LIMITS["free"]["chat"] == 5
-    assert TIER_LIMITS["pro"]["chat"] == 20
+    assert TIER_LIMITS["free"]["chat"] == 12
+    assert TIER_LIMITS["pro"]["chat"] == 60
 
 
 @pytest.mark.asyncio
@@ -26,7 +26,7 @@ async def test_check_quota_raises_when_chat_limit_reached(monkeypatch: pytest.Mo
         summaries_used=0,
         quizzes_used=0,
         practice_used=0,
-        chat_used=5,
+        chat_used=12,
         reset_at=datetime.now(timezone.utc) + timedelta(hours=1),
     )
     user = SimpleNamespace(id=uuid.uuid4(), tier="free")

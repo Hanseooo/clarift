@@ -267,14 +267,14 @@ QUOTA_LIMITS = {
     "free": {
         "summaries": 3,       # per day
         "quizzes": 3,         # per day
-        "practice": 1,        # per day
-        "chat_per_window": 20,
+        "practice": 3,        # per day
+        "chat": 12,             # per day
     },
     "pro": {
         "summaries": 10,      # per day
         "quizzes": 15,        # per day
         "practice": 10,       # per day
-        "chat_per_window": 100,
+        "chat": 60,             # per day
     }
 }
 ```

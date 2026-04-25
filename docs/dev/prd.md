@@ -198,6 +198,6 @@ Review centers, universities, corporate learners.
 |---|---|---|
 | Summaries | 3/day | 10/day |
 | Quizzes | 3/day | 15/day |
-| Targeted practice | 1/day | 10/day |
-| Chat | Resets every 5 hours | Resets every 5 hours |
-| Uploads | Limited (TBD) | Unlimited |
+| Targeted practice | 3/day | 10/day |
+| Chat | 12/day | 60/day |
+| Uploads | 8 documents max | Unlimited |
