@@ -1,21 +1,15 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ChatInput } from "./chat-input"
 import { ChatMessages } from "./chat-messages"
 import { DocumentSelector } from "./document-selector"
 import { useSendChatMessage } from "@/hooks/use-chat"
+import { useChatStore } from "@/stores/chat-store"
 
 type DocumentOption = {
   id: string
   title: string
-}
-
-type ChatMessage = {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  citations?: Array<{ chunk_id?: string | null }>
 }
 
 export function ChatPageClient({
@@ -25,35 +19,49 @@ export function ChatPageClient({
   documents: DocumentOption[]
   initialDocumentId?: string
 }) {
-  const [selectedIds, setSelectedIds] = useState<string[]>(
-    initialDocumentId ? [initialDocumentId] : []
-  )
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const {
+    messages,
+    selectedDocumentIds: selectedIds,
+    setSelectedDocumentIds,
+    addMessage,
+  } = useChatStore()
   const [isSearching, setIsSearching] = useState(false)
   const { mutateAsync, isLoading, error } = useSendChatMessage()
+
+  useEffect(() => {
+    if (initialDocumentId && selectedIds.length === 0) {
+      setSelectedDocumentIds([initialDocumentId])
+    }
+  }, [initialDocumentId, selectedIds.length, setSelectedDocumentIds])
 
   const selectedDocumentId = useMemo(() => selectedIds[0], [selectedIds])
 
   const sendMessage = async (message: string) => {
-    setMessages((previous) => [
-      ...previous,
-      { id: crypto.randomUUID(), role: "user", content: message },
-    ])
+    addMessage({
+      id: crypto.randomUUID(),
+      role: "user",
+      content: message,
+      timestamp: Date.now(),
+    })
     setIsSearching(true)
     try {
+      const contextMessages = useChatStore
+        .getState()
+        .getRecentMessages(8)
+        .map((m) => ({ role: m.role, content: m.content }))
+
       const response = await mutateAsync({
         question: message,
         document_id: selectedDocumentId,
+        messages: contextMessages,
       })
-      setMessages((previous) => [
-        ...previous,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: response.answer,
-          citations: response.citations as Array<{ chunk_id?: string | null }>,
-        },
-      ])
+      addMessage({
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: response.answer,
+        citations: response.citations as Array<{ chunk_id?: string | null }>,
+        timestamp: Date.now(),
+      })
     } finally {
       setIsSearching(false)
     }
@@ -77,10 +85,10 @@ export function ChatPageClient({
               documents={documents}
               selectedIds={selectedIds}
               onToggle={(id) => {
-                setSelectedIds((previous) =>
-                  previous.includes(id)
-                    ? previous.filter((item) => item !== id)
-                    : [...previous, id]
+                setSelectedDocumentIds(
+                  selectedIds.includes(id)
+                    ? selectedIds.filter((item) => item !== id)
+                    : [...selectedIds, id]
                 )
               }}
             />

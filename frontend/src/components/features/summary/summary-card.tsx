@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -22,7 +23,10 @@ export function SummaryCard({ id, title, createdAt }: SummaryCardProps) {
   const displayTitle = title ?? "Untitled summary";
 
   return (
-    <div className="group bg-surface-card border border-border-default rounded-xl p-4 flex items-center gap-3 hover:bg-surface-overlay hover:border-border-strong transition-colors-fast">
+    <Link
+      href={`/summaries/${id}`}
+      className="block group bg-surface-card border border-border-default rounded-xl p-4 flex items-center gap-3 hover:bg-surface-overlay hover:border-border-strong transition-colors-fast"
+    >
       {/* Icon box */}
       <div className="size-9 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0">
         <BookOpen className="size-[18px] text-brand-400" />
@@ -51,6 +55,6 @@ export function SummaryCard({ id, title, createdAt }: SummaryCardProps) {
           Summary
         </Badge>
       </div>
-    </div>
+    </Link>
   );
 }

@@ -19,6 +19,8 @@ interface ChatMessagesProps {
   error: string | null
 }
 
+const CONTEXT_WINDOW_SIZE = 8
+
 export function ChatMessages({ messages, isSearching, error }: ChatMessagesProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -41,42 +43,52 @@ export function ChatMessages({ messages, isSearching, error }: ChatMessagesProps
         </div>
       )}
 
-      {messages.map((msg) => (
-        <div
-          key={msg.id}
-          className={cn(
-            "flex",
-            msg.role === "user" ? "justify-end" : "justify-start"
-          )}
-        >
-          {msg.role === "user" ? (
-            <div className="max-w-[78%] bg-brand-500 text-white rounded-[16px_16px_4px_16px] px-3.5 py-2.5 text-[13px] leading-[1.5]">
-              {msg.content}
-            </div>
-          ) : (
-            <div className="max-w-[92%] space-y-1.5">
-              <div className="text-sm leading-[1.65] text-text-primary">
-                <RichMarkdown content={msg.content} />
-              </div>
-
-              {/* Citation pills */}
-              {msg.citations && msg.citations.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {msg.citations.map((citation, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center gap-1 bg-surface-subtle border border-border-default rounded-md px-2 py-0.5 text-[11px] text-text-secondary"
-                    >
-                      <FileText className="size-[11px] text-text-tertiary" />
-                      Citation {i + 1}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+      {messages.length > CONTEXT_WINDOW_SIZE && (
+        <div className="sticky top-0 z-10 rounded-md bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+          To keep responses sharp, only the last {CONTEXT_WINDOW_SIZE} messages are used as context.
         </div>
-      ))}
+      )}
+
+      {messages.map((msg, index) => {
+        const isInContext = index >= messages.length - CONTEXT_WINDOW_SIZE
+        return (
+          <div
+            key={msg.id}
+            className={cn(
+              "flex transition-all duration-300",
+              !isInContext && "opacity-50 grayscale",
+              msg.role === "user" ? "justify-end" : "justify-start"
+            )}
+          >
+            {msg.role === "user" ? (
+              <div className="max-w-[78%] bg-brand-500 text-white rounded-[16px_16px_4px_16px] px-3.5 py-2.5 text-[13px] leading-[1.5]">
+                {msg.content}
+              </div>
+            ) : (
+              <div className="max-w-[92%] space-y-1.5">
+                <div className="text-sm leading-[1.65] text-text-primary">
+                  <RichMarkdown content={msg.content} />
+                </div>
+
+                {/* Citation pills */}
+                {msg.citations && msg.citations.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {msg.citations.map((citation, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-1 bg-surface-subtle border border-border-default rounded-md px-2 py-0.5 text-[11px] text-text-secondary"
+                      >
+                        <FileText className="size-[11px] text-text-tertiary" />
+                        Citation {i + 1}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
 
       {/* Thinking state */}
       {isSearching && <ThinkingIndicator />}
