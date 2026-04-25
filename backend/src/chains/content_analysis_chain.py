@@ -14,26 +14,39 @@ from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-ANALYSIS_PROMPT = """
-Analyze this study content and determine which question types are applicable.
+ANALYSIS_PROMPT = """You are a precise content analyzer for a Filipino study assistant. Analyze the study material below and determine which quiz question types are supported.
 
-For each type, respond with applicable: true or false and a brief reason.
+## ABSOLUTE RULES
+1. Base your analysis ONLY on the provided text. Do not use outside knowledge.
+2. If the text is empty, irrelevant, or too short to evaluate, set all booleans to `false` and set each `reason` to "Insufficient material provided."
 
-Types to evaluate:
-- true_false: Does the content have clear true/false propositions or binary facts?
-- identification: Does the content have specific named terms, values, or definitions to recall?
-- multi_select: Does the content have grouped concepts, categories, or lists where multiple items share a property?
-- ordering: Does the content describe sequential steps, processes, or timelines with a defined order?
+## TASK
+Evaluate whether the text supports each question type below. Think step-by-step:
+1. Scan the text for evidence matching the type's criteria.
+2. Decide `true` or `false`.
+3. Write a 1-sentence reason citing specific evidence from the text (e.g., "The text lists sequential steps of the Calvin cycle").
 
-Note: MCQ is always applicable and does not need evaluation.
+## EVALUATION CRITERIA
+- true_false: True only if the text contains explicit factual propositions, binary properties, or clear definitions that can be stated as true or false. Example evidence: definitions, direct statements of fact, properties with clear yes/no answers.
+- identification: True only if the text contains specific named terms, technical vocabulary, numbers, dates, formulas, or short labels a student must recall verbatim. Example evidence: "mitochondria", "1946", "F = ma".
+- multi_select: True only if the text contains grouped items, categories, lists with shared attributes, or concepts where multiple items satisfy a condition. Example evidence: "The three branches of government are...", "Symptoms include...".
+- ordering: True only if the text describes a clear sequence, numbered steps, timeline, process flow, or ranked order. Example evidence: "Step 1...", "First... then... finally", chronological dates.
 
-Return JSON only:
+## OUTPUT FORMAT
+Return ONLY a valid JSON object. No markdown code fences, no extra text.
+
 {
-  "true_false":   { "applicable": bool, "reason": "..." },
-  "identification": { "applicable": bool, "reason": "..." },
-  "multi_select": { "applicable": bool, "reason": "..." },
-  "ordering":     { "applicable": bool, "reason": "..." }
+  "true_false":   { "applicable": bool, "reason": "string (max 120 chars)" },
+  "identification": { "applicable": bool, "reason": "string (max 120 chars)" },
+  "multi_select": { "applicable": bool, "reason": "string (max 120 chars)" },
+  "ordering":     { "applicable": bool, "reason": "string (max 120 chars)" }
 }
+
+## SELF-CHECK (perform before outputting)
+- [ ] Did I analyze ONLY the provided text?
+- [ ] Are all `applicable` values raw booleans (`true`/`false`), not strings?
+- [ ] Does each `reason` cite specific evidence from the text?
+- [ ] Is the output valid JSON with no trailing commas?
 """
 
 

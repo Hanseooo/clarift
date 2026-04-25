@@ -107,13 +107,13 @@ export default async function SummaryDetailPage({
         )}
 
         {/* Quiz type flags */}
-        {summary.quiz_type_flags && (
+        {typeof summary.quiz_type_flags === 'object' && summary.quiz_type_flags !== null ? (
           <div className="bg-surface-card border border-border-default rounded-2xl p-5 space-y-4">
             <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wide">
               Quiz Types Available
             </h3>
             <div className="grid grid-cols-2 gap-2">
-              {Object.entries(summary.quiz_type_flags).map(([key, value]) => (
+              {Object.entries(summary.quiz_type_flags as Record<string, boolean>).map(([key, value]) => (
                 <div
                   key={key}
                   className={`rounded-lg border p-2.5 text-center transition-colors ${
@@ -127,14 +127,11 @@ export default async function SummaryDetailPage({
                   }`}>
                     {key.replace(/_/g, " ")}
                   </p>
-                  <p className="text-[10px] text-text-tertiary mt-0.5">
-                    {value ? "Available" : "Not available"}
-                  </p>
                 </div>
               ))}
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Generate quiz CTA */}

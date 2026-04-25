@@ -62,7 +62,7 @@ export function PaginatedReader({ content }: PaginatedReaderProps) {
       </div>
 
       <div className="min-h-[300px] rounded-xl border border-border bg-background p-6">
-        <div className="prose prose-sm dark:prose-invert max-w-none">
+        <div className="prose-brand">
           <RichMarkdown content={pages[currentPage]} />
         </div>
       </div>

@@ -25,18 +25,68 @@ from src.core.config import settings
 logger = logging.getLogger(__name__)
 
 TYPE_PROMPTS = {
-    "mcq": "Generate {count} multiple choice questions with exactly 4 options each. Mark the correct answer.",
-    "true_false": "Generate {count} true/false questions about clear factual claims.",
-    "identification": (
-        "Generate {count} fill-in-the-blank (identification) questions. "
-        "Each blank replaces a SINGLE specific term, keyword, or short phrase (max 3 words). "
-        "The correct_answer MUST be a single word or very short phrase — never a full sentence. "
-        "CRITICAL: The question must include a format hint in parentheses, e.g. (1 word), "
-        "(2 words), (3 words, with hyphen), (with unit), (with symbol), (2 decimal places), "
-        "(abbreviation), depending on the expected answer."
+    "mcq": (
+        "Generate exactly {count} multiple choice questions. "
+        "Each question MUST have exactly 4 options labeled A, B, C, D. "
+        "Only ONE option is correct. "
+        "Base every question and option STRICTLY on the provided source material. "
+        "Do NOT use outside knowledge. "
+        "Question text max 200 characters. Each option max 100 characters. "
+        "Mark the correct answer clearly."
     ),
-    "multi_select": "Generate {count} multiple-select questions where 2 or more answers are correct. Mark all correct answers.",
-    "ordering": "Generate {count} sequencing questions where the student arranges steps in the correct order. Provide 4-6 steps each.",
+    "true_false": (
+        "Generate exactly {count} true/false questions. "
+        "Each question must be a clear, unambiguous factual claim derived ONLY from the provided source material. "
+        "Do NOT use outside knowledge. "
+        "Question text max 200 characters. "
+        "The correct answer must be either `true` or `false`."
+    ),
+    "identification": (
+        "Generate exactly {count} fill-in-the-blank (identification) questions. "
+        "Base every question STRICTLY on the provided source material. "
+        "Do NOT use outside knowledge. "
+        "\n\n"
+        "STRICT RULES:\n"
+        "1. Each blank replaces a SINGLE specific term, keyword, number, date, or short phrase (max 3 words).\n"
+        "2. The correct_answer MUST be 1-3 words only. NEVER a full sentence, NEVER a definition, NEVER a restatement of the question.\n"
+        "3. Every question MUST include a format hint in parentheses at the end, such as:\n"
+        "   - (1 word)\n"
+        "   - (2 words)\n"
+        "   - (abbreviation)\n"
+        "   - (with unit)\n"
+        "   - (with symbol)\n"
+        "   - (2 decimal places)\n"
+        "   - (year)\n"
+        "4. Question text max 200 characters. correct_answer max 30 characters.\n"
+        "\n"
+        "CORRECT EXAMPLES:\n"
+        "- Question: 'The ____ command displays the commit history. (1 word)' -> correct_answer: 'log'\n"
+        "- Question: 'The ____ protocol encrypts web traffic. (abbreviation, 5 letters)' -> correct_answer: 'HTTPS'\n"
+        "- Question: 'The speed of light is approximately ____ m/s. (9 digits)' -> correct_answer: '299792458'\n"
+        "- Question: 'The value of pi to two decimal places is ____. (number)' -> correct_answer: '3.14'\n"
+        "\n"
+        "WRONG EXAMPLES (never do this):\n"
+        "- Question: 'What does git log do?' -> correct_answer: 'Displays a list of all commits' (WRONG: answer is a sentence)\n"
+        "- Question: 'The process of cell division is called ____. (1 word)' -> correct_answer: 'The process where a cell divides' (WRONG: answer is a sentence)\n"
+        "- Question: '____ discovered penicillin. (2 words)' -> correct_answer: 'Alexander Fleming was a scientist who discovered penicillin in 1928' (WRONG: far too long)"
+    ),
+    "multi_select": (
+        "Generate exactly {count} multiple-select questions. "
+        "Each question must have 4-6 options. "
+        "TWO or MORE options must be correct. "
+        "Base every question and option STRICTLY on the provided source material. "
+        "Do NOT use outside knowledge. "
+        "Question text max 200 characters. Each option max 100 characters. "
+        "Mark all correct answers clearly."
+    ),
+    "ordering": (
+        "Generate exactly {count} sequencing questions. "
+        "Each question must provide 4-6 steps, events, or items that the student must arrange in the correct order. "
+        "Base every question STRICTLY on the provided source material. "
+        "Do NOT use outside knowledge. "
+        "Question text max 200 characters. Each step max 100 characters. "
+        "Provide the correct order clearly."
+    ),
 }
 
 
@@ -216,9 +266,18 @@ def _build_generation_prompt(
     context = "\n\n".join(chunks) if chunks else "No document context provided."
 
     instructions: list[str] = [
-        "Generate the following questions strictly from the provided study material.",
-        "Do not use knowledge outside the provided content.",
+        "You are a precise quiz generator for Filipino students. Generate quiz questions strictly from the source material provided below.",
         "",
+        "## ABSOLUTE RULES",
+        "1. Base EVERY question, option, step, and explanation ONLY on the source material.",
+        "2. Do NOT use outside knowledge, common sense, or general facts not present in the text.",
+        "3. If the source material does not support enough questions for a requested type, generate as many as possible based on the text and omit the rest. Do NOT invent questions.",
+        "4. Generate exactly the requested count per type whenever the text supports it.",
+        "",
+        "## SOURCE MATERIAL",
+        context,
+        "",
+        "## QUESTION TYPES TO GENERATE",
     ]
 
     for type_id, count in distribution.items():
@@ -226,41 +285,69 @@ def _build_generation_prompt(
             instructions.append(TYPE_PROMPTS[type_id].format(count=count))
 
     instructions.append("")
-
-    # Few-shot examples for identification — enforce single-word/short answers with hints
-    has_identification = distribution.get("identification", 0) > 0
-    if has_identification:
-        instructions.append(
-            "IDENTIFICATION correct_answer RULES (strict):\n"
-            '  - CORRECT: "branch", "fetch", "merge conflict", "remote repository" (1-3 words)\n'
-            '  - WRONG: "A way to combine changes from different branches" (full sentence — never do this)\n'
-            "  - GOOD: The ____ command displays the commit history. (1 word)\n"
-            '    -> correct_answer: "log"\n'
-            "  - GOOD: The ____ protocol encrypts web traffic. (1 word, abbreviation (4 letters))\n"
-            '    -> correct_answer: "HTTPS"\n'
-            "  - GOOD: The speed of light is approximately ____ m/s. (1 word, 3 digits)\n"
-            '    -> correct_answer: "299792458"\n'
-            "  - GOOD: The value of pi to two decimal places is ____. (2 words, with decimal)\n"
-            '    -> correct_answer: "3.14"\n'
-            '  - WRONG: "What does git log do?" -> "Displays a list of all commits in the repository"\n'
-        )
-
     instructions.append(
-        "Return valid JSON only — an object with keys: 'title', 'questions'. "
-        "The 'title' should be a concise quiz title based on the topics covered (max 32 characters). "
-        "The 'questions' value must be an array of question objects. "
-        "Each question object must include: id, type, question, topic, explanation, "
-        "and type-specific fields (options/correct_answer for mcq, "
-        "correct_answer boolean for true_false, correct_answer string for identification (1-3 words only), "
-        "options/correct_answers array for multi_select, steps/correct_order array for ordering)."
+        "## UNIVERSAL CONSTRAINTS\n"
+        "- `title`: Concise quiz title based on the topics covered (max 32 characters).\n"
+        "- `question` text: max 200 characters.\n"
+        "- `options`: max 4-6 items, each max 100 characters.\n"
+        "- `explanation`: Brief explanation of why the answer is correct, max 250 characters. MUST cite evidence from the source material.\n"
+        '- `topic`: A 1-3 word label describing what the question covers (e.g., "Photosynthesis", "Git Commands").\n'
+        '- `id`: A unique string for each question (e.g., "q1", "q2").'
+    )
+
+    instructions.append("")
+    instructions.append(
+        "## TYPE-SPECIFIC CONSTRAINTS\n"
+        "- mcq: Exactly 4 options (A, B, C, D). One correct answer.\n"
+        "- true_false: Correct answer is boolean `true` or `false` (not a string).\n"
+        "- identification: `correct_answer` is 1-3 words, max 30 characters. MUST include a format hint in parentheses in the question text. NEVER a sentence.\n"
+        "- multi_select: 2 or more correct answers. `correct_answers` is an array of strings.\n"
+        "- ordering: 4-6 steps. `steps` is an array of strings. `correct_order` is an array of step strings in the correct sequence."
+    )
+
+    instructions.append("")
+    instructions.append(
+        "## OUTPUT FORMAT\n"
+        "Return ONLY a single valid JSON object. No markdown code fences, no extra text.\n"
+        "\n"
+        "JSON schema:\n"
+        "{\n"
+        '  "title": "string (max 32 chars)",\n'
+        '  "questions": [\n'
+        "    {\n"
+        '      "id": "string",\n'
+        '      "type": "mcq | true_false | identification | multi_select | ordering",\n'
+        '      "question": "string (max 200 chars)",\n'
+        '      "topic": "string (1-3 words)",\n'
+        '      "explanation": "string (max 250 chars)",\n'
+        '      "options": ["string"] | null,\n'
+        '      "correct_answer": "string or bool",\n'
+        '      "correct_answers": ["string"] | null,\n'
+        '      "steps": ["string"] | null,\n'
+        '      "correct_order": ["string"] | null\n'
+        "    }\n"
+        "  ]\n"
+        "}\n"
+        "\n"
+        "Note on nullable fields: Use `null` (not empty arrays) for fields not applicable to a question type."
+    )
+
+    instructions.append("")
+    instructions.append(
+        "## SELF-CHECK (perform before outputting)\n"
+        "- [ ] Is every question derived solely from the source material?\n"
+        "- [ ] Are identification `correct_answer` values 1-3 words only (never sentences)?\n"
+        "- [ ] Are true_false `correct_answer` values raw booleans?\n"
+        "- [ ] Does the total number of questions match the requested counts (or the maximum supported by the text)?\n"
+        "- [ ] Is the output valid JSON with no trailing commas and no markdown wrappers?"
     )
 
     if error_context:
         instructions.append("")
-        instructions.append(f"Previous attempt had these errors: {error_context}")
+        instructions.append(f"## PREVIOUS ERRORS TO FIX\n{error_context}")
         instructions.append("Fix the errors and return corrected JSON.")
 
-    return f"Study material:\n{context}\n\n" + "\n".join(instructions)
+    return "\n".join(instructions)
 
 
 def _parse_llm_output(raw_content: object) -> tuple[str, list[QuizQuestion]]:

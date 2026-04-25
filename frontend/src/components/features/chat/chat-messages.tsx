@@ -44,7 +44,7 @@ export function ChatMessages({ messages, isSearching, error }: ChatMessagesProps
       )}
 
       {messages.length > CONTEXT_WINDOW_SIZE && (
-        <div className="sticky top-0 z-10 rounded-md bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+        <div className="sticky top-0 z-10 rounded-md bg-warning-100 px-3 py-2 text-center text-xs text-warning-800">
           To keep responses sharp, only the last {CONTEXT_WINDOW_SIZE} messages are used as context.
         </div>
       )}
@@ -66,7 +66,7 @@ export function ChatMessages({ messages, isSearching, error }: ChatMessagesProps
               </div>
             ) : (
               <div className="max-w-[92%] space-y-1.5">
-                <div className="text-sm leading-[1.65] text-text-primary">
+                <div className="prose-compact">
                   <RichMarkdown content={msg.content} />
                 </div>
 

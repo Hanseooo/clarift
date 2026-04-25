@@ -80,7 +80,7 @@ export function MermaidBlock({ chart }: MermaidBlockProps) {
 
   if (error) {
     return (
-      <div role="alert" className="rounded-md bg-amber-50 p-4 text-sm text-amber-800">
+      <div role="alert" className="rounded-md bg-warning-100 p-4 text-sm text-warning-800">
         Could not render diagram.
       </div>
     );

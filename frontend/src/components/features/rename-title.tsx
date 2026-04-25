@@ -47,7 +47,7 @@ export function RenameTitle({ id, currentTitle, onSave }: RenameTitleProps) {
         maxLength={32}
         autoFocus
         disabled={isSaving}
-        className="rounded border border-gray-300 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none"
+        className="rounded border border-border-default px-2 py-1 text-sm bg-surface-card text-text-primary focus:border-brand-500 focus:outline-none"
       />
     );
   }

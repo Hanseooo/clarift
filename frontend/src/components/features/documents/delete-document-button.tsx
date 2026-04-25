@@ -78,7 +78,6 @@ export function DeleteDocumentButton({
                 size="sm"
                 onClick={handleDelete}
                 disabled={isPending}
-                className="bg-[#EF4444] text-white hover:bg-[#DC2626]"
               >
                 {isPending ? (
                   <Loader2 className="size-4 animate-spin" />
