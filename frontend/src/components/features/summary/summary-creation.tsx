@@ -36,7 +36,6 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
     }
     return documents[0]?.id ?? "";
   });
-  const [format, setFormat] = useState<"bullet" | "outline" | "paragraph">("bullet");
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -104,7 +103,6 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
       const { data, error } = await authClient.POST("/api/v1/summaries", {
         body: {
           document_id: documentId,
-          format,
           override_preferences: overridePreferences ?? undefined,
         },
       });
@@ -158,7 +156,7 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
       </label>
 
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-foreground">Format</span>
+        <span className="text-sm font-medium text-foreground">Preferences</span>
         <OverrideSettingsModal
           initialPreferences={initialPreferences}
           onSave={async (preferences) => {
@@ -166,15 +164,6 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
           }}
         />
       </div>
-      <select
-        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-        value={format}
-        onChange={(event) => setFormat(event.target.value as "bullet" | "outline" | "paragraph")}
-      >
-        <option value="bullet">Bullet</option>
-        <option value="outline">Outline</option>
-        <option value="paragraph">Paragraph</option>
-      </select>
 
       <Button className="w-full" disabled={isLoading || !documentId} onClick={onCreateSummary}>
         {isLoading ? "Generating..." : "Generate Summary"}

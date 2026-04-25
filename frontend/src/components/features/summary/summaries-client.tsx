@@ -7,10 +7,8 @@ import { SummaryCard } from "./summary-card";
 interface SummaryItem {
   id: string;
   document_id: string;
-  format: string;
+  title: string | null;
   content: string;
-  diagram_syntax: string | null;
-  diagram_type: string | null;
   quiz_type_flags: Record<string, boolean> | null;
   created_at: string;
 }
@@ -23,7 +21,7 @@ export function SummariesClient({ summaries }: SummariesClientProps) {
   const [search, setSearch] = useState("");
 
   const filtered = summaries.filter((summary) =>
-    summary.format.toLowerCase().includes(search.toLowerCase()) ||
+    (summary.title ?? "Untitled summary").toLowerCase().includes(search.toLowerCase()) ||
     summary.document_id.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -59,7 +57,7 @@ export function SummariesClient({ summaries }: SummariesClientProps) {
               key={summary.id}
               id={summary.id}
               documentId={summary.document_id}
-              format={summary.format}
+              title={summary.title}
               createdAt={summary.created_at}
             />
           ))}

@@ -14,29 +14,11 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OverridePreferences } from "@/types/preferences";
-
-const EDUCATION_LEVELS = [
-  "High School",
-  "College Undergraduate",
-  "College Graduate",
-  "Postgraduate",
-  "Other"
-];
-
-const OUTPUT_FORMATS = [
-  "Bullet Points",
-  "Paragraphs",
-  "Q&A",
-  "Flashcards",
-  "Summaries"
-];
-
-const EXPLANATION_STYLES = [
-  "Simple & Direct",
-  "Detailed & Academic",
-  "Analogy-based",
-  "Socratic (Ask me questions)"
-];
+import {
+  OUTPUT_FORMAT_OPTIONS,
+  EXPLANATION_STYLE_OPTIONS,
+  EDUCATION_LEVEL_OPTIONS,
+} from "@/lib/preference-options";
 
 type OverrideSettingsModalProps = {
   initialPreferences?: OverridePreferences;
@@ -136,7 +118,7 @@ export function OverrideSettingsModal({
                 <SelectValue placeholder="Select your level" />
               </SelectTrigger>
               <SelectContent>
-                {EDUCATION_LEVELS.map((level) => (
+                {EDUCATION_LEVEL_OPTIONS.map((level) => (
                   <SelectItem key={level} value={level}>
                     {level}
                   </SelectItem>
@@ -150,15 +132,15 @@ export function OverrideSettingsModal({
               Preferred Output Formats
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {OUTPUT_FORMATS.map((format) => (
-                <label key={format} className="flex items-center space-x-2 text-sm">
+              {OUTPUT_FORMAT_OPTIONS.map((option) => (
+                <label key={option.value} className="flex items-center space-x-2 text-sm">
                   <input
                     type="checkbox"
-                    checked={outputFormats.includes(format)}
-                    onChange={() => handleFormatChange(format)}
+                    checked={outputFormats.includes(option.value)}
+                    onChange={() => handleFormatChange(option.value)}
                     className="rounded border-border-default text-text-primary focus:ring-brand-500"
                   />
-                  <span className="text-text-secondary">{format}</span>
+                  <span className="text-text-secondary">{option.label}</span>
                 </label>
               ))}
             </div>
@@ -169,15 +151,15 @@ export function OverrideSettingsModal({
               Explanation Styles
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {EXPLANATION_STYLES.map((style) => (
-                <label key={style} className="flex items-center space-x-2 text-sm">
+              {EXPLANATION_STYLE_OPTIONS.map((option) => (
+                <label key={option.value} className="flex items-center space-x-2 text-sm">
                   <input
                     type="checkbox"
-                    checked={explanationStyles.includes(style)}
-                    onChange={() => handleStyleChange(style)}
+                    checked={explanationStyles.includes(option.value)}
+                    onChange={() => handleStyleChange(option.value)}
                     className="rounded border-border-default text-text-primary focus:ring-brand-500"
                   />
-                  <span className="text-text-secondary">{style}</span>
+                  <span className="text-text-secondary">{option.label}</span>
                 </label>
               ))}
             </div>

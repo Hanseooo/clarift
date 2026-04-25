@@ -9,10 +9,8 @@ import { RichMarkdown } from "@/components/ui/rich-markdown";
 type SummaryItem = {
   id: string;
   document_id: string;
-  format: string;
+  title: string | null;
   content: string;
-  diagram_syntax: string | null;
-  diagram_type: string | null;
   quiz_type_flags: Record<string, boolean> | null;
   created_at: string;
 };
@@ -59,7 +57,7 @@ export function SummaryList({ summaries, initialSelectedId }: SummaryListProps) 
                   onClick={() => setSelectedSummaryId(summary.id)}
                   type="button"
                 >
-                  <p className="font-medium text-foreground">{summary.format} summary</p>
+                  <p className="font-medium text-foreground">{summary.title ?? "Untitled summary"}</p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(summary.created_at).toLocaleString('en-US', {
                       year: 'numeric',
@@ -108,17 +106,6 @@ export function SummaryList({ summaries, initialSelectedId }: SummaryListProps) 
                 />
               </div>
             </div>
-
-            {selectedSummary.diagram_syntax ? (
-              <div className="rounded-xl border border-border bg-background p-4">
-                <p className="text-sm font-medium text-foreground">
-                  Diagram ({selectedSummary.diagram_type ?? "unknown"})
-                </p>
-                <pre className="mt-2 whitespace-pre-wrap break-words text-xs text-muted-foreground">
-                  {selectedSummary.diagram_syntax}
-                </pre>
-              </div>
-            ) : null}
 
             {selectedSummary.quiz_type_flags ? (
               <div className="rounded-xl border border-border bg-background p-4">
