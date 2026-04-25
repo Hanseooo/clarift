@@ -53,10 +53,11 @@ Apply `Depends(enforce_quota("document_upload"))` to the `upload_document` route
 Responsibilities:
 1. Auth & tenant isolation: verify `Document.user_id == current_user.id`.
 2. Delete R2 object via `S3Service.delete_file(object_name)` (new method).
-3. Delete `document_chunks` rows for this document.
-4. Delete `Document` row.
-5. Decrement `documents_uploaded` counter via `quota_service.decrement_quota(db, user, "document_upload")` (new helper).
-6. Return `204 No Content`.
+3. Delete `Document` row. (The `document_chunks` rows are cascade-deleted by the database FK `ON DELETE CASCADE`; explicit deletion is optional.)
+4. Decrement `documents_uploaded` counter via `quota_service.decrement_quota(db, user, "document_upload")` (new helper).
+5. Return `204 No Content`.
+
+**API Contract note:** After adding this endpoint, run `pnpm run generate:api` in the frontend directory to regenerate `frontend/src/types/api.ts` from the OpenAPI schema.
 
 ### `backend/src/services/s3_service.py`
 Add:
@@ -70,20 +71,59 @@ async def delete_file(self, object_name: str) -> None:
 Add:
 ```python
 async def decrement_quota(db: AsyncSession, user: User, feature: Feature) -> None:
-    # mirrors increment_quota but subtracts 1, floors at 0
+    """Decrement the usage counter for the given feature, flooring at 0."""
+    usage = await get_or_create_user_usage(db, cast(UUID, user.id))
+    column_map = {
+        "summary": "summaries_used",
+        "quiz": "quizzes_used",
+        "practice": "practice_used",
+        "chat": "chat_used",
+        "document_upload": "documents_uploaded",
+    }
+    column = column_map.get(feature)
+    if not column:
+        logger.warning("No counter for feature %s, skipping decrement", feature)
+        return
+    current = getattr(usage, column, 0) or 0
+    new_value = max(current - 1, 0)
+    update_stmt = (
+        update(UserUsage)
+        .where(UserUsage.user_id == user.id)
+        .values(**{column: new_value})
+    )
+    await db.execute(update_stmt)
+    await db.commit()
 ```
 
 ## Frontend Changes
 
 ### `frontend/src/app/actions/documents.ts`
-Rewrite `deleteDocument` to call the backend API instead of Drizzle:
+Rewrite `deleteDocument` to call the backend API instead of Drizzle. Because this is the first Server Action that forwards to FastAPI, the spec includes the auth forwarding pattern explicitly:
+
+1. Obtain the Clerk JWT token inside the Server Action via `const token = await getToken({ template: "default" })` from `@clerk/nextjs/server`.
+2. Construct the authenticated client using the existing `createAuthenticatedClient(token)` helper (or equivalent) from the project's API client setup.
+3. Call `DELETE /api/v1/documents/{id}`.
+
 ```typescript
+import { auth, getToken } from "@clerk/nextjs/server";
+import { createAuthenticatedClient } from "@/lib/api-client"; // existing helper
+
 export async function deleteDocument(documentId: string) {
-  // auth check still happens here
-  const response = await authClient.DELETE(`/api/v1/documents/{id}`, {
+  const { userId: clerkUserId } = await auth();
+  if (!clerkUserId) throw new Error("Unauthorized");
+
+  const token = await getToken({ template: "default" });
+  if (!token) throw new Error("Unauthorized");
+
+  const client = createAuthenticatedClient(token);
+  const response = await client.DELETE("/api/v1/documents/{id}", {
     params: { path: { id: documentId } },
   });
-  if (response.error) throw new Error(response.error.detail || "Delete failed");
+
+  if (response.error) {
+    throw new Error(response.error.detail || "Delete failed");
+  }
+
   revalidatePath("/documents");
   return { success: true };
 }
