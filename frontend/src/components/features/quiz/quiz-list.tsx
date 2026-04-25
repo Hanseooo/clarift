@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { CheckSquare } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { RenameTitle } from "@/components/features/rename-title"
+import { updateQuizTitle } from "@/app/actions/quizzes"
 
 interface QuizItem {
   id: string
@@ -55,9 +57,11 @@ export function QuizList({ quizzes }: QuizListProps) {
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-text-primary truncate">
-                {quiz.title ?? "Untitled quiz"}
-              </p>
+              <RenameTitle
+                id={quiz.id}
+                currentTitle={quiz.title}
+                onSave={updateQuizTitle}
+              />
               <p className="text-xs text-text-tertiary mt-0.5">
                 {quiz.question_count} questions ·{" "}
                 {new Date(quiz.created_at).toLocaleDateString("en-PH", {

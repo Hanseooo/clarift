@@ -2,6 +2,8 @@ import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { RenameTitle } from "@/components/features/rename-title";
+import { updateSummaryTitle } from "@/app/actions/summaries";
 
 interface SummaryCardProps {
   id: string;
@@ -29,12 +31,11 @@ export function SummaryCard({ id, title, createdAt }: SummaryCardProps) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <Link
-          href={`/summaries/${id}`}
-          className="text-sm font-medium text-text-primary hover:text-brand-500 transition-colors-fast truncate block"
-        >
-          {displayTitle}
-        </Link>
+        <RenameTitle
+          id={id}
+          currentTitle={displayTitle}
+          onSave={updateSummaryTitle}
+        />
         <p className="text-xs text-text-tertiary mt-0.5">
           {dateStr}
         </p>
