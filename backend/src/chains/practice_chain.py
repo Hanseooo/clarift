@@ -40,8 +40,27 @@ async def _validate_topics_with_llm(topics: list[str]) -> list[str]:
         temperature=0,
     )
     prompt = (
-        "Normalize these topics into concise study labels. Return comma-separated only: "
-        + ", ".join(topics)
+        "You are a study material organizer for Filipino students. Normalize the following raw topics into a clean, comma-separated list of concise study labels.\n\n"
+        "## INPUT TOPICS\n" + ", ".join(topics) + "\n\n"
+        "## NORMALIZATION RULES\n"
+        "1. Output ONLY a comma-separated list. No numbers, no bullets, no extra text.\n"
+        '2. Use Title Case for each label (e.g., "Cell Biology", "World War II").\n'
+        "3. Each label must be 1-4 words, max 40 characters.\n"
+        '4. Remove duplicates and near-duplicates (e.g., "Photosynthesis" and "Photosynthesis Process" → keep only "Photosynthesis").\n'
+        "5. Generalize overly specific phrases into study-friendly labels:\n"
+        '   - "The process by which plants make food" → "Photosynthesis"\n'
+        '   - "Chapter 3 section 2 about mitosis" → "Mitosis"\n'
+        '   - "How to solve quadratic equations by factoring" → "Quadratic Equations"\n'
+        "6. If a topic is empty, gibberish, or irrelevant, omit it entirely.\n"
+        "7. If ALL topics are empty/irrelevant, output exactly: General Study Material\n"
+        "8. Do NOT add topics not present in the input. Do NOT use outside knowledge to expand the list.\n\n"
+        "## EXAMPLES\n"
+        'Input: "cell structure, Cell Structure, the parts of a cell, mitochondria function, , random text"\n'
+        "Output: Cell Structure, Mitochondria Function\n\n"
+        'Input: "how git works, git branching and merging, solving merge conflicts"\n'
+        "Output: Git Basics, Git Branching, Merge Conflicts\n\n"
+        "## OUTPUT FORMAT\n"
+        "Comma-separated labels only. No quotes, no markdown, no JSON."
     )
     response = await llm.ainvoke(prompt)
     raw = response.content
@@ -74,24 +93,46 @@ async def _generate_drills_with_llm(
     context = "\n\n".join(chunk.get("content", "") for chunk in chunks[:5])
 
     prompt = (
-        f"You are a tutor for Filipino nursing students. Generate exactly {count} practice drills "
-        f"for these topics: {', '.join(topics)}.\n\n"
-        f"Source material:\n{context}\n\n"
-        "Difficulty progression:\n"
-        "- difficulty 1: basic recall/definition questions\n"
-        "- difficulty 2: understanding/application questions\n"
-        "- difficulty 3: complex analysis/calculation questions\n"
-        "Start with difficulty 1 and progress to 3.\n\n"
-        "Return ONLY a JSON array. Each drill must have:\n"
-        "{\n"
-        '  "question": "string",\n'
-        '  "type": "mcq" | "true_false" | "identification",\n'
-        '  "options": ["A", "B", "C", "D"] (empty array for identification),\n'
-        '  "correct_answer": "string" (the correct option text or answer),\n'
-        '  "explanation": "string",\n'
-        '  "difficulty": 1 | 2 | 3,\n'
-        '  "topic": "string"\n'
-        "}\n"
+        f"You are an encouraging tutor for Filipino students. Generate exactly {count} practice drills using ONLY the source material below.\n\n"
+        "## ABSOLUTE RULES\n"
+        "1. Every drill MUST be based strictly on the provided source material.\n"
+        "2. Do NOT use outside knowledge, common sense, or invented scenarios.\n"
+        "3. If the source material cannot support the requested number of drills, generate only as many as the text allows. Never invent questions.\n\n"
+        f"## SOURCE MATERIAL\n{context}\n\n"
+        f"## TOPICS TO COVER\n{', '.join(topics)}\n\n"
+        "## DIFFICULTY PROGRESSION\n"
+        "Distribute difficulties as evenly as possible across the drills:\n"
+        "- Difficulty 1 (basic recall/definition): ~30-40% of drills\n"
+        "- Difficulty 2 (understanding/application): ~30-40% of drills\n"
+        "- Difficulty 3 (complex analysis/calculation): ~20-40% of drills\n"
+        "Start with difficulty 1 and increase progressively.\n\n"
+        "## DRILL CONSTRAINTS\n"
+        "- `question`: max 200 characters.\n"
+        "- `options`: Exactly 4 strings for mcq/true_false; empty array `[]` for identification.\n"
+        "- `correct_answer`: The exact text of the correct option (for mcq) or the correct term (for identification/true_false). Max 100 characters.\n"
+        "- `explanation`: Why the answer is correct, citing the source material. Max 250 characters.\n"
+        "- `difficulty`: integer 1, 2, or 3.\n"
+        "- `topic`: 1-3 word label matching one of the provided topics.\n\n"
+        "## OUTPUT FORMAT\n"
+        "Return ONLY a valid JSON array. No markdown code fences, no extra text.\n"
+        "\n"
+        "[\n"
+        "  {\n"
+        '    "question": "string (max 200 chars)",\n'
+        '    "type": "mcq | true_false | identification",\n'
+        '    "options": ["string"] or [],\n'
+        '    "correct_answer": "string (max 100 chars)",\n'
+        '    "explanation": "string (max 250 chars)",\n'
+        '    "difficulty": 1 | 2 | 3,\n'
+        '    "topic": "string (1-3 words)"\n'
+        "  }\n"
+        "]\n\n"
+        "## SELF-CHECK (perform before outputting)\n"
+        "- [ ] Is every drill derived solely from the source material?\n"
+        "- [ ] Are there exactly the requested number of drills, or fewer only if the text is insufficient?\n"
+        "- [ ] Are difficulties distributed across 1, 2, and 3?\n"
+        "- [ ] Do identification drills have an empty `options` array?\n"
+        "- [ ] Is the output a valid JSON array with no trailing commas?"
     )
 
     response = await llm.ainvoke(prompt)

@@ -49,7 +49,9 @@ export function MiniLesson({ topics, onStartDrill }: MiniLessonProps) {
           Based on {chunksUsed} source chunk{chunksUsed !== 1 ? "s" : ""}
         </span>
       </div>
-      <RichMarkdown content={lesson} className="text-sm text-foreground" />
+      <div className="prose-brand">
+        <RichMarkdown content={lesson} />
+      </div>
       <Button className="w-full" onClick={onStartDrill}>
         Start Drill
       </Button>

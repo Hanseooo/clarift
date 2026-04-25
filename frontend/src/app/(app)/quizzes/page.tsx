@@ -28,7 +28,7 @@ export default async function QuizzesPage() {
     (documentsResponse.data as Array<{ id: string; title: string }> | undefined) ?? [];
   const quizzes =
     (quizzesResponse.data as
-      | Array<{ id: string; question_count: number; question_types: string[]; created_at: string }>
+      | Array<{ id: string; title: string | null; question_count: number; question_types: string[]; created_at: string }>
       | undefined) ?? [];
 
   return (

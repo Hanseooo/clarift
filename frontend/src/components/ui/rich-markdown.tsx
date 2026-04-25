@@ -15,7 +15,7 @@ type RichMarkdownProps = {
 
 export function RichMarkdown({ content, className }: RichMarkdownProps) {
   return (
-    <div className={`${className} prose-pre:p-0`}>
+    <div className={className}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath, remarkAlert]}
         rehypePlugins={[rehypeKatex, rehypeHighlight]}

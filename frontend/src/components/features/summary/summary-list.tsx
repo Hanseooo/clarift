@@ -100,7 +100,7 @@ export function SummaryList({ summaries, initialSelectedId }: SummaryListProps) 
             </header>
 
             <div className="rounded-xl border border-border bg-background p-4">
-               <div className="prose prose-sm dark:prose-invert max-w-none">
+               <div className="prose-brand">
                 <RichMarkdown
                   content={selectedSummary.content || "Summary is still being generated..."}
                 />
