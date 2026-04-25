@@ -42,6 +42,14 @@ Alembic migration adding `documents_uploaded INTEGER NOT NULL DEFAULT 0` to `use
 2. In `increment_quota`, add `"document_upload": "documents_uploaded"` to `column_map`.
 3. In `reset_if_needed`, **do not** reset `documents_uploaded` (it is a lifetime counter).
 
+## Quota API Exposure
+
+### `backend/src/api/schemas/quota.py`
+Add `documents_used: int` and `documents_limit: int` to `QuotaResponse`.
+
+### `backend/src/api/routers/quota.py`
+In the quota retrieval endpoint, populate the new fields from `usage.documents_uploaded` and `TIER_LIMITS[user.tier]["document_upload"]`.
+
 ## Upload Flow Changes
 
 ### `backend/src/api/routers/documents.py`
@@ -52,12 +60,12 @@ Apply `Depends(enforce_quota("document_upload"))` to the `upload_document` route
 ### New: `DELETE /api/v1/documents/{id}`
 Responsibilities:
 1. Auth & tenant isolation: verify `Document.user_id == current_user.id`.
-2. Delete R2 object via `S3Service.delete_file(object_name)` (new method).
+2. Delete R2 object via `S3Service.delete_file(document.r2_key)` (new method).
 3. Delete `Document` row. (The `document_chunks` rows are cascade-deleted by the database FK `ON DELETE CASCADE`; explicit deletion is optional.)
 4. Decrement `documents_uploaded` counter via `quota_service.decrement_quota(db, user, "document_upload")` (new helper).
 5. Return `204 No Content`.
 
-**API Contract note:** After adding this endpoint, run `pnpm run generate:api` in the frontend directory to regenerate `frontend/src/types/api.ts` from the OpenAPI schema.
+**API Contract note:** After adding this endpoint, run `pnpm run generate:api-types` in the frontend directory to regenerate `frontend/src/lib/api-types.ts` from the OpenAPI schema.
 
 ### `backend/src/services/s3_service.py`
 Add:
@@ -100,19 +108,19 @@ async def decrement_quota(db: AsyncSession, user: User, feature: Feature) -> Non
 ### `frontend/src/app/actions/documents.ts`
 Rewrite `deleteDocument` to call the backend API instead of Drizzle. Because this is the first Server Action that forwards to FastAPI, the spec includes the auth forwarding pattern explicitly:
 
-1. Obtain the Clerk JWT token inside the Server Action via `const token = await getToken({ template: "default" })` from `@clerk/nextjs/server`.
-2. Construct the authenticated client using the existing `createAuthenticatedClient(token)` helper (or equivalent) from the project's API client setup.
+1. Obtain the Clerk JWT token inside the Server Action via `const token = await session.getToken()` from the `@clerk/nextjs/server` `auth()` result.
+2. Construct the authenticated client using the existing `createAuthenticatedClient(token)` helper from `@/lib/api`.
 3. Call `DELETE /api/v1/documents/{id}`.
 
 ```typescript
-import { auth, getToken } from "@clerk/nextjs/server";
-import { createAuthenticatedClient } from "@/lib/api-client"; // existing helper
+import { auth } from "@clerk/nextjs/server";
+import { createAuthenticatedClient } from "@/lib/api";
 
 export async function deleteDocument(documentId: string) {
-  const { userId: clerkUserId } = await auth();
-  if (!clerkUserId) throw new Error("Unauthorized");
+  const session = await auth();
+  if (!session.userId) throw new Error("Unauthorized");
 
-  const token = await getToken({ template: "default" });
+  const token = await session.getToken();
   if (!token) throw new Error("Unauthorized");
 
   const client = createAuthenticatedClient(token);
