@@ -13,6 +13,19 @@ interface Document {
   createdAt: Date | string
 }
 
+interface WeakArea {
+  topic: string
+  accuracy: number
+}
+
+interface RecentSummary {
+  id: string
+  title: string | null
+  document_id: string
+  content: string
+  created_at: string
+}
+
 interface DashboardOverviewProps {
   userName: string
   documents: Document[]
@@ -21,11 +34,17 @@ interface DashboardOverviewProps {
     summariesLimit: number
     quizzesUsed: number
     quizzesLimit: number
+    practiceUsed: number
+    practiceLimit: number
+    chatUsed: number
+    chatLimit: number
     resetAt: string
   }
+  recentSummaries?: RecentSummary[]
+  weakAreas?: WeakArea[]
 }
 
-export function DashboardOverview({ userName, documents, usage }: DashboardOverviewProps) {
+export function DashboardOverview({ userName, documents, usage, recentSummaries, weakAreas }: DashboardOverviewProps) {
   const recentDocuments = documents.slice(0, 3)
   const hasDocuments = documents.length > 0
 

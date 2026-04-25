@@ -17,6 +17,7 @@ type DocumentOption = {
 type SummaryItem = {
   id: string;
   document_id: string;
+  title: string | null;
   format: string;
   content: string;
   diagram_syntax: string | null;

@@ -1,5 +1,7 @@
+import { describe, it, expect } from "vitest";
 import { render, screen } from '@testing-library/react';
 import { MermaidBlock } from '../mermaid-block';
+import "@testing-library/jest-dom";
 
 describe('MermaidBlock', () => {
   it('renders without crashing', () => {
