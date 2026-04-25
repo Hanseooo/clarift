@@ -805,6 +805,33 @@
         }
       }
     },
+    "/api/v1/quota": {
+      "get": {
+        "tags": [
+          "quota"
+        ],
+        "summary": "Get Quota",
+        "description": "Get current quota usage for the authenticated user.",
+        "operationId": "get_quota_api_v1_quota_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuotaResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -1518,6 +1545,65 @@
           "latest_score"
         ],
         "title": "QuizItemResponse"
+      },
+      "QuotaResponse": {
+        "properties": {
+          "summaries_used": {
+            "type": "integer",
+            "title": "Summaries Used"
+          },
+          "summaries_limit": {
+            "type": "integer",
+            "title": "Summaries Limit"
+          },
+          "quizzes_used": {
+            "type": "integer",
+            "title": "Quizzes Used"
+          },
+          "quizzes_limit": {
+            "type": "integer",
+            "title": "Quizzes Limit"
+          },
+          "practice_used": {
+            "type": "integer",
+            "title": "Practice Used"
+          },
+          "practice_limit": {
+            "type": "integer",
+            "title": "Practice Limit"
+          },
+          "chat_used": {
+            "type": "integer",
+            "title": "Chat Used"
+          },
+          "chat_limit": {
+            "type": "integer",
+            "title": "Chat Limit"
+          },
+          "reset_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Reset At"
+          },
+          "tier": {
+            "type": "string",
+            "title": "Tier"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summaries_used",
+          "summaries_limit",
+          "quizzes_used",
+          "quizzes_limit",
+          "practice_used",
+          "practice_limit",
+          "chat_used",
+          "chat_limit",
+          "reset_at",
+          "tier"
+        ],
+        "title": "QuotaResponse"
       },
       "SubmitAttemptRequest": {
         "properties": {

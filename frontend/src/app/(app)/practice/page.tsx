@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { PracticePageClient } from "@/components/features/practice/practice-page-client";
 import { createAuthenticatedClient } from "@/lib/api";
+import { QuotaDisplay } from "@/components/features/quota-display";
 
 type WeakAreaItem = {
   topic: string;
@@ -27,8 +28,29 @@ export default async function PracticePage() {
   const response = await apiClient.GET("/api/v1/practice/weak-areas");
   const weakAreas = (response.data as { weak_topics?: WeakAreaItem[] } | undefined)?.weak_topics ?? [];
 
+  // Fetch quota data
+  let quotaData = null;
+  try {
+    const quotaResponse = await apiClient.GET("/api/v1/quota");
+    if (quotaResponse.data) {
+      quotaData = quotaResponse.data;
+    }
+  } catch {
+    // Graceful degradation
+  }
+
   return (
     <div className="space-y-6">
+      {quotaData && (
+        <div className="mb-6">
+          <QuotaDisplay
+            feature="practice"
+            used={quotaData.practice_used}
+            limit={quotaData.practice_limit}
+            resetAt={quotaData.reset_at}
+          />
+        </div>
+      )}
       <header className="space-y-1">
         <h1 className="text-xl font-semibold text-text-primary">Targeted Practice</h1>
         <p className="text-sm text-text-secondary">

@@ -192,10 +192,10 @@ Use existing `QuotaMeter` component. Fetch real data from new endpoint.
 **Display all 4 quota types:**
 - Summaries (3/day free, 10/day pro)
 - Quizzes (3/day free, 15/day pro)
-- Practice (1/day free, 10/day pro)
-- Chat (5/day free, 20/day pro)
+- Practice (3/day free, 12/day pro)
+- Chat (12/day free, 60/day pro)
 
-**Note:** Documents have a lifetime upload limit, not a daily meter. Display on Documents page as a simple count ("X of 5 documents uploaded") instead of the QuotaDisplay component.
+**Note:** Documents have a lifetime upload limit, not a daily meter. Display on Documents page as a simple count ("X of 8 documents uploaded") instead of the QuotaDisplay component.
 
 **Grid layout:**
 - Mobile: `grid-cols-2` (2x2 grid)
@@ -275,7 +275,7 @@ SummariesPage/PracticePage/ChatPage (Server Component):
 DocumentsPage (Server Component):
   → getDocuments() [existing Server Action]
   → Count array length vs lifetime limit (5 for free tier)
-  → Show simple count: "X of 5 documents uploaded"
+  → Show simple count: "X of 8 documents uploaded"
 ```
 
 ---

@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { BookOpen } from "lucide-react";
 import { createAuthenticatedClient } from "@/lib/api";
 import { OverrideSettingsModal } from "@/components/features/generation/override-settings-modal";
 import { OverridePreferences } from "@/types/preferences";
@@ -89,6 +97,17 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
     }
   };
 
+  if (documents.length === 0) {
+    return (
+      <div className="text-center py-8 bg-surface-subtle rounded-xl">
+        <BookOpen className="size-8 text-text-tertiary mx-auto mb-2" />
+        <p className="text-sm text-text-secondary">
+          Upload a document first to create a summary
+        </p>
+      </div>
+    );
+  }
+
   const onCreateSummary = async () => {
     setIsLoading(true);
     setErrorMessage(null);
@@ -140,20 +159,21 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
         <p className="text-sm text-muted-foreground">Select a document and output format.</p>
       </header>
 
-      <label className="block space-y-2">
-        <span className="text-sm font-medium text-foreground">Document</span>
-        <select
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          value={documentId}
-          onChange={(event) => setDocumentId(event.target.value)}
-        >
-          {documents.map((document) => (
-            <option key={document.id} value={document.id}>
-              {document.title}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="space-y-2">
+        <label htmlFor="summary-document-select" className="text-sm font-medium text-foreground">Document</label>
+        <Select value={documentId} onValueChange={setDocumentId}>
+          <SelectTrigger id="summary-document-select" className="w-full rounded-xl border-border bg-background px-3 py-2 text-sm">
+            <SelectValue placeholder="Select a document" />
+          </SelectTrigger>
+          <SelectContent>
+            {documents.map((document) => (
+              <SelectItem key={document.id} value={document.id}>
+                {document.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">Preferences</span>

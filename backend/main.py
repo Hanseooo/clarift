@@ -9,6 +9,7 @@ from src.api.routers.documents import router as documents_router
 from src.api.routers.jobs import router as jobs_router
 from src.api.routers.practice import router as practice_router
 from src.api.routers.quizzes import router as quizzes_router
+from src.api.routers.quota import router as quota_router
 from src.api.routers.summaries import router as summaries_router
 from src.core.config import settings
 from src.core.exceptions import DocumentNotReadyException, QuotaExceededException
@@ -68,6 +69,7 @@ app.include_router(quizzes_router)
 app.include_router(practice_router)
 app.include_router(chat_router)
 app.include_router(jobs_router)
+app.include_router(quota_router)
 
 
 @app.get("/health")

@@ -4,6 +4,13 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useCreateQuiz } from "@/hooks/use-quiz"
 import { GraduationCap } from "lucide-react"
 
@@ -56,18 +63,19 @@ export function QuizCreation({ documents }: QuizCreationProps) {
 
       {/* Document select */}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-text-primary">Document</label>
-        <select
-          value={documentId}
-          onChange={(e) => setDocumentId(e.target.value)}
-          className="w-full h-10 px-3 text-sm bg-surface-subtle border border-border-default rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition-colors-fast text-text-primary"
-        >
-          {documents.map((doc) => (
-            <option key={doc.id} value={doc.id}>
-              {doc.title}
-            </option>
-          ))}
-        </select>
+        <label htmlFor="quiz-document-select" className="text-sm font-medium text-text-primary">Document</label>
+        <Select value={documentId} onValueChange={setDocumentId}>
+          <SelectTrigger id="quiz-document-select" className="w-full h-10 px-3 text-sm bg-surface-subtle border-border-default rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15">
+            <SelectValue placeholder="Select a document" />
+          </SelectTrigger>
+          <SelectContent>
+            {documents.map((doc) => (
+              <SelectItem key={doc.id} value={doc.id}>
+                {doc.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Question count */}

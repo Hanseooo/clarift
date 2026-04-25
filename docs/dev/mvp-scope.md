@@ -66,9 +66,9 @@ MVP is the complete, polished, production-deployable version of Clarift's core l
 |---|---|---|
 | Summaries | 3/day | 10/day |
 | Quizzes | 3/day | 15/day |
-| Targeted practice | 1/day | 10/day |
-| Chat | Resets every 5 hours | Resets every 5 hours |
-| Uploads | 5 documents max | Unlimited |
+| Targeted practice | 3/day | 12/day |
+| Chat | 12/day | 60/day |
+| Uploads | 8 documents max | 24 documents max |
 
 **Reset:** Daily at midnight Philippine time (UTC+8 = 16:00 UTC).  
 **Chat:** Rolling window via Redis TTL, not daily reset.

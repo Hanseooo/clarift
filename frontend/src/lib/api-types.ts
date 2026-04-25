@@ -352,6 +352,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Quota
+         * @description Get current quota usage for the authenticated user.
+         */
+        get: operations["get_quota_api_v1_quota_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -639,6 +659,32 @@ export interface components {
             attempt_count: number;
             /** Latest Score */
             latest_score: number | null;
+        };
+        /** QuotaResponse */
+        QuotaResponse: {
+            /** Summaries Used */
+            summaries_used: number;
+            /** Summaries Limit */
+            summaries_limit: number;
+            /** Quizzes Used */
+            quizzes_used: number;
+            /** Quizzes Limit */
+            quizzes_limit: number;
+            /** Practice Used */
+            practice_used: number;
+            /** Practice Limit */
+            practice_limit: number;
+            /** Chat Used */
+            chat_used: number;
+            /** Chat Limit */
+            chat_limit: number;
+            /**
+             * Reset At
+             * Format: date-time
+             */
+            reset_at: string;
+            /** Tier */
+            tier: string;
         };
         /**
          * SubmitAttemptRequest
@@ -1278,6 +1324,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_quota_api_v1_quota_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuotaResponse"];
                 };
             };
         };

@@ -5,12 +5,26 @@ import { FileText, MessageSquare, GraduationCap, Target, Upload, BookOpen, Setti
 import { QuotaMeter } from "./quota-meter"
 import { QuickActionCard } from "./quick-action-card"
 import { DocumentCard } from "@/components/features/documents/document-card"
+import { RecentSummaries } from "./recent-summaries"
+import { DashboardWeakAreas } from "./dashboard-weak-areas"
 
 interface Document {
   id: string
   title: string
   status: "pending" | "processing" | "ready" | "failed"
   createdAt: Date | string
+}
+
+interface Summary {
+  id: string
+  title: string | null
+  format: string
+  created_at: string
+}
+
+interface WeakArea {
+  topic: string
+  accuracy: number
 }
 
 interface DashboardOverviewProps {
@@ -21,11 +35,23 @@ interface DashboardOverviewProps {
     summariesLimit: number
     quizzesUsed: number
     quizzesLimit: number
+    practiceUsed: number
+    practiceLimit: number
+    chatUsed: number
+    chatLimit: number
     resetAt: string
   }
+  recentSummaries?: Summary[]
+  weakAreas?: WeakArea[]
 }
 
-export function DashboardOverview({ userName, documents, usage }: DashboardOverviewProps) {
+export function DashboardOverview({ 
+  userName, 
+  documents, 
+  usage, 
+  recentSummaries = [], 
+  weakAreas = [] 
+}: DashboardOverviewProps) {
   const recentDocuments = documents.slice(0, 3)
   const hasDocuments = documents.length > 0
 
@@ -50,9 +76,9 @@ export function DashboardOverview({ userName, documents, usage }: DashboardOverv
         </Link>
       </div>
 
-      {/* Quota meters */}
+      {/* Quota meters - 4 types in 2x2 grid mobile, 4-col desktop */}
       {usage && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <QuotaMeter
             label="Summaries"
             used={usage.summariesUsed}
@@ -63,6 +89,18 @@ export function DashboardOverview({ userName, documents, usage }: DashboardOverv
             label="Quizzes"
             used={usage.quizzesUsed}
             limit={usage.quizzesLimit}
+            resetAt={usage.resetAt}
+          />
+          <QuotaMeter
+            label="Practice"
+            used={usage.practiceUsed}
+            limit={usage.practiceLimit}
+            resetAt={usage.resetAt}
+          />
+          <QuotaMeter
+            label="Chat"
+            used={usage.chatUsed}
+            limit={usage.chatLimit}
             resetAt={usage.resetAt}
           />
         </div>
@@ -107,7 +145,7 @@ export function DashboardOverview({ userName, documents, usage }: DashboardOverv
         </div>
       </section>
 
-      {/* Recent documents */}
+      {/* Recent Documents */}
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-medium text-text-secondary uppercase tracking-wide">
@@ -130,7 +168,7 @@ export function DashboardOverview({ userName, documents, usage }: DashboardOverv
                 key={doc.id}
                 id={doc.id}
                 title={doc.title}
-                status={doc.status as "pending" | "processing" | "ready" | "failed"}
+                status={doc.status}
                 createdAt={doc.createdAt}
                 showDelete={false}
               />
@@ -149,6 +187,12 @@ export function DashboardOverview({ userName, documents, usage }: DashboardOverv
           </div>
         )}
       </section>
+
+      {/* Recent Summaries */}
+      <RecentSummaries summaries={recentSummaries} />
+
+      {/* Weak Areas */}
+      <DashboardWeakAreas weakAreas={weakAreas} />
     </div>
   )
 }
