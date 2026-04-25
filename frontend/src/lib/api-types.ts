@@ -426,11 +426,6 @@ export interface components {
         CreateSummaryRequest: {
             /** Document Id */
             document_id: string;
-            /**
-             * Format
-             * @default bullet
-             */
-            format: string;
             override_preferences?: components["schemas"]["OverridePreferences"] | null;
         };
         /** CreateSummaryResponse */
@@ -506,6 +501,8 @@ export interface components {
             id: string;
             /** Document Id */
             document_id: string;
+            /** Title */
+            title: string | null;
             /** Questions */
             questions: {
                 [key: string]: unknown;
@@ -525,6 +522,8 @@ export interface components {
             id: string;
             /** Document Id */
             document_id: string;
+            /** Title */
+            title: string | null;
             /** Question Count */
             question_count: number;
             /** Question Types */
@@ -564,14 +563,12 @@ export interface components {
             id: string;
             /** Document Id */
             document_id: string;
-            /** Format */
-            format: string;
+            /** Title */
+            title: string | null;
             /** Content */
             content: string;
             /** Quiz Type Flags */
-            quiz_type_flags: {
-                [key: string]: unknown;
-            } | null;
+            quiz_type_flags: unknown;
             /** Created At */
             created_at: string;
         };

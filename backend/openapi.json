@@ -892,11 +892,6 @@
             "type": "string",
             "title": "Document Id"
           },
-          "format": {
-            "type": "string",
-            "title": "Format",
-            "default": "bullet"
-          },
           "override_preferences": {
             "anyOf": [
               {
@@ -1116,6 +1111,17 @@
             "type": "string",
             "title": "Document Id"
           },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
           "questions": {
             "items": {
               "additionalProperties": true,
@@ -1148,6 +1154,7 @@
         "required": [
           "id",
           "document_id",
+          "title",
           "questions",
           "question_types",
           "question_count",
@@ -1165,6 +1172,17 @@
           "document_id": {
             "type": "string",
             "title": "Document Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
           },
           "question_count": {
             "type": "integer",
@@ -1186,6 +1204,7 @@
         "required": [
           "id",
           "document_id",
+          "title",
           "question_count",
           "question_types",
           "created_at"
@@ -1256,24 +1275,22 @@
             "type": "string",
             "title": "Document Id"
           },
-          "format": {
-            "type": "string",
-            "title": "Format"
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
           },
           "content": {
             "type": "string",
             "title": "Content"
           },
           "quiz_type_flags": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "title": "Quiz Type Flags"
           },
           "created_at": {
@@ -1285,7 +1302,7 @@
         "required": [
           "id",
           "document_id",
-          "format",
+          "title",
           "content",
           "quiz_type_flags",
           "created_at"
