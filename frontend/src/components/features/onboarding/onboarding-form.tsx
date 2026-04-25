@@ -20,7 +20,6 @@ import { cn } from "@/lib/utils"
 import {
   OUTPUT_FORMAT_OPTIONS,
   EXPLANATION_STYLE_OPTIONS,
-  EDUCATION_LEVEL_OPTIONS,
 } from "@/lib/preference-options"
 
 interface OnboardingFormProps {
