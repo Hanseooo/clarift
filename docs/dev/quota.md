@@ -18,7 +18,7 @@ QUOTA_LIMITS = {
     "pro": {
         "summaries": 10,      # per day
         "quizzes": 15,        # per day
-        "practice": 10,       # per day
+        "practice": 12,       # per day
         "chat": 60,             # per day
     }
 }

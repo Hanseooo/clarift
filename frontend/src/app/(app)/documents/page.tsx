@@ -18,7 +18,7 @@ export default async function DocumentsPage() {
   }))
 
   const documentCount = documents.length
-  const documentLimit = 5 // Free tier lifetime limit
+  const documentLimit = 8 // Free tier lifetime limit
 
   return (
     <div className="space-y-6">

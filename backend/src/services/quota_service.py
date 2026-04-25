@@ -37,9 +37,9 @@ TIER_LIMITS = {
     "pro": {
         "summary": 10,
         "quiz": 15,
-        "practice": 10,
+        "practice": 12,
         "chat": 60,
-        "document_upload": None,  # unlimited
+        "document_upload": 24,  # lifetime limit, not daily
     },
 }
 
