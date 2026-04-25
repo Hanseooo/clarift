@@ -1,7 +1,7 @@
 "use client"
 
-import { useRef, useEffect } from "react"
-import { FileText } from "lucide-react"
+import { useRef, useEffect, useState } from "react"
+import { FileText, X } from "lucide-react"
 import { RichMarkdown } from "@/components/ui/rich-markdown"
 import { ThinkingIndicator } from "./thinking-indicator"
 import { cn } from "@/lib/utils"
@@ -20,15 +20,29 @@ interface ChatMessagesProps {
 }
 
 const CONTEXT_WINDOW_SIZE = 8
+const CHAT_NOTICE_KEY = "chat-context-notice-dismissed"
 
 export function ChatMessages({ messages, isSearching, error }: ChatMessagesProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [isNoticeDismissed, setIsNoticeDismissed] = useState(false)
 
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight
     }
   }, [messages, isSearching])
+
+  useEffect(() => {
+    const dismissed = localStorage.getItem(CHAT_NOTICE_KEY)
+    if (dismissed) {
+      setIsNoticeDismissed(true)
+    }
+  }, [])
+
+  const handleDismissNotice = () => {
+    setIsNoticeDismissed(true)
+    localStorage.setItem(CHAT_NOTICE_KEY, "true")
+  }
 
   return (
     <div
@@ -43,9 +57,16 @@ export function ChatMessages({ messages, isSearching, error }: ChatMessagesProps
         </div>
       )}
 
-      {messages.length > CONTEXT_WINDOW_SIZE && (
-        <div className="sticky top-0 z-10 rounded-md bg-warning-100 px-3 py-2 text-center text-xs text-warning-800">
-          To keep responses sharp, only the last {CONTEXT_WINDOW_SIZE} messages are used as context.
+      {messages.length > CONTEXT_WINDOW_SIZE && !isNoticeDismissed && (
+        <div className="sticky top-0 z-10 rounded-md bg-warning-100 px-3 py-2 text-center text-xs text-warning-800 flex items-center justify-center gap-2">
+          <span>To keep responses sharp, only the last {CONTEXT_WINDOW_SIZE} messages are used as context.</span>
+          <button
+            onClick={handleDismissNotice}
+            className="p-0.5 hover:text-warning-900 transition-colors"
+            aria-label="Dismiss notice"
+          >
+            <X className="size-3" />
+          </button>
         </div>
       )}
 
