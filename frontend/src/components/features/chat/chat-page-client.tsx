@@ -1,11 +1,19 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { FileText, ChevronDown } from "lucide-react"
 import { ChatInput } from "./chat-input"
 import { ChatMessages } from "./chat-messages"
 import { DocumentSelector } from "./document-selector"
 import { useSendChatMessage } from "@/hooks/use-chat"
 import { useChatStore } from "@/stores/chat-store"
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { motion, AnimatePresence } from "framer-motion"
 
 type DocumentOption = {
   id: string
@@ -26,6 +34,7 @@ export function ChatPageClient({
     addMessage,
   } = useChatStore()
   const [isSearching, setIsSearching] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const { mutateAsync, isLoading, error } = useSendChatMessage()
 
   useEffect(() => {
@@ -84,6 +93,7 @@ export function ChatPageClient({
             <DocumentSelector
               documents={documents}
               selectedIds={selectedIds}
+              variant="checkbox"
               onToggle={(id) => {
                 setSelectedDocumentIds(
                   selectedIds.includes(id)
@@ -105,10 +115,52 @@ export function ChatPageClient({
             Chat with your notes
           </span>
           {selectedDocumentId && (
-            <span className="ml-auto text-[11px] text-text-tertiary bg-surface-subtle border border-border-default rounded-md px-2 py-0.5">
+            <span className="hidden lg:inline-flex ml-auto text-[11px] text-text-tertiary bg-surface-subtle border border-border-default rounded-md px-2 py-0.5">
               {documents.find((d) => d.id === selectedDocumentId)?.title || "Document"}
             </span>
           )}
+
+          {/* Mobile context selector trigger */}
+          <Dialog open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+            <DialogTrigger asChild>
+              <button className="lg:hidden ml-auto inline-flex items-center gap-1.5 text-[11px] text-text-tertiary bg-surface-subtle border border-border-default rounded-md px-2 py-0.5">
+                <FileText className="size-3" />
+                <span className="max-w-[120px] truncate">
+                  {selectedDocumentId
+                    ? documents.find((d) => d.id === selectedDocumentId)?.title || "Document"
+                    : "Select context"}
+                </span>
+                <ChevronDown className="size-3" />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 w-full max-w-none rounded-t-2xl rounded-b-none p-0 gap-0 sm:top-1/2 sm:left-1/2 sm:right-auto sm:bottom-auto sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-w-md sm:rounded-4xl sm:p-6 sm:gap-6">
+              <DialogTitle className="sr-only">Select document context</DialogTitle>
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+              >
+                <div className="p-4 border-b border-border-default">
+                  <h3 className="text-sm font-semibold text-text-primary">Select context</h3>
+                  <p className="text-[11px] text-text-tertiary mt-1">
+                    Choose a document to chat with
+                  </p>
+                </div>
+                <div className="max-h-[60vh] overflow-y-auto p-2">
+                  <DocumentSelector
+                    documents={documents}
+                    selectedIds={selectedIds}
+                    variant="radio"
+                    animated
+                    onToggle={(id) => {
+                      setSelectedDocumentIds([id])
+                      setIsDrawerOpen(false)
+                    }}
+                  />
+                </div>
+              </motion.div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Messages */}

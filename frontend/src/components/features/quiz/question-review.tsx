@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle, XCircle } from "lucide-react";
 import { RichMarkdown } from "@/components/ui/rich-markdown";
 import { cn } from "@/lib/utils";
@@ -42,10 +42,11 @@ export function QuestionReview({
 }: QuestionReviewProps) {
   const [isRevealed, setIsRevealed] = useState(showAnswers);
 
-  // Sync with parent state
-  if (showAnswers && !isRevealed) {
-    setIsRevealed(true);
-  }
+  useEffect(() => {
+    if (showAnswers && !isRevealed) {
+      setIsRevealed(true);
+    }
+  }, [showAnswers, isRevealed]);
 
   return (
     <article className="bg-surface-card border border-border-default rounded-2xl p-4 md:p-5 space-y-3.5">
