@@ -42,6 +42,7 @@ class CreateQuizResponse(BaseModel):
 class QuizItemResponse(BaseModel):
     id: str
     document_id: str
+    title: str | None
     question_count: int
     question_types: list[str]
     created_at: str
@@ -50,6 +51,7 @@ class QuizItemResponse(BaseModel):
 class QuizDetailResponse(BaseModel):
     id: str
     document_id: str
+    title: str | None
     questions: list[dict]
     question_types: list[str]
     question_count: int
@@ -83,6 +85,7 @@ async def list_quizzes(
         QuizItemResponse(
             id=str(quiz.id),
             document_id=str(quiz.document_id),
+            title=quiz.title,
             question_count=quiz.question_count,
             question_types=quiz.question_types,
             created_at=datetime.fromisoformat(str(quiz.created_at)).isoformat(),
@@ -102,6 +105,7 @@ async def get_quiz(
     return QuizDetailResponse(
         id=str(quiz.id),
         document_id=str(quiz.document_id),
+        title=quiz.title,
         questions=quiz.questions if isinstance(quiz.questions, list) else [],
         question_types=quiz.question_types,
         question_count=quiz.question_count,

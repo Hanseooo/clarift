@@ -64,6 +64,7 @@ class QuizQuestion(TypedDict, total=False):
 
 class QuizChainOutput(TypedDict):
     quiz_id: str
+    title: str
     questions: list[QuizQuestion]
     question_types: list[str]
     weak_topics: list[str]
@@ -245,8 +246,10 @@ def _build_generation_prompt(
         )
 
     instructions.append(
-        "Return valid JSON only — an array of question objects. "
-        "Each object must include: id, type, question, topic, explanation, "
+        "Return valid JSON only — an object with keys: 'title', 'questions'. "
+        "The 'title' should be a concise quiz title based on the topics covered (max 32 characters). "
+        "The 'questions' value must be an array of question objects. "
+        "Each question object must include: id, type, question, topic, explanation, "
         "and type-specific fields (options/correct_answer for mcq, "
         "correct_answer boolean for true_false, correct_answer string for identification (1-3 words only), "
         "options/correct_answers array for multi_select, steps/correct_order array for ordering)."
@@ -260,7 +263,7 @@ def _build_generation_prompt(
     return f"Study material:\n{context}\n\n" + "\n".join(instructions)
 
 
-def _parse_llm_questions(raw_content: object) -> list[QuizQuestion]:
+def _parse_llm_output(raw_content: object) -> tuple[str, list[QuizQuestion]]:
     if isinstance(raw_content, str):
         content = raw_content.strip()
     else:
@@ -272,9 +275,20 @@ def _parse_llm_questions(raw_content: object) -> list[QuizQuestion]:
         content = content.split("```", 1)[1].split("```", 1)[0].strip()
 
     payload = json.loads(content)
-    if not isinstance(payload, list):
-        raise ValueError("Quiz chain payload is not a list")
-    return [_normalize_question(item, idx) for idx, item in enumerate(payload)]
+    title = "Untitled quiz"
+    questions_data: list[Any]
+
+    if isinstance(payload, dict):
+        title = str(payload.get("title", title))[:32]
+        questions_data = payload.get("questions", [])
+    elif isinstance(payload, list):
+        questions_data = payload
+    else:
+        raise ValueError("Quiz chain payload is not a list or object")
+
+    if not isinstance(questions_data, list):
+        raise ValueError("Quiz chain questions is not a list")
+    return title, [_normalize_question(item, idx) for idx, item in enumerate(questions_data)]
 
 
 @retry(
@@ -287,7 +301,7 @@ async def _generate_questions_from_llm(
     chunks: list[str],
     distribution: dict[str, int],
     error_context: str | None = None,
-) -> list[QuizQuestion]:
+) -> tuple[str, list[QuizQuestion]]:
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash-lite",
         google_api_key=settings.GOOGLE_API_KEY,
@@ -297,7 +311,7 @@ async def _generate_questions_from_llm(
     prompt = _build_generation_prompt(chunks, distribution, error_context)
     response = await llm.ainvoke(prompt)
     await asyncio.sleep(2)
-    return _parse_llm_questions(response.content)
+    return _parse_llm_output(response.content)
 
 
 async def run_quiz_chain(input: QuizChainInput) -> QuizChainOutput:
@@ -320,8 +334,9 @@ async def run_quiz_chain(input: QuizChainInput) -> QuizChainOutput:
     question_count = input["question_count"]
     chunks = input.get("chunks", [])
 
+    title = "Untitled quiz"
     try:
-        questions = await _generate_questions_from_llm(chunks, distribution)
+        title, questions = await _generate_questions_from_llm(chunks, distribution)
         if not questions:
             questions, question_types = _fallback_questions(question_count)
         else:
@@ -329,7 +344,7 @@ async def run_quiz_chain(input: QuizChainInput) -> QuizChainOutput:
             if errors:
                 logger.warning("Validation errors on first pass: %s", errors)
                 error_ctx = "; ".join(errors)
-                questions = await _generate_questions_from_llm(
+                title, questions = await _generate_questions_from_llm(
                     chunks, distribution, error_context=error_ctx
                 )
                 errors = _validate_questions(questions)
@@ -347,6 +362,7 @@ async def run_quiz_chain(input: QuizChainInput) -> QuizChainOutput:
 
     return {
         "quiz_id": str(uuid.uuid4()),
+        "title": title,
         "questions": questions,
         "question_types": question_types,
         "weak_topics": weak_topics,

@@ -61,12 +61,48 @@ def _mmr_select(
     return [candidates[i][0] for i in selected_indices]
 
 
+OUTPUT_FORMAT_OPTIONS = {
+    "bullet_points",
+    "paragraphs",
+    "q_and_a",
+    "examples",
+    "tables",
+    "step_by_step",
+}
+
+EXPLANATION_STYLE_OPTIONS = {
+    "simple_direct",
+    "detailed_academic",
+    "analogy_based",
+    "socratic",
+    "eli5",
+    "mental_models",
+}
+
+
+def _validate_preferences(prefs: dict | None) -> dict:
+    """Filter invalid preference values."""
+    if not prefs:
+        return {}
+    result = {}
+    if "output_formats" in prefs:
+        result["output_formats"] = [
+            v for v in prefs["output_formats"] if v in OUTPUT_FORMAT_OPTIONS
+        ]
+    if "explanation_styles" in prefs:
+        result["explanation_styles"] = [
+            v for v in prefs["explanation_styles"] if v in EXPLANATION_STYLE_OPTIONS
+        ]
+    if "custom_instructions" in prefs:
+        result["custom_instructions"] = prefs["custom_instructions"]
+    return result
+
+
 async def generate_summary_for_document(
     db: AsyncSession,
     *,
     user_id: uuid.UUID,
     document_id: uuid.UUID,
-    format_value: str,
     override_preferences: dict | None = None,
 ) -> SummaryChainOutput:
     """Fetch diverse chunk context and generate summary content with the LLM chain."""
@@ -81,7 +117,7 @@ async def generate_summary_for_document(
     )
     retrieval_query = (
         "Generate a complete study summary highlighting key concepts, "
-        f"relationships, and useful notes in {format_value} format."
+        "relationships, and useful notes."
     )
 
     @retry(
@@ -158,9 +194,8 @@ async def generate_summary_for_document(
         preferences_to_use = cast(dict | None, user_result.scalar_one_or_none())
         logger.info(f"Using database preferences for user {user_id}")
 
-    chain_input = SummaryChainInput(
-        format=format_value, chunks=chunks, user_preferences=preferences_to_use
-    )
+    validated_prefs = _validate_preferences(preferences_to_use)
+    chain_input = SummaryChainInput(chunks=chunks, user_preferences=validated_prefs)
     logger.info(f"Calling run_summary_chain with {len(chunks)} chunks")
     result = await run_summary_chain(chain_input)
     return result

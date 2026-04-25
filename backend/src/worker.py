@@ -167,7 +167,6 @@ async def run_summary_job(
     job_id: str,
     user_id: str,
     document_id: str,
-    format_value: str,
     override_preferences: dict | None = None,
 ):
     """
@@ -195,7 +194,6 @@ async def run_summary_job(
                         db=session,
                         user_id=uuid.UUID(user_id),
                         document_id=uuid.UUID(document_id),
-                        format_value=format_value,
                         override_preferences=override_preferences,
                     ),
                     timeout=300.0,  # 5 minutes
@@ -213,8 +211,9 @@ async def run_summary_job(
                 update(Summary)
                 .where(Summary.id == uuid.UUID(summary_id))
                 .values(
+                    title=chain_output.get("title", "Untitled summary")[:32],
                     content=chain_output["content"],
-                    quiz_type_flags=chain_output["quiz_type_flags"],
+                    quiz_type_flags=chain_output.get("quiz_type_flags"),
                 )
             )
 
@@ -368,6 +367,7 @@ async def run_quiz_job(
                 update(Quiz)
                 .where(Quiz.id == uuid.UUID(quiz_id))
                 .values(
+                    title=chain_output.get("title", "Untitled quiz")[:32],
                     questions=chain_output["questions"],
                     question_types=chain_output["question_types"],
                     question_count=len(chain_output["questions"]),

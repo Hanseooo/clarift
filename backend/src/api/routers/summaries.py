@@ -31,7 +31,6 @@ class CreateSummaryRequest(BaseModel):
     """Request body for creating a summary."""
 
     document_id: str
-    format: str = "bullet"  # bullet, outline, paragraph
     override_preferences: Optional[OverridePreferences] = None
 
 
@@ -44,9 +43,9 @@ class CreateSummaryResponse(BaseModel):
 class SummaryResponse(BaseModel):
     id: str
     document_id: str
-    format: str
+    title: str | None
     content: str
-    quiz_type_flags: dict[str, Any] | None
+    quiz_type_flags: Any
     created_at: str
 
 
@@ -54,7 +53,7 @@ def _to_summary_response(summary: Summary) -> SummaryResponse:
     return SummaryResponse(
         id=str(summary.id),
         document_id=str(summary.document_id),
-        format=summary.format,
+        title=summary.title,
         content=summary.content,
         quiz_type_flags=summary.quiz_type_flags,
         created_at=datetime.fromisoformat(str(summary.created_at)).isoformat(),
@@ -104,14 +103,6 @@ async def create_summary(
     Creates a pending Summary record and a Job, then triggers the summary chain.
     Returns the summary ID and job ID for polling.
     """
-    # Validate format
-    allowed_formats = {"bullet", "outline", "paragraph"}
-    if request.format not in allowed_formats:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid format: {request.format}. Allowed: {', '.join(allowed_formats)}",
-        )
-
     try:
         document_uuid = uuid.UUID(request.document_id)
     except ValueError as exc:
@@ -136,7 +127,6 @@ async def create_summary(
         .values(
             document_id=document.id,
             user_id=user.id,
-            format=request.format,
             content="",  # placeholder, will be filled by chain
         )
         .returning(Summary)
@@ -166,7 +156,6 @@ async def create_summary(
         str(job.id),
         str(user.id),
         str(document.id),
-        request.format,
         request.override_preferences,
     )
 
