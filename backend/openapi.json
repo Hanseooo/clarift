@@ -441,6 +441,112 @@
         ]
       }
     },
+    "/api/v1/quizzes/attempts/{attempt_id}": {
+      "get": {
+        "tags": [
+          "quizzes"
+        ],
+        "summary": "Get Attempt",
+        "description": "Retrieve detailed results for a quiz attempt.",
+        "operationId": "get_attempt_api_v1_quizzes_attempts__attempt_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "attempt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Attempt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quizzes/{quiz_id}/attempts": {
+      "get": {
+        "tags": [
+          "quizzes"
+        ],
+        "summary": "Get Quiz Attempts",
+        "description": "List attempts for a specific quiz.",
+        "operationId": "get_quiz_attempts_api_v1_quizzes__quiz_id__attempts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "quiz_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Quiz Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/practice/lesson": {
       "post": {
         "tags": [
@@ -718,6 +824,164 @@
   },
   "components": {
     "schemas": {
+      "AttemptDetailResponse": {
+        "properties": {
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "per_topic": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Per Topic"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/AttemptQuestionResponse"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score",
+          "per_topic",
+          "questions"
+        ],
+        "title": "AttemptDetailResponse"
+      },
+      "AttemptListItem": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "topics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Topics"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "score",
+          "topics",
+          "created_at"
+        ],
+        "title": "AttemptListItem"
+      },
+      "AttemptListResponse": {
+        "properties": {
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/AttemptListItem"
+            },
+            "type": "array",
+            "title": "Attempts"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempts",
+          "total"
+        ],
+        "title": "AttemptListResponse"
+      },
+      "AttemptQuestionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "user_answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "User Answer"
+          },
+          "correct_answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Correct Answer"
+          },
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "question",
+          "user_answer",
+          "correct_answer",
+          "is_correct",
+          "topic",
+          "explanation",
+          "type"
+        ],
+        "title": "AttemptQuestionResponse"
+      },
       "Body_upload_document_api_v1_documents_upload_post": {
         "properties": {
           "file": {
@@ -1225,6 +1489,21 @@
           "created_at": {
             "type": "string",
             "title": "Created At"
+          },
+          "attempt_count": {
+            "type": "integer",
+            "title": "Attempt Count"
+          },
+          "latest_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Score"
           }
         },
         "type": "object",
@@ -1234,7 +1513,9 @@
           "title",
           "question_count",
           "question_types",
-          "created_at"
+          "created_at",
+          "attempt_count",
+          "latest_score"
         ],
         "title": "QuizItemResponse"
       },

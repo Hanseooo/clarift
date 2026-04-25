@@ -190,6 +190,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quizzes/attempts/{attempt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Attempt
+         * @description Retrieve detailed results for a quiz attempt.
+         */
+        get: operations["get_attempt_api_v1_quizzes_attempts__attempt_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quizzes/{quiz_id}/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Quiz Attempts
+         * @description List attempts for a specific quiz.
+         */
+        get: operations["get_quiz_attempts_api_v1_quizzes__quiz_id__attempts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/practice/lesson": {
         parameters: {
             query?: never;
@@ -333,6 +373,56 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AttemptDetailResponse */
+        AttemptDetailResponse: {
+            /** Score */
+            score: number;
+            /** Per Topic */
+            per_topic: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            };
+            /** Questions */
+            questions: components["schemas"]["AttemptQuestionResponse"][];
+        };
+        /** AttemptListItem */
+        AttemptListItem: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Score */
+            score: number;
+            /** Topics */
+            topics: string[];
+            /** Created At */
+            created_at: string;
+        };
+        /** AttemptListResponse */
+        AttemptListResponse: {
+            /** Attempts */
+            attempts: components["schemas"]["AttemptListItem"][];
+            /** Total */
+            total: number;
+        };
+        /** AttemptQuestionResponse */
+        AttemptQuestionResponse: {
+            /** Id */
+            id: string;
+            /** Question */
+            question: string;
+            /** User Answer */
+            user_answer: string | boolean | string[];
+            /** Correct Answer */
+            correct_answer: string | boolean | string[];
+            /** Is Correct */
+            is_correct: boolean;
+            /** Topic */
+            topic: string;
+            /** Explanation */
+            explanation: string;
+            /** Type */
+            type: string;
+        };
         /** Body_upload_document_api_v1_documents_upload_post */
         Body_upload_document_api_v1_documents_upload_post: {
             /** File */
@@ -545,6 +635,10 @@ export interface components {
             question_types: string[];
             /** Created At */
             created_at: string;
+            /** Attempt Count */
+            attempt_count: number;
+            /** Latest Score */
+            latest_score: number | null;
         };
         /**
          * SubmitAttemptRequest
@@ -930,6 +1024,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubmitAttemptResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_attempt_api_v1_quizzes_attempts__attempt_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attempt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_quiz_attempts_api_v1_quizzes__quiz_id__attempts_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                quiz_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptListResponse"];
                 };
             };
             /** @description Validation Error */

@@ -17,6 +17,7 @@ from src.services.quiz_service import (
     create_quiz_job,
     get_attempt_by_id,
     get_quiz_by_id,
+    list_quiz_attempts,
     list_quizzes_by_user,
     submit_quiz_attempt,
 )
@@ -47,6 +48,8 @@ class QuizItemResponse(BaseModel):
     question_count: int
     question_types: list[str]
     created_at: str
+    attempt_count: int
+    latest_score: float | None
 
 
 class QuizDetailResponse(BaseModel):
@@ -93,22 +96,36 @@ class AttemptDetailResponse(BaseModel):
     questions: list[AttemptQuestionResponse]
 
 
+class AttemptListItem(BaseModel):
+    attempt_id: str
+    score: float
+    topics: list[str]
+    created_at: str
+
+
+class AttemptListResponse(BaseModel):
+    attempts: list[AttemptListItem]
+    total: int
+
+
 @router.get("", response_model=list[QuizItemResponse])
 async def list_quizzes(
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    quizzes = await list_quizzes_by_user(db, user.id)
+    rows = await list_quizzes_by_user(db, user.id)
     return [
         QuizItemResponse(
-            id=str(quiz.id),
-            document_id=str(quiz.document_id),
-            title=quiz.title,
-            question_count=quiz.question_count,
-            question_types=quiz.question_types,
-            created_at=datetime.fromisoformat(str(quiz.created_at)).isoformat(),
+            id=str(row["quiz"].id),
+            document_id=str(row["quiz"].document_id),
+            title=row["quiz"].title,
+            question_count=row["quiz"].question_count,
+            question_types=row["quiz"].question_types,
+            created_at=datetime.fromisoformat(str(row["quiz"].created_at)).isoformat(),
+            attempt_count=row["attempt_count"],
+            latest_score=row["latest_score"],
         )
-        for quiz in quizzes
+        for row in rows
     ]
 
 
@@ -203,4 +220,30 @@ async def get_attempt(
         score=result["score"],
         per_topic=result["per_topic"],
         questions=[AttemptQuestionResponse(**q) for q in result["questions"]],
+    )
+
+
+@router.get("/{quiz_id}/attempts", response_model=AttemptListResponse)
+async def get_quiz_attempts(
+    quiz_id: str,
+    limit: int = 10,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    List attempts for a specific quiz.
+    """
+    attempts = await list_quiz_attempts(db, user.id, uuid.UUID(quiz_id), limit=limit)
+
+    return AttemptListResponse(
+        attempts=[
+            AttemptListItem(
+                attempt_id=str(attempt.id),
+                score=float(attempt.score),
+                topics=attempt.topics or [],
+                created_at=datetime.fromisoformat(str(attempt.created_at)).isoformat(),
+            )
+            for attempt in attempts
+        ],
+        total=len(attempts),
     )
