@@ -5,7 +5,12 @@ export interface ChatMessage {
   id: string
   role: "user" | "assistant"
   content: string
-  citations?: Array<{ chunk_id?: string | null }>
+  citations?: Array<{
+    chunk_id?: string | null
+    document_id?: string | null
+    document_name?: string | null
+    chunk_index?: number | null
+  }>
   timestamp: number
 }
 
