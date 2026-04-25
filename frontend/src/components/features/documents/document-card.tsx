@@ -1,7 +1,9 @@
 import Link from "next/link"
 import { FileText } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { SwipeCard } from "@/components/ui/swipe-card"
 import { DeleteDocumentButton } from "./delete-document-button"
+import { deleteDocument } from "@/app/actions/documents"
 
 interface DocumentCardProps {
   id: string
@@ -16,7 +18,11 @@ export function DocumentCard({ id, title, status, createdAt, showDelete = true }
     ? createdAt
     : createdAt.toLocaleDateString("en-PH", { month: "short", day: "numeric" })
 
-  return (
+  const handleDelete = async () => {
+    await deleteDocument(id);
+  };
+
+  const cardContent = (
     <div className="group bg-surface-card border border-border-default rounded-xl p-4 flex items-center gap-3 hover:bg-surface-overlay hover:border-border-strong transition-colors-fast">
       {/* Icon box */}
       <div className="size-9 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0">
@@ -42,11 +48,24 @@ export function DocumentCard({ id, title, status, createdAt, showDelete = true }
           {status}
         </Badge>
         {showDelete && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="hidden md:block opacity-0 group-hover:opacity-100 transition-opacity">
             <DeleteDocumentButton documentId={id} />
           </div>
         )}
       </div>
     </div>
-  )
+  );
+
+  if (!showDelete || status === "processing" || status === "pending") {
+    return cardContent;
+  }
+
+  return (
+    <SwipeCard
+      onDelete={handleDelete}
+      deleteConfirmation="Delete this document and all associated summaries and quizzes?"
+    >
+      {cardContent}
+    </SwipeCard>
+  );
 }

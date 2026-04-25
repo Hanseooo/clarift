@@ -3,8 +3,15 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
+import { ScoreReveal } from "@/components/features/quiz/score-reveal";
+import { WeakTopicsList } from "@/components/features/quiz/weak-topics-list";
 import { MasteryChart } from "@/components/features/quiz/mastery-chart";
+import { QuestionReview } from "@/components/features/quiz/question-review";
+import { QuizResultsActions } from "@/components/features/quiz/quiz-results-actions";
 import { Button } from "@/components/ui/button";
+
+// Client wrapper for reveal state
+import { ResultsClient } from "./results-client";
 
 type QuizResultQuestion = {
   id: string;
@@ -14,6 +21,7 @@ type QuizResultQuestion = {
   is_correct: boolean;
   topic: string;
   explanation: string;
+  type?: string;
 };
 
 type QuizResult = {
@@ -23,14 +31,9 @@ type QuizResult = {
 };
 
 type ResultsPageProps = {
+  params: Promise<{ id: string }>;
   searchParams: Promise<{ attempt_id?: string }>;
 };
-
-function formatAnswer(answer: string | boolean | string[]): string {
-  if (typeof answer === "boolean") return answer ? "True" : "False";
-  if (Array.isArray(answer)) return answer.join(", ");
-  return answer;
-}
 
 async function fetchAttemptDetails(attemptId: string, token: string): Promise<QuizResult | null> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -46,7 +49,7 @@ async function fetchAttemptDetails(attemptId: string, token: string): Promise<Qu
   return res.json() as Promise<QuizResult>;
 }
 
-export default async function ResultsPage({ searchParams }: ResultsPageProps) {
+export default async function ResultsPage({ params, searchParams }: ResultsPageProps) {
   const user = await currentUser();
   if (!user) redirect("/login");
 
@@ -54,6 +57,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
   const token = await session.getToken();
   if (!token) redirect("/login");
 
+  const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
   const attemptId = resolvedSearchParams.attempt_id;
 
@@ -73,10 +77,13 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
 
   const weakTopics = perTopicAccuracy
     .filter((t) => t.accuracy < 70)
-    .map((t) => t.topic);
+    .map((t) => ({ topic: t.topic, accuracy: t.accuracy }));
+
+  const correctCount = result.questions.filter((q) => q.is_correct).length;
 
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="max-w-3xl space-y-6">
+      {/* Back button */}
       <Button variant="outline" size="sm" asChild className="w-fit">
         <Link href="/quizzes">
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -84,83 +91,31 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
         </Link>
       </Button>
 
-      <section className="space-y-6">
-        <div className="text-center space-y-2">
-          <p className="text-sm text-muted-foreground">Quiz Results</p>
-          <p className="text-6xl font-bold text-foreground">{result.score}%</p>
-          <p className="text-sm text-muted-foreground">Overall Score</p>
-        </div>
+      {/* Score reveal */}
+      <ScoreReveal
+        score={result.score}
+        correctCount={correctCount}
+        totalCount={result.questions.length}
+      />
 
-        <div className="rounded-2xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Mastery by Topic</h2>
-          <MasteryChart perTopicAccuracy={perTopicAccuracy} />
-        </div>
+      {/* Topic mastery */}
+      <section className="bg-surface-card border border-border-default rounded-2xl p-5">
+        <h2 className="text-lg font-semibold text-text-primary mb-4">
+          Mastery by Topic
+        </h2>
+        <MasteryChart perTopicAccuracy={perTopicAccuracy} />
       </section>
 
+      {/* Weak topics */}
       {weakTopics.length > 0 && (
-        <div className="rounded-xl border border-warning-300 bg-warning-100 p-4">
-          <p className="text-sm text-warning-800 mb-3">
-            Weak areas detected: {weakTopics.join(", ")}
-          </p>
-          <Button
-            asChild
-            variant="outline"
-            className="border-warning-400 text-warning-900 hover:bg-warning-100"
-          >
-            <Link href={`/practice?topics=${weakTopics.join(",")}`}>
-              Start Targeted Practice
-            </Link>
-          </Button>
-        </div>
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold text-text-primary">Weak Areas</h2>
+          <WeakTopicsList topics={weakTopics} />
+        </section>
       )}
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">Question Review</h2>
-        {result.questions.map((q, index) => (
-          <article
-            key={q.id}
-            className="rounded-xl border border-border bg-card p-4 space-y-3"
-          >
-            <div className="flex items-start gap-2">
-              <span className="text-sm font-medium text-muted-foreground mt-0.5">
-                {index + 1}.
-              </span>
-              <p className="font-medium text-foreground">{q.question}</p>
-            </div>
-
-            <div className="space-y-2 pl-6">
-              <div
-                className={`rounded-lg px-3 py-2 text-sm ${
-                  q.is_correct
-                    ? "bg-success-100 text-success-800"
-                    : "bg-danger-100 text-danger-800"
-                }`}
-              >
-                <span className="font-medium">Your answer: </span>
-                {formatAnswer(q.user_answer)}
-              </div>
-
-              {!q.is_correct && (
-                <div className="rounded-lg bg-primary/10 px-3 py-2 text-sm text-primary">
-                  <span className="font-medium">Correct answer: </span>
-                  {formatAnswer(q.correct_answer)}
-                </div>
-              )}
-
-              <div className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">Explanation: </span>
-                {q.explanation}
-              </div>
-            </div>
-          </article>
-        ))}
-      </section>
-
-      <div className="flex justify-center pt-4">
-        <Button asChild>
-          <Link href="/quizzes">Back to Quizzes</Link>
-        </Button>
-      </div>
+      {/* Question review with client-side reveal */}
+      <ResultsClient quizId={resolvedParams.id} questions={result.questions} />
     </div>
   );
 }

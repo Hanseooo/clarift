@@ -88,3 +88,48 @@ export function useSubmitAttempt() {
 
   return { mutateAsync, isLoading, error };
 }
+
+type Attempt = {
+  attempt_id: string;
+  score: number;
+  topics: string[];
+  created_at: string;
+};
+
+export function useQuizAttempts(quizId: string) {
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
+
+  const fetchAttempts = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      if (!token) {
+        throw new Error("You must be logged in to view attempts.");
+      }
+
+      const authClient = createAuthenticatedClient(token);
+      const { data, error: apiError } = await authClient.GET(
+        "/api/v1/quizzes/{quiz_id}/attempts",
+        {
+          params: { path: { quiz_id: quizId } },
+        }
+      );
+      if (apiError || !data) {
+        throw new Error("Failed to load attempts");
+      }
+      setAttempts(data.attempts);
+    } catch (caughtError) {
+      const message =
+        caughtError instanceof Error ? caughtError.message : "Failed to load attempts";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getToken, quizId]);
+
+  return { attempts, isLoading, error, fetchAttempts };
+}

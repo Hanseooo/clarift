@@ -1,5 +1,6 @@
 import { AppShellDesktop } from "./app-shell-desktop"
 import { AppShellMobile } from "./app-shell-mobile"
+import { SwipeHint } from "@/components/ui/swipe-hint"
 
 interface AppShellProps {
   children: React.ReactNode
@@ -26,6 +27,7 @@ export function AppShell({ children, maxWidth = "default" }: AppShellProps) {
           {children}
         </div>
       </main>
+      <SwipeHint />
     </div>
   )
 }

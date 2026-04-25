@@ -23,7 +23,9 @@ export function AppShellMobile() {
   const pathname = usePathname()
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 h-[56px] border-t border-border-default bg-surface-card/95 backdrop-blur supports-[backdrop-filter]:bg-surface-card/60">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 h-[56px] border-t border-border-default bg-surface-card/95 backdrop-blur supports-[backdrop-filter]:bg-surface-card/60"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       <div className="flex items-center justify-around h-full">
         {routes.map((route) => {
           const Icon = route.icon
@@ -33,10 +35,14 @@ export function AppShellMobile() {
               key={route.path}
               href={route.path}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 min-w-[44px] min-h-[44px] transition-colors-fast",
+                "relative flex flex-col items-center justify-center gap-0.5 min-w-[44px] min-h-[44px] transition-colors-fast",
                 isActive ? "text-brand-500" : "text-text-tertiary"
               )}
             >
+              {/* Active indicator dot */}
+              {isActive && (
+                <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-brand-500" />
+              )}
               <Icon className="size-[22px] stroke-[1.5]" />
               <span className="text-[11px] font-medium">{route.name}</span>
             </Link>

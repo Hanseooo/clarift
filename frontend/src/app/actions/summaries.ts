@@ -76,3 +76,35 @@ export async function updateSummaryTitle(summaryId: string, title: string) {
     return { success: false, error: "Failed to update summary title" };
   }
 }
+
+export async function deleteSummary(summaryId: string) {
+  const { userId: clerkUserId } = await auth();
+
+  if (!clerkUserId) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.clerkUserId, clerkUserId),
+  });
+
+  if (!user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    await db
+      .delete(summaries)
+      .where(and(
+        eq(summaries.id, summaryId),
+        eq(summaries.userId, user.id),
+      ));
+
+    revalidatePath("/summaries");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete summary:", error);
+    return { success: false, error: "Failed to delete summary" };
+  }
+}

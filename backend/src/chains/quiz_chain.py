@@ -32,14 +32,27 @@ TYPE_PROMPTS = {
         "Base every question and option STRICTLY on the provided source material. "
         "Do NOT use outside knowledge. "
         "Question text max 200 characters. Each option max 100 characters. "
-        "Mark the correct answer clearly."
+        "Mark the correct answer clearly. "
+        "\n\n"
+        "Markdown formatting is ALLOWED in question text and options: "
+        "Use LaTeX ($...$ or $$...$$) for mathematical expressions, chemical formulas, and equations. "
+        "Use code blocks (```lang...```) for programming snippets. "
+        "Use tables (| col | col |) for structured data. "
+        "Use bold/italic for emphasis. "
+        "Use lists for multi-part information."
     ),
     "true_false": (
         "Generate exactly {count} true/false questions. "
         "Each question must be a clear, unambiguous factual claim derived ONLY from the provided source material. "
         "Do NOT use outside knowledge. "
         "Question text max 200 characters. "
-        "The correct answer must be either `true` or `false`."
+        "The correct answer must be either `true` or `false`. "
+        "\n\n"
+        "Markdown formatting is ALLOWED in question text: "
+        "Use LaTeX ($...$ or $$...$$) for mathematical expressions, chemical formulas, and equations. "
+        "Use code blocks (```lang...```) for programming snippets. "
+        "Use tables (| col | col |) for structured data. "
+        "Use bold/italic for emphasis."
     ),
     "identification": (
         "Generate exactly {count} fill-in-the-blank (identification) questions. "
@@ -69,6 +82,19 @@ TYPE_PROMPTS = {
         "- Question: 'What does git log do?' -> correct_answer: 'Displays a list of all commits' (WRONG: answer is a sentence)\n"
         "- Question: 'The process of cell division is called ____. (1 word)' -> correct_answer: 'The process where a cell divides' (WRONG: answer is a sentence)\n"
         "- Question: '____ discovered penicillin. (2 words)' -> correct_answer: 'Alexander Fleming was a scientist who discovered penicillin in 1928' (WRONG: far too long)"
+        "\n\n"
+        "Markdown formatting is ALLOWED in question text:\n"
+        "Use LaTeX ($...$ or $$...$$) for mathematical expressions, chemical formulas, and equations. "
+        "Use code blocks (```lang...```) for programming snippets. "
+        "Use tables (| col | col |) for structured data. "
+        "Use bold/italic for emphasis. "
+        "Use lists for multi-part information.\n\n"
+        "STRICT GUARDRAIL for identification questions:\n"
+        "The `correct_answer` field MUST be plain text only. "
+        "NEVER include markdown syntax (*, _, $, `, #, etc.) in `correct_answer`. "
+        "NEVER include LaTeX in `correct_answer`. "
+        "If the question asks about a formula, the answer must be the NAME or DESCRIPTION, not the formula itself. "
+        "Example: Question: 'The formula $E=mc^2$ represents ____. (2 words)' -> correct_answer: 'mass-energy equivalence' NOT '$E=mc^2$'."
     ),
     "multi_select": (
         "Generate exactly {count} multiple-select questions. "
@@ -77,7 +103,14 @@ TYPE_PROMPTS = {
         "Base every question and option STRICTLY on the provided source material. "
         "Do NOT use outside knowledge. "
         "Question text max 200 characters. Each option max 100 characters. "
-        "Mark all correct answers clearly."
+        "Mark all correct answers clearly. "
+        "\n\n"
+        "Markdown formatting is ALLOWED in question text and options: "
+        "Use LaTeX ($...$ or $$...$$) for mathematical expressions, chemical formulas, and equations. "
+        "Use code blocks (```lang...```) for programming snippets. "
+        "Use tables (| col | col |) for structured data. "
+        "Use bold/italic for emphasis. "
+        "Use lists for multi-part information."
     ),
     "ordering": (
         "Generate exactly {count} sequencing questions. "
@@ -85,7 +118,14 @@ TYPE_PROMPTS = {
         "Base every question STRICTLY on the provided source material. "
         "Do NOT use outside knowledge. "
         "Question text max 200 characters. Each step max 100 characters. "
-        "Provide the correct order clearly."
+        "Provide the correct order clearly. "
+        "\n\n"
+        "Markdown formatting is ALLOWED in question text and steps: "
+        "Use LaTeX ($...$ or $$...$$) for mathematical expressions, chemical formulas, and equations. "
+        "Use code blocks (```lang...```) for programming snippets. "
+        "Use tables (| col | col |) for structured data. "
+        "Use bold/italic for emphasis. "
+        "Use lists for multi-part information."
     ),
 }
 
@@ -241,6 +281,26 @@ def _validate_questions(questions: list[QuizQuestion]) -> list[str]:
                 errors.append(
                     f"Identification question {q['id']} correct_answer too long "
                     f"({len(str(answer).split())} words, max 5)"
+                )
+            # Check for markdown syntax in answer
+            import re
+
+            markdown_patterns = [
+                r"\*\*",
+                r"\*",
+                r"__",
+                r"_",
+                r"\$",
+                r"`",
+                r"#",
+                r"\[.*?\]\(.*?\)",
+                r"!\[.*?\]\(.*?\)",
+            ]
+            answer_str = str(answer)
+            if any(re.search(pattern, answer_str) for pattern in markdown_patterns):
+                errors.append(
+                    f"Identification question {q['id']} correct_answer contains markdown syntax. "
+                    f"It must be plain text only."
                 )
         elif qtype == "multi_select":
             correct = q.get("correct_answers", [])

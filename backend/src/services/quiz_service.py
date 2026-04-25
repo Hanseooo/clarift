@@ -267,14 +267,46 @@ async def create_quiz_job(
 async def list_quizzes_by_user(
     db: AsyncSession,
     user_id: uuid.UUID,
-) -> list[Quiz]:
+) -> list[dict[str, Any]]:
     """
-    List all quizzes for a user, ordered by creation date descending.
+    List all quizzes for a user with attempt metadata,
+    ordered by creation date descending.
     """
-    result = await db.execute(
-        select(Quiz).where(Quiz.user_id == user_id).order_by(Quiz.created_at.desc())
+    attempt_count_sq = (
+        select(func.count(QuizAttempt.id))
+        .where(QuizAttempt.quiz_id == Quiz.id, QuizAttempt.user_id == user_id)
+        .correlate(Quiz)
+        .scalar_subquery()
     )
-    return list(result.scalars().all())
+
+    latest_score_sq = (
+        select(QuizAttempt.score)
+        .where(QuizAttempt.quiz_id == Quiz.id, QuizAttempt.user_id == user_id)
+        .order_by(QuizAttempt.created_at.desc())
+        .limit(1)
+        .correlate(Quiz)
+        .scalar_subquery()
+    )
+
+    result = await db.execute(
+        select(
+            Quiz,
+            attempt_count_sq.label("attempt_count"),
+            latest_score_sq.label("latest_score"),
+        )
+        .where(Quiz.user_id == user_id)
+        .order_by(Quiz.created_at.desc())
+    )
+
+    rows = result.all()
+    return [
+        {
+            "quiz": row.Quiz,
+            "attempt_count": row.attempt_count or 0,
+            "latest_score": float(row.latest_score) if row.latest_score is not None else None,
+        }
+        for row in rows
+    ]
 
 
 async def get_quiz_by_id(
@@ -407,4 +439,100 @@ async def submit_quiz_attempt(
         "attempt_id": str(attempt.id),
         "score": score,
         "weak_topics": weak_topics,
+    }
+
+
+async def list_quiz_attempts(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    quiz_id: uuid.UUID,
+    limit: int = 10,
+) -> list[QuizAttempt]:
+    """
+    List attempts for a specific quiz, ordered by date descending.
+    """
+    await get_quiz_by_id(db, user_id, quiz_id)
+
+    result = await db.execute(
+        select(QuizAttempt)
+        .where(
+            QuizAttempt.quiz_id == quiz_id,
+            QuizAttempt.user_id == user_id,
+        )
+        .order_by(QuizAttempt.created_at.desc())
+        .limit(limit)
+    )
+    return list(result.scalars().all())
+
+
+async def get_attempt_by_id(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    attempt_id: str,
+) -> dict[str, Any]:
+    """
+    Retrieve a quiz attempt by ID with full question breakdown.
+
+    Returns dict with score, per_topic accuracy, and detailed questions.
+    """
+    from sqlalchemy.orm import joinedload
+
+    result = await db.execute(
+        select(QuizAttempt)
+        .options(joinedload(QuizAttempt.quiz))
+        .where(
+            QuizAttempt.id == uuid.UUID(attempt_id),
+            QuizAttempt.user_id == user_id,
+        )
+    )
+    attempt = result.scalar_one_or_none()
+    if not attempt:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Attempt not found",
+        )
+
+    quiz = attempt.quiz
+    questions = quiz.questions if isinstance(quiz.questions, list) else []
+    answers = attempt.answers if isinstance(attempt.answers, dict) else {}
+
+    question_by_id = {str(q.get("id")): q for q in questions if isinstance(q, dict)}
+
+    topic_stats: dict[str, dict[str, int]] = {}
+    question_results: list[dict[str, Any]] = []
+
+    for question_id, selected in answers.items():
+        question = question_by_id.get(question_id)
+        if not question:
+            continue
+
+        topic = str(question.get("topic") or "General")
+        expected = str(question.get("correct_answer") or "")
+        is_correct = selected.strip().lower() == expected.strip().lower()
+
+        if topic not in topic_stats:
+            topic_stats[topic] = {"correct": 0, "total": 0}
+        topic_stats[topic]["total"] += 1
+        topic_stats[topic]["correct"] += int(is_correct)
+
+        question_results.append(
+            {
+                "id": str(question.get("id", question_id)),
+                "question": str(question.get("question", "")),
+                "user_answer": selected,
+                "correct_answer": question.get("correct_answer", ""),
+                "is_correct": is_correct,
+                "topic": topic,
+                "explanation": str(question.get("explanation", "")),
+                "type": str(question.get("type", "mcq")),
+            }
+        )
+
+    # Preserve original question order
+    question_results.sort(key=lambda q: list(question_by_id.keys()).index(q["id"]))
+
+    return {
+        "score": float(attempt.score),
+        "per_topic": topic_stats,
+        "questions": question_results,
     }

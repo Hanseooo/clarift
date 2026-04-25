@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { RichMarkdown } from "@/components/ui/rich-markdown";
 import { useSubmitAttempt } from "@/hooks/use-quiz";
 
 type QuizType = "mcq" | "true_false" | "identification" | "multi_select" | "ordering";
@@ -127,7 +128,12 @@ function MCQQuestion({
             >
               {letter}
             </span>
-            <span className="text-sm text-foreground">{option}</span>
+            <span className="text-sm text-foreground">
+              <RichMarkdown
+                content={option}
+                className="prose-compact prose-p:inline prose-p:m-0 prose-p:text-sm prose-code:text-xs"
+              />
+            </span>
           </button>
         );
       })}
@@ -229,7 +235,12 @@ function MultiSelectQuestion({
             >
               {letter}
             </span>
-            <span className="text-sm text-foreground">{option}</span>
+            <span className="text-sm text-foreground">
+              <RichMarkdown
+                content={option}
+                className="prose-compact prose-p:inline prose-p:m-0 prose-p:text-sm prose-code:text-xs"
+              />
+            </span>
           </button>
         );
       })}
@@ -357,9 +368,9 @@ export function AttemptWizard({ quizId, questions }: AttemptWizardProps) {
         </div>
 
         {/* Question text */}
-        <p className="text-sm font-medium leading-relaxed text-foreground">
-          {currentQuestion.question}
-        </p>
+        <div className="prose-compact max-w-none">
+          <RichMarkdown content={currentQuestion.question} />
+        </div>
 
         {/* Answer input by type */}
         {currentQuestion.type === "mcq" && (
