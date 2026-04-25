@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link"
 import { CheckSquare, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
