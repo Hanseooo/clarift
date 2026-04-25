@@ -8,7 +8,7 @@ from src.chains.quiz_chain import (
     _fallback_questions,
     _normalize_question,
     _validate_questions,
-    _parse_llm_questions,
+    _parse_llm_output,
     _build_generation_prompt,
 )
 
@@ -370,27 +370,40 @@ class TestFallbackQuestions:
         assert ident["correct_answer"]
 
 
-class TestParseLlmQuestions:
+class TestParseLlmOutput:
     def test_parses_valid_json_array(self):
         raw = '[{"id": "q1", "type": "mcq", "question": "Test?", "options": ["A", "B", "C", "D"], "correct_answer": "A", "topic": "General", "explanation": ""}]'
-        result = _parse_llm_questions(raw)
-        assert len(result) == 1
-        assert result[0]["id"] == "q1"
+        title, questions = _parse_llm_output(raw)
+        assert title == "Untitled quiz"
+        assert len(questions) == 1
+        assert questions[0]["id"] == "q1"
+
+    def test_parses_valid_json_object(self):
+        raw = '{"title": "Math Quiz", "questions": [{"id": "q1", "type": "mcq", "question": "Test?", "options": ["A", "B", "C", "D"], "correct_answer": "A", "topic": "General", "explanation": ""}]}'
+        title, questions = _parse_llm_output(raw)
+        assert title == "Math Quiz"
+        assert len(questions) == 1
+        assert questions[0]["id"] == "q1"
 
     def test_strips_json_code_block(self):
         raw = '```json\n[{"id": "q1", "type": "mcq", "question": "Test?", "options": ["A", "B", "C", "D"], "correct_answer": "A", "topic": "General", "explanation": ""}]\n```'
-        result = _parse_llm_questions(raw)
-        assert len(result) == 1
+        title, questions = _parse_llm_output(raw)
+        assert len(questions) == 1
 
     def test_strips_plain_code_block(self):
         raw = '```\n[{"id": "q1", "type": "mcq", "question": "Test?", "options": ["A", "B", "C", "D"], "correct_answer": "A", "topic": "General", "explanation": ""}]\n```'
-        result = _parse_llm_questions(raw)
-        assert len(result) == 1
+        title, questions = _parse_llm_output(raw)
+        assert len(questions) == 1
 
-    def test_raises_on_non_list(self):
-        raw = '{"id": "q1"}'
-        with pytest.raises(ValueError, match="not a list"):
-            _parse_llm_questions(raw)
+    def test_raises_on_non_list_or_object(self):
+        raw = '"just a string"'
+        with pytest.raises(ValueError, match="not a list or object"):
+            _parse_llm_output(raw)
+
+    def test_raises_on_questions_not_list(self):
+        raw = '{"title": "Test", "questions": "bad"}'
+        with pytest.raises(ValueError, match="questions is not a list"):
+            _parse_llm_output(raw)
 
     def test_handles_non_string_input(self):
         raw = [
@@ -405,7 +418,7 @@ class TestParseLlmQuestions:
             }
         ]
         with pytest.raises(Exception):
-            _parse_llm_questions(raw)
+            _parse_llm_output(raw)
 
 
 class TestBuildGenerationPrompt:

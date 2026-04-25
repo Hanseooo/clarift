@@ -5,7 +5,7 @@ Unit test for the ARQ worker summary job.
 from __future__ import annotations
 
 import uuid
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -20,13 +20,13 @@ async def test_run_summary_job_success():
     job_id = str(uuid.uuid4())
     user_id = str(uuid.uuid4())
     document_id = str(uuid.uuid4())
-    format_value = "bullet"
 
     # Mock context (ARQ worker context)
     ctx = {}
 
     # Mock the generate_summary_for_document function
     mock_chain_output = {
+        "title": "Mock summary",
         "content": "Mock summary content",
         "quiz_type_flags": {"multiple_choice": True, "fill_in_blanks": False},
     }
@@ -41,20 +41,19 @@ async def test_run_summary_job_success():
         mock_session.execute = AsyncMock()
         mock_session.commit = AsyncMock()
 
-        mock_async_session_local = AsyncMock()
-        mock_async_session_local.return_value.__aenter__.return_value = mock_session
-        mock_async_session_local.return_value.__aexit__.return_value = None
+        mock_async_session_local = MagicMock()
+        mock_async_session_local.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_async_session_local.return_value.__aexit__ = AsyncMock(return_value=None)
 
         with patch("src.db.session.AsyncSessionLocal", mock_async_session_local):
             # Execute the job
-            await run_summary_job(ctx, summary_id, job_id, user_id, document_id, format_value)
+            await run_summary_job(ctx, summary_id, job_id, user_id, document_id)
 
             # Verify generate_summary_for_document was called with correct arguments
             mock_generate.assert_called_once()
             call_kwargs = mock_generate.call_args.kwargs
             assert call_kwargs["user_id"] == uuid.UUID(user_id)
             assert call_kwargs["document_id"] == uuid.UUID(document_id)
-            assert call_kwargs["format_value"] == format_value
             assert call_kwargs["db"] is mock_session
 
             # Verify Summary update
@@ -77,7 +76,6 @@ async def test_run_summary_job_failure():
     job_id = str(uuid.uuid4())
     user_id = str(uuid.uuid4())
     document_id = str(uuid.uuid4())
-    format_value = "bullet"
 
     ctx = {}
 
@@ -92,13 +90,13 @@ async def test_run_summary_job_failure():
         mock_session.execute = AsyncMock()
         mock_session.commit = AsyncMock()
 
-        mock_async_session_local = AsyncMock()
-        mock_async_session_local.return_value.__aenter__.return_value = mock_session
-        mock_async_session_local.return_value.__aexit__.return_value = None
+        mock_async_session_local = MagicMock()
+        mock_async_session_local.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_async_session_local.return_value.__aexit__ = AsyncMock(return_value=None)
 
         with patch("src.db.session.AsyncSessionLocal", mock_async_session_local):
             # Execute the job
-            await run_summary_job(ctx, summary_id, job_id, user_id, document_id, format_value)
+            await run_summary_job(ctx, summary_id, job_id, user_id, document_id)
 
             # Verify generate_summary_for_document was called
             mock_generate.assert_called_once()
