@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, TypedDict, cast
 
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -27,9 +28,31 @@ class ChatChainOutput(TypedDict):
     relevant_chunks: list[str]
 
 
+def _parse_structured_output(text: str) -> tuple[str, list[int]]:
+    """Extract <answer> and <used_citations> from structured LLM output."""
+    answer_match = re.search(r"<answer>(.*?)</answer>", text, re.DOTALL)
+    used_match = re.search(r"<used_citations>(.*?)</used_citations>", text, re.DOTALL)
+
+    if answer_match:
+        answer = answer_match.group(1).strip()
+    else:
+        answer = text.strip()
+
+    used_indices: list[int] = []
+    if used_match:
+        raw = used_match.group(1).strip()
+        if raw.upper() != "NONE":
+            for part in raw.split(","):
+                part = part.strip()
+                if part.isdigit():
+                    used_indices.append(int(part))
+
+    return answer, used_indices
+
+
 @retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
 async def _generate_grounded_answer(
-    question: str, context: str, messages: list[dict[str, Any]] | None = None
+    question: str, numbered_context: str, messages: list[dict[str, Any]] | None = None
 ) -> str:
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash-lite",
@@ -43,9 +66,9 @@ async def _generate_grounded_answer(
     prompt = (
         f"{settings.CHAT_SYSTEM_PROMPT}\n\n"
         f"{history}"
-        f"Context:\n{context}\n\n"
+        f"Context:\n{numbered_context}\n\n"
         f"Question: {question}\n\n"
-        f"If missing answer in context, return exactly: {settings.CHAT_FALLBACK_MESSAGE}"
+        f"Fallback message (use exactly if answer not in context): {settings.CHAT_FALLBACK_MESSAGE}"
     )
     response = await llm.ainvoke(prompt)
     raw = response.content
@@ -65,35 +88,47 @@ async def run_chat_chain(input: ChatChainInput) -> ChatChainOutput:
         }
 
     context_parts = [str(item.get("content", "")) for item in chunks if item.get("content")]
-    context = "\n\n".join(context_parts)
-    if not context.strip():
+    if not context_parts:
         return {
             "answer": settings.CHAT_FALLBACK_MESSAGE,
             "citations": [],
             "relevant_chunks": [],
         }
+
+    numbered_context = "\n\n".join(
+        f"[{i + 1}] {content}" for i, content in enumerate(context_parts)
+    )
 
     try:
-        answer = await _generate_grounded_answer(input["question"], context, input.get("messages"))
+        raw_output = await _generate_grounded_answer(
+            input["question"], numbered_context, input.get("messages")
+        )
     except Exception as exc:  # noqa: BLE001
         logger.error("Chat chain generation failed: %s", exc)
-        answer = settings.CHAT_FALLBACK_MESSAGE
+        raw_output = settings.CHAT_FALLBACK_MESSAGE
 
-    if answer == settings.CHAT_FALLBACK_MESSAGE:
+    answer, used_indices = _parse_structured_output(raw_output)
+
+    if answer == settings.CHAT_FALLBACK_MESSAGE or not used_indices:
         return {
-            "answer": settings.CHAT_FALLBACK_MESSAGE,
+            "answer": answer if answer else settings.CHAT_FALLBACK_MESSAGE,
             "citations": [],
-            "relevant_chunks": [],
+            "relevant_chunks": context_parts,
         }
 
-    citations = [
-        {
-            "chunk_id": str(item.get("id")),
-            "document_id": str(item.get("document_id")),
-            "chunk_index": item.get("chunk_index"),
-        }
-        for item in chunks
-    ]
+    used_indices_set = set(used_indices)
+    citations = []
+    for idx in used_indices_set:
+        if 1 <= idx <= len(chunks):
+            item = chunks[idx - 1]
+            citations.append(
+                {
+                    "chunk_id": str(item.get("id")),
+                    "document_id": str(item.get("document_id")),
+                    "document_name": item.get("document_title") or "Unknown",
+                    "chunk_index": item.get("chunk_index"),
+                }
+            )
 
     return {
         "answer": answer,

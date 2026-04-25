@@ -2,14 +2,18 @@
 Grounded chat router for answering questions based on uploaded documents.
 """
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import enforce_quota, get_current_user
+from src.db.models import Document
 from src.db.session import get_db
 from src.services.chat_chain import ChatChainInput, run_chat_chain
-from src.services.retrieval_service import get_user_chunks
+from src.services.retrieval_service import get_relevant_chunks
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 
@@ -56,12 +60,22 @@ async def chat(
             detail="Question cannot be empty",
         )
 
-    chunks = await get_user_chunks(
+    doc_id = uuid.UUID(request.document_id) if request.document_id else None
+    chunks = await get_relevant_chunks(
         db,
         user_id=user.id,
-        document_id=request.document_id,
+        query=request.question,
+        document_id=doc_id,
         limit=5,
     )
+
+    if chunks:
+        document_ids = {chunk["document_id"] for chunk in chunks}
+        doc_stmt = select(Document.id, Document.title).where(Document.id.in_(document_ids))
+        doc_result = await db.execute(doc_stmt)
+        doc_map = {row.id: row.title for row in doc_result.all()}
+        for chunk in chunks:
+            chunk["document_title"] = doc_map.get(chunk["document_id"], "Unknown")
 
     chain_input = ChatChainInput(
         user_id=str(user.id),

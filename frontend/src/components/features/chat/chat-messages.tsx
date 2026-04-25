@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useEffect, useState } from "react"
-import { FileText, X } from "lucide-react"
+import { X } from "lucide-react"
 import { RichMarkdown } from "@/components/ui/rich-markdown"
 import { ThinkingIndicator } from "./thinking-indicator"
 import { cn } from "@/lib/utils"
@@ -10,7 +10,12 @@ interface ChatMessage {
   id: string
   role: "user" | "assistant"
   content: string
-  citations?: Array<{ chunk_id?: string | null }>
+  citations?: Array<{
+    chunk_id?: string | null
+    document_id?: string | null
+    document_name?: string | null
+    chunk_index?: number | null
+  }>
 }
 
 interface ChatMessagesProps {
@@ -91,20 +96,7 @@ export function ChatMessages({ messages, isSearching, error }: ChatMessagesProps
                   <RichMarkdown content={msg.content} />
                 </div>
 
-                {/* Citation pills */}
-                {msg.citations && msg.citations.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {msg.citations.map((citation, i) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center gap-1 bg-surface-subtle border border-border-default rounded-md px-2 py-0.5 text-[11px] text-text-secondary"
-                      >
-                        <FileText className="size-[11px] text-text-tertiary" />
-                        Citation {i + 1}
-                      </span>
-                    ))}
-                  </div>
-                )}
+
               </div>
             )}
           </div>

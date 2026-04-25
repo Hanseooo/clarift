@@ -48,7 +48,7 @@
   - Fallback: If `uv` is unavailable, use `python -m venv .venv` and `pip install -r requirements.txt` inside the venv
   **Never install backend Python dependencies globally—always use `.venv`.**
 - Lint (Backend): `ruff check .`
-- Build/Typecheck (Frontend): `pnpm run generate:api` (Required after any backend openapi changes to sync `src/types/api.ts`).
+- Build/Typecheck (Frontend): `pnpm run generate:openapi` (Required after any backend openapi changes to sync `src/types/api.ts`).
 - Unit tests (Frontend): `pnpm run test:run` (vitest)
 - Unit tests (Backend): `pytest`
 - Integration/E2E: `pnpm run test` (watch mode)
@@ -133,7 +133,7 @@
   - All Gemini calls have tenacity retry.
   - All vector queries are user-scoped.
   - Test covers happy path and main error case.
-  - `pnpm run generate:api` run if endpoint added.
+  - `pnpm run generate:openapi` run if endpoint added.
 
 ## Verification Protocol
 - Provide proof (logs, screenshots, Read-tool output). If no automated test exists, create a temporary script or manual verification note.
