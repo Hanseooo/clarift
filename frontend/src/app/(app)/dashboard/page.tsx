@@ -43,7 +43,7 @@ export default async function DashboardPage() {
   }
 
   // Fetch recent summaries
-  let recentSummaries: Array<{ id: string; title: string | null; document_id: string; content: string; created_at: string }> = []
+  let recentSummaries: Array<{ id: string; title: string | null; format: string; created_at: string }> = []
   try {
     const session = await auth()
     const token = await session.getToken()
@@ -51,7 +51,12 @@ export default async function DashboardPage() {
       const apiClient = createAuthenticatedClient(token)
       const { data: summariesData } = await apiClient.GET("/api/v1/summaries")
       if (summariesData && Array.isArray(summariesData)) {
-        recentSummaries = summariesData.slice(0, 3)
+        recentSummaries = summariesData.slice(0, 3).map((s: any) => ({
+          id: s.id,
+          title: s.title,
+          format: typeof s.quiz_type_flags === "string" ? s.quiz_type_flags : "structured",
+          created_at: s.created_at,
+        }))
       }
     }
   } catch {
