@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
     "@tiptap/extension-task-list",
     "@tiptap/extension-task-item",
     "@tiptap/extension-link",
+    "@tiptap/core",
     "@tiptap/suggestion",
     "tippy.js",
   ],
