@@ -280,6 +280,11 @@ class UserUsage(Base):
         nullable=False,
         server_default=text("0"),
     )
+    documents_uploaded: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0"),
+    )
     reset_at: Mapped[TIMESTAMP] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,

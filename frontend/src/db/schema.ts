@@ -110,6 +110,7 @@ export const userUsage = pgTable("user_usage", {
   summariesUsed: integer("summaries_used").notNull().default(0),
   quizzesUsed: integer("quizzes_used").notNull().default(0),
   practiceUsed: integer("practice_used").notNull().default(0),
+  documentsUploaded: integer("documents_uploaded").notNull().default(0),
   resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
 })
 
