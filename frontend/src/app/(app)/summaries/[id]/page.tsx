@@ -7,8 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PaginatedReader } from "@/components/features/summary/paginated-reader";
-import { MarkdownEditor } from "@/components/features/editor/markdown-editor";
-import { updateSummaryContent } from "@/app/actions/summaries";
+import { TiptapEditor } from "@/components/features/editor/tiptap-editor";
 import { createAuthenticatedClient } from "@/lib/api";
 
 type SummaryDetailPageProps = {
@@ -45,14 +44,6 @@ export default async function SummaryDetailPage({
   }
 
   const summary = response.data;
-
-  async function handleSave(content: string) {
-    "use server";
-    const result = await updateSummaryContent(id, content);
-    if (result.success) {
-      redirect(`/summaries/${id}`);
-    }
-  }
 
   return (
     <div className="max-w-[640px] mx-auto space-y-6">
@@ -97,10 +88,9 @@ export default async function SummaryDetailPage({
       {/* Content */}
       <div className="space-y-6">
         {isEditing ? (
-          <MarkdownEditor
+          <TiptapEditor
             initialContent={summary.content}
-            onSave={handleSave}
-            onCancelHref={`/summaries/${id}`}
+            summaryId={id}
           />
         ) : (
           <PaginatedReader content={summary.content} />
