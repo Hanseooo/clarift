@@ -2,9 +2,10 @@
 
 import { db } from "@/db";
 import { documents, users } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { createAuthenticatedClient } from "@/lib/api";
 
 export async function getDocuments() {
   const { userId: clerkUserId } = await auth();
@@ -30,27 +31,25 @@ export async function getDocuments() {
 }
 
 export async function deleteDocument(documentId: string) {
-  const { userId: clerkUserId } = await auth();
-
-  if (!clerkUserId) {
+  const session = await auth();
+  if (!session.userId) {
     throw new Error("Unauthorized");
   }
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.clerkUserId, clerkUserId),
+  const token = await session.getToken();
+  if (!token) {
+    throw new Error("Unauthorized");
+  }
+
+  const client = createAuthenticatedClient(token);
+  const response = await client.DELETE("/api/v1/documents/{document_id}", {
+    params: { path: { document_id: documentId } },
   });
 
-  if (!user) {
-    throw new Error("Unauthorized");
+  if (response.error) {
+    throw new Error(response.error.detail || "Delete failed");
   }
 
-  // TODO: Call backend endpoint to cascade delete pgvector embeddings to save space.
-
-  await db
-    .delete(documents)
-    .where(and(eq(documents.id, documentId), eq(documents.userId, user.id)));
-
   revalidatePath("/documents");
-
   return { success: true };
 }
