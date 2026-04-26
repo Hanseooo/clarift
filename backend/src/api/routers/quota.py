@@ -34,6 +34,8 @@ async def get_quota(
         practice_limit=limits["practice"],
         chat_used=usage.chat_used,
         chat_limit=limits["chat"],
+        documents_used=usage.documents_uploaded,
+        documents_limit=limits["document_upload"],
         reset_at=usage.reset_at,
         tier=user.tier,
     )

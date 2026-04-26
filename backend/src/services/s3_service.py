@@ -34,3 +34,8 @@ class S3Service:
         async with self._session.client(**self._client_kwargs) as client:
             response = await client.get_object(Bucket=self._bucket, Key=object_name)
             return await response["Body"].read()
+
+    async def delete_file(self, object_name: str) -> None:
+        """Delete an object from the configured bucket."""
+        async with self._session.client(**self._client_kwargs) as client:
+            await client.delete_object(Bucket=self._bucket, Key=object_name)

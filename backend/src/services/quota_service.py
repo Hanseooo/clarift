@@ -135,10 +135,7 @@ async def check_quota(
     elif feature == "chat":
         used = usage.chat_used
     elif feature == "document_upload":
-        # document_upload is a lifetime limit for free tier,
-        # stored in a separate column (not yet in schema).
-        # For now, treat as unlimited.
-        return
+        used = usage.documents_uploaded
     else:
         raise ValueError(f"Unknown feature: {feature}")
 
@@ -169,7 +166,7 @@ async def increment_quota(
         "quiz": "quizzes_used",
         "practice": "practice_used",
         "chat": "chat_used",
-        # document_upload not yet supported
+        "document_upload": "documents_uploaded",
     }
     if feature not in column_map:
         logger.warning("No counter for feature %s, skipping increment", feature)
@@ -188,6 +185,42 @@ async def increment_quota(
         feature,
         user.id,
         getattr(usage, column) + 1,
+    )
+
+
+async def decrement_quota(
+    db: AsyncSession,
+    user: User,
+    feature: Feature,
+) -> None:
+    """
+    Decrement the usage counter for the given feature, flooring at 0.
+    """
+    usage = await get_or_create_user_usage(db, cast(UUID, user.id))
+    column_map = {
+        "summary": "summaries_used",
+        "quiz": "quizzes_used",
+        "practice": "practice_used",
+        "chat": "chat_used",
+        "document_upload": "documents_uploaded",
+    }
+    column = column_map.get(feature)
+    if not column:
+        logger.warning("No counter for feature %s, skipping decrement", feature)
+        return
+
+    current = getattr(usage, column, 0) or 0
+    new_value = max(current - 1, 0)
+    update_stmt = (
+        update(UserUsage).where(UserUsage.user_id == user.id).values(**{column: new_value})
+    )
+    await db.execute(update_stmt)
+    await db.commit()
+    logger.debug(
+        "Decremented %s for user %s (new count: %s)",
+        feature,
+        user.id,
+        new_value,
     )
 
 

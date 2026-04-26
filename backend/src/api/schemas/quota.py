@@ -12,5 +12,7 @@ class QuotaResponse(BaseModel):
     practice_limit: int
     chat_used: int
     chat_limit: int
+    documents_used: int
+    documents_limit: int
     reset_at: datetime
     tier: str

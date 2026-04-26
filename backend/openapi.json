@@ -149,6 +149,47 @@
         ]
       }
     },
+    "/api/v1/documents/{document_id}": {
+      "delete": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Delete Document",
+        "description": "Delete a document and its associated storage.\nVerifies ownership, deletes R2 object, cascades DB rows, and decrements upload counter.",
+        "operationId": "delete_document_api_v1_documents__document_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/summaries": {
       "get": {
         "tags": [
@@ -1580,6 +1621,14 @@
             "type": "integer",
             "title": "Chat Limit"
           },
+          "documents_used": {
+            "type": "integer",
+            "title": "Documents Used"
+          },
+          "documents_limit": {
+            "type": "integer",
+            "title": "Documents Limit"
+          },
           "reset_at": {
             "type": "string",
             "format": "date-time",
@@ -1600,6 +1649,8 @@
           "practice_limit",
           "chat_used",
           "chat_limit",
+          "documents_used",
+          "documents_limit",
           "reset_at",
           "tier"
         ],
