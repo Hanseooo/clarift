@@ -2,6 +2,7 @@
 Documents router for file upload and processing.
 """
 
+import logging
 import uuid
 from datetime import datetime
 
@@ -11,12 +12,15 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps import get_current_user
+from src.api.deps import enforce_quota, get_current_user
 from src.core.config import settings
 from src.db.models import Document, Job
 from src.db.session import get_db
+from src.services.quota_service import decrement_quota
 from src.services.s3_service import S3Service
 from src.worker import get_arq_pool
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 
@@ -53,6 +57,7 @@ async def upload_document(
     file: UploadFile = File(...),
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    _quota: None = Depends(enforce_quota("document_upload")),
 ):
     """
     Upload a study document (PDF, image, text) for processing.
@@ -132,3 +137,41 @@ async def upload_document(
         "job_id": str(job.id),
         "message": "Document uploaded and queued for processing.",
     }
+
+
+@router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_document(
+    document_id: str,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Delete a document and its associated storage.
+    Verifies ownership, deletes R2 object, cascades DB rows, and decrements upload counter.
+    """
+    # Fetch document and verify ownership
+    result = await db.execute(
+        select(Document).where(Document.id == document_id, Document.user_id == user.id)
+    )
+    document = result.scalar_one_or_none()
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    # Delete R2 object (ignore 404 if object doesn't exist)
+    s3_service = S3Service()
+    try:
+        await s3_service.delete_file(document.r2_key)
+    except Exception as e:
+        logger.warning("Failed to delete R2 object %s: %s", document.r2_key, e)
+
+    # Delete document row (cascades document_chunks, summaries, quizzes via FK)
+    await db.delete(document)
+    await db.commit()
+
+    # Decrement upload counter
+    await decrement_quota(db, user, "document_upload")
+
+    return None
