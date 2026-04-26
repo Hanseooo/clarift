@@ -20,11 +20,7 @@ const extensions = [
   StarterKit.configure({
     heading: { levels: [1, 2, 3] },
   }),
-  Markdown.configure({
-    html: false,
-    transformPastedText: true,
-    transformCopiedText: true,
-  }),
+  Markdown,
   Table.configure({ resizable: true }),
   TableRow,
   TableCell,

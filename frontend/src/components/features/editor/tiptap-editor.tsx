@@ -24,7 +24,7 @@ export function TiptapEditor({ initialContent, summaryId }: TiptapEditorProps) {
     setSaveError(null);
     startTransition(async () => {
       try {
-        const markdown = editor.storage.markdown?.getMarkdown() || "";
+        const markdown = editor.getMarkdown() || "";
         const result = await updateSummaryContent(summaryId, markdown);
         if (result.success) {
           router.push(`/summaries/${summaryId}`);
