@@ -47,7 +47,11 @@ export async function deleteDocument(documentId: string) {
   });
 
   if (response.error) {
-    throw new Error(response.error.detail || "Delete failed");
+    const detail = response.error.detail;
+    const message = Array.isArray(detail)
+      ? detail.map((d) => (typeof d === "string" ? d : d.msg)).join(", ")
+      : detail || "Delete failed";
+    throw new Error(message);
   }
 
   revalidatePath("/documents");
