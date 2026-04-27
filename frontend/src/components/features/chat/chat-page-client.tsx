@@ -93,6 +93,8 @@ export function ChatPageClient({
 
       const words = response.answer.split(/(\s+)/).filter(Boolean)
       let currentIndex = 0
+      const BATCH_SIZE = 5
+      const TICK_MS = 50
 
       streamIntervalRef.current = setInterval(() => {
         if (currentIndex >= words.length) {
@@ -108,12 +110,13 @@ export function ChatPageClient({
           return
         }
 
-        const partialContent = words.slice(0, currentIndex + 1).join("")
+        const nextIndex = Math.min(currentIndex + BATCH_SIZE, words.length)
+        const partialContent = words.slice(0, nextIndex).join("")
         useChatStore.getState().updateMessage(messageId, {
           content: partialContent,
         })
-        currentIndex++
-      }, 50)
+        currentIndex = nextIndex
+      }, TICK_MS)
     } finally {
       setIsSearching(false)
     }

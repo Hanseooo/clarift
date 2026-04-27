@@ -31,11 +31,7 @@ TIER_LIMITS = {
         "summary": 3,
         "quiz": 3,
         "practice": 6,
-<<<<<<< feat/frontend-chat-streaming
         "chat": 15,
-=======
-        "chat": 12,
->>>>>>> main
         "document_upload": 8,  # lifetime limit, not daily
     },
     "pro": {
