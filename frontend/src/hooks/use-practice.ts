@@ -94,6 +94,54 @@ export function useSubmitPracticeAnswer() {
   };
 }
 
+export function useSubmitPractice() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
+
+  const mutateAsync = useCallback(
+    async ({
+      practiceId,
+      answers,
+    }: {
+      practiceId: string;
+      answers: Record<string, string>;
+    }) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = await getToken();
+        if (!token) {
+          throw new Error("You must be logged in to submit practice.");
+        }
+
+        const authClient = createAuthenticatedClient(token);
+        const { data, error: apiError } = await authClient.POST(
+          "/api/v1/practice/{practice_id}/submit",
+          {
+            params: { path: { practice_id: practiceId } },
+            body: { answers },
+          }
+        );
+        if (apiError || !data) {
+          throw new Error("Failed to submit practice");
+        }
+        return data;
+      } catch (caughtError) {
+        const message =
+          caughtError instanceof Error ? caughtError.message : "Failed to submit practice";
+        setError(message);
+        throw caughtError;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [getToken]
+  );
+
+  return { mutateAsync, isLoading, error };
+}
+
 type LessonInput = {
   topics: string[];
 };

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MiniLesson } from "@/components/features/practice/mini-lesson";
 import { PracticeCreation } from "@/components/features/practice/practice-creation";
 import { WeakAreasDisplay } from "@/components/features/practice/weak-areas-display";
-import { AttemptWizard } from "@/components/features/quiz/attempt-wizard";
+import { PracticeAttempt } from "@/components/features/practice/practice-attempt";
 import { Button } from "@/components/ui/button";
 import { useCreatePractice, useWeakAreas } from "@/hooks/use-practice";
 
@@ -79,19 +79,12 @@ export function PracticePageClient({ initialWeakAreas }: { initialWeakAreas: Wea
   };
 
   if (state === "drill" && practiceId) {
-    const handlePracticeSubmit = async () => {
-      // Practice drills don't have a backend submission endpoint yet.
-      // Just return to topic selection on completion.
-      handleBackToSelect();
-      return {};
-    };
-
     return (
       <div className="max-w-3xl mx-auto space-y-4">
         <Button variant="outline" size="sm" onClick={handleBackToSelect}>
           Back to Topics
         </Button>
-        <AttemptWizard quizId={practiceId} questions={drills} onSubmit={handlePracticeSubmit} />
+        <PracticeAttempt drills={drills} practiceId={practiceId} onFinish={handleBackToSelect} />
       </div>
     );
   }
