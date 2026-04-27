@@ -151,6 +151,47 @@ type LessonOutput = {
   chunks_used: number;
 };
 
+export function useResetWeakArea() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
+
+  const mutateAsync = useCallback(
+    async (topic: string) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = await getToken();
+        if (!token) {
+          throw new Error("You must be logged in to reset a weak area.");
+        }
+
+        const authClient = createAuthenticatedClient(token);
+        const { error: apiError } = await authClient.DELETE(
+          "/api/v1/practice/weak-areas/{topic}",
+          {
+            params: { path: { topic } },
+          }
+        );
+        if (apiError) {
+          throw new Error("Failed to reset weak area");
+        }
+        return { success: true };
+      } catch (caughtError) {
+        const message =
+          caughtError instanceof Error ? caughtError.message : "Failed to reset weak area";
+        setError(message);
+        throw caughtError;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [getToken]
+  );
+
+  return { mutateAsync, isLoading, error };
+}
+
 export function useGenerateLesson() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

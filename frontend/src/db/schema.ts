@@ -98,6 +98,7 @@ export const userTopicPerformance = pgTable("user_topic_performance", {
   topic: text("topic").notNull(),
   attempts: integer("attempts").notNull().default(0),
   correct: integer("correct").notNull().default(0),
+  quizCount: integer("quiz_count").notNull().default(0),
   lastUpdated: timestamp("last_updated", { withTimezone: true }).notNull().defaultNow(),
 })
 

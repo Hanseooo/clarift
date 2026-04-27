@@ -197,6 +197,30 @@ async def get_practice_session(
     )
 
 
+@router.delete("/weak-areas/{topic}")
+async def reset_weak_area(
+    topic: str,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Reset performance stats for a specific topic.
+    Sets attempts, correct, and quiz_count to 0 so the topic disappears from weak areas.
+    """
+    from sqlalchemy import update
+
+    await db.execute(
+        update(UserTopicPerformance)
+        .where(
+            UserTopicPerformance.user_id == user.id,
+            UserTopicPerformance.topic == topic,
+        )
+        .values(attempts=0, correct=0, quiz_count=0)
+    )
+    await db.commit()
+    return {"message": f"Stats for '{topic}' have been reset"}
+
+
 @router.post("/{practice_id}/submit", response_model=SubmitPracticeResponse)
 async def submit_practice(
     practice_id: str,

@@ -753,6 +753,52 @@
         }
       }
     },
+    "/api/v1/practice/weak-areas/{topic}": {
+      "delete": {
+        "tags": [
+          "practice"
+        ],
+        "summary": "Reset Weak Area",
+        "description": "Reset performance stats for a specific topic.\nSets attempts, correct, and quiz_count to 0 so the topic disappears from weak areas.",
+        "operationId": "reset_weak_area_api_v1_practice_weak_areas__topic__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "topic",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Topic"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/practice/{practice_id}/submit": {
       "post": {
         "tags": [
