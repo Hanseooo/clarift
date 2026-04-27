@@ -22,12 +22,13 @@ interface ChatMessagesProps {
   messages: ChatMessage[]
   isSearching: boolean
   error: string | null
+  streamingMessageId?: string | null
 }
 
 const CONTEXT_WINDOW_SIZE = 8
 const CHAT_NOTICE_KEY = "chat-context-notice-dismissed"
 
-export function ChatMessages({ messages, isSearching, error }: ChatMessagesProps) {
+export function ChatMessages({ messages, isSearching, error, streamingMessageId }: ChatMessagesProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isNoticeDismissed, setIsNoticeDismissed] = useState(false)
 
@@ -94,9 +95,22 @@ export function ChatMessages({ messages, isSearching, error }: ChatMessagesProps
               <div className="max-w-[92%] space-y-1.5">
                 <div className="prose-compact">
                   <RichMarkdown content={msg.content} />
+                  {streamingMessageId === msg.id && (
+                    <span className="inline-block w-[2px] h-[1em] ml-0.5 bg-brand-500 animate-pulse align-text-bottom" />
+                  )}
                 </div>
-
-
+                {msg.citations && msg.citations.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {msg.citations.map((citation, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center px-2 py-0.5 rounded text-[11px] bg-surface-subtle text-text-tertiary border border-border-default"
+                      >
+                        [{idx + 1}] {citation.document_name || "Source"}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
