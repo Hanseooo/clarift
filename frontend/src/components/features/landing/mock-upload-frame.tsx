@@ -14,7 +14,7 @@ export function MockUploadFrame() {
             Drop your notes here, or click to upload
           </p>
           <p className="mt-1 text-sm text-text-secondary">
-            PDF, PNG, JPG, or TXT — up to 50MB
+            PDF only up to 50MB
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-2">

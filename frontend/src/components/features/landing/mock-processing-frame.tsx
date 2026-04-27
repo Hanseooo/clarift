@@ -11,7 +11,7 @@ export function MockProcessingFrame() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-text-primary">
-            Nursing_Review_Chapter_12.pdf
+            Engineering_Mechanics_Ch3.pdf
           </p>
           <p className="text-xs font-medium text-brand-500">Processing...</p>
         </div>

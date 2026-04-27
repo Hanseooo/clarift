@@ -58,7 +58,7 @@ function AssistantResponse() {
       <div className="flex flex-wrap gap-1.5 pt-1">
         <div className="inline-flex items-center gap-1 rounded-md bg-surface-subtle border border-border-default px-2 py-1">
           <FileText className="size-3 text-text-tertiary" />
-          <span className="text-[11px] text-text-secondary">Nursing Notes · p.12</span>
+          <span className="text-[11px] text-text-secondary">CS101_Lectures · p.12</span>
         </div>
       </div>
     </div>
@@ -66,10 +66,10 @@ function AssistantResponse() {
 }
 
 const CONVERSATION: ChatPhase[] = [
-  { type: "user", id: 1, content: "What are the key concepts in renal failure?" },
+  { type: "user", id: 1, content: "Explain binary search trees in detail" },
   { type: "thinking", id: 2 },
   { type: "assistant", id: 3 },
-  { type: "user", id: 4, content: "Explain the pathophysiology in detail" },
+  { type: "user", id: 4, content: "What about AVL tree rotations?" },
   { type: "thinking", id: 5 },
   { type: "assistant", id: 6 },
 ]
@@ -154,7 +154,7 @@ export function MockChatFrame() {
         <span className="text-sm font-medium text-text-primary">Chat with your notes</span>
         <div className="ml-auto flex items-center gap-1.5 bg-surface-subtle border border-border-default rounded-md px-2 py-0.5">
           <FileText className="size-3 text-text-tertiary" />
-          <span className="text-[11px] text-text-tertiary">Nursing Notes</span>
+          <span className="text-[11px] text-text-tertiary">CS101_Lectures</span>
         </div>
       </div>
 

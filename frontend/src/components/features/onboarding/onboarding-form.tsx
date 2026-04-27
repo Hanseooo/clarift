@@ -243,7 +243,7 @@ export function OnboardingForm({ initialData, onSuccess }: OnboardingFormProps) 
 
       {/* Submit */}
       <Button type="submit" variant="default" disabled={isSubmitting} className="w-full md:w-auto">
-        {isSubmitting ? "Saving..." : "Start Studying"}
+        {isSubmitting ? "Saving..." : "Save Preferences"}
       </Button>
     </form>
   )

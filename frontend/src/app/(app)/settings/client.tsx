@@ -17,7 +17,7 @@ export function SettingsClient({ preferences }: SettingsClientProps) {
   const [showSuccess, setShowSuccess] = useState(false)
 
   return (
-    <div className="space-y-8 max-w-[640px]">
+    <div className="space-y-8 max-w-[640px] mx-auto">
       {/* Page header */}
       <div>
         <h1 className="text-xl font-semibold text-text-primary">

@@ -21,9 +21,9 @@ function LetterBadge({ letter, variant = "default" }: { letter: string; variant?
 
 function MockDocuments() {
   const docs = [
-    { name: "Nursing_Review_Ch12.pdf", pages: "42 pages", status: "ready" as const },
-    { name: "Pharmacology_Notes.txt", pages: "Processing...", status: "processing" as const },
-    { name: "Anatomy_Flashcards.png", pages: "12 pages", status: "ready" as const },
+    { name: "Anatomy_Study_Guide.pdf", pages: "45 pages", status: "ready" as const },
+    { name: "Pathology_Notes.txt", pages: "Processing...", status: "processing" as const },
+    { name: "Physiology_Cards.png", pages: "12 pages", status: "ready" as const },
   ]
 
   return (
@@ -63,7 +63,7 @@ function MockSummary() {
       </div>
       {/* Key Concept callout */}
       <div className="rounded-xl border border-brand-500/15 bg-brand-500/[0.04] p-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-500 mb-1.5">Key Concept</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-500 mb-1.5">Key Formula</p>
         <div className="space-y-1.5">
           <div className="h-2 w-full rounded-full bg-surface-subtle" />
           <div className="h-2 w-4/5 rounded-full bg-surface-subtle" />
@@ -75,9 +75,9 @@ function MockSummary() {
 
 function MockQuizResults() {
   const topics = [
-    { name: "Renal System", accuracy: 85 },
-    { name: "Cardiovascular", accuracy: 45 },
-    { name: "Pharmacology", accuracy: 60 },
+    { name: "Data Structures", accuracy: 85 },
+    { name: "Algorithms", accuracy: 45 },
+    { name: "Computer Networks", accuracy: 60 },
   ]
 
   return (
@@ -113,7 +113,7 @@ function MockQuizResults() {
           <Target className="size-4 text-accent-500" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-text-primary">Cardiovascular</p>
+          <p className="text-xs font-medium text-text-primary">Algorithms</p>
           <p className="text-[10px] text-text-tertiary">8 attempts across 3 quizzes</p>
         </div>
         <span className="text-sm font-bold text-accent-500">45%</span>
@@ -134,20 +134,20 @@ function MockPracticeDrill() {
         </div>
       </div>
       <p className="text-sm font-medium text-text-primary leading-relaxed">
-        Which electrolyte imbalance is most commonly associated with acute kidney injury?
+        Calculate the output voltage of an op-amp inverting amplifier with R1=10kΩ and Rf=47kΩ when Vin=0.5V?
       </p>
       <div className="space-y-1.5">
         <div className="flex items-center gap-2.5 rounded-lg border border-brand-500 bg-brand-500/5 p-2.5">
           <LetterBadge letter="A" variant="selected" />
-          <span className="text-sm text-text-primary">Hyperkalemia</span>
+          <span className="text-sm text-text-primary">-2.35V</span>
         </div>
         <div className="flex items-center gap-2.5 rounded-lg border border-border-default bg-surface-card p-2.5">
           <LetterBadge letter="B" />
-          <span className="text-sm text-text-primary">Hyponatremia</span>
+          <span className="text-sm text-text-primary">+2.35V</span>
         </div>
         <div className="flex items-center gap-2.5 rounded-lg border border-border-default bg-surface-card p-2.5">
           <LetterBadge letter="C" />
-          <span className="text-sm text-text-primary">Hypocalcemia</span>
+          <span className="text-sm text-text-primary">-0.5V</span>
         </div>
       </div>
     </div>
@@ -158,7 +158,7 @@ const showcases = [
   {
     icon: FileText,
     title: "All your materials in one place",
-    description: "Upload PDFs, images, and text files. Track processing status and access everything from your document library.",
+    description: "Upload PDFs. Track processing status and access everything from your document library.",
     mock: <MockDocuments />,
   },
   {
