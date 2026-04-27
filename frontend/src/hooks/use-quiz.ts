@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 
 import { createAuthenticatedClient } from "@/lib/api";
+import { useQuota } from "@/contexts/quota-context";
 
 type CreateQuizInput = {
   document_id: string;
@@ -20,10 +21,12 @@ export function useCreateQuiz() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { getToken } = useAuth();
+  const { optimisticallyIncrement } = useQuota();
 
   const mutateAsync = useCallback(async (payload: CreateQuizInput) => {
     setIsLoading(true);
     setError(null);
+    const rollback = optimisticallyIncrement("quizzes");
     try {
       const token = await getToken();
       if (!token) {
@@ -39,17 +42,22 @@ export function useCreateQuiz() {
         },
       });
       if (apiError || !data) {
-        throw new Error("Failed to create quiz");
+        console.error("[useCreateQuiz] API error:", apiError);
+        const errorDetail = apiError && typeof apiError === "object" && "detail" in apiError
+          ? JSON.stringify(apiError.detail)
+          : "Failed to create quiz";
+        throw new Error(errorDetail);
       }
       return data;
     } catch (caughtError) {
+      rollback();
       const message = caughtError instanceof Error ? caughtError.message : "Failed to create quiz";
       setError(message);
       throw caughtError;
     } finally {
       setIsLoading(false);
     }
-  }, [getToken]);
+  }, [getToken, optimisticallyIncrement]);
 
   return { mutateAsync, isLoading, error };
 }
@@ -73,7 +81,11 @@ export function useSubmitAttempt() {
         body: payload,
       });
       if (apiError || !data) {
-        throw new Error("Failed to submit attempt");
+        console.error("[useSubmitAttempt] API error:", apiError);
+        const errorDetail = apiError && typeof apiError === "object" && "detail" in apiError
+          ? JSON.stringify(apiError.detail)
+          : "Failed to submit attempt";
+        throw new Error(errorDetail);
       }
       return data;
     } catch (caughtError) {

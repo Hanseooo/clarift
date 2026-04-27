@@ -8,7 +8,7 @@ import { SummaryCreation } from "@/components/features/summary/summary-creation"
 import { SummariesClient } from "@/components/features/summary/summaries-client";
 import { createAuthenticatedClient } from "@/lib/api";
 import { OverridePreferences } from "@/types/preferences";
-import { QuotaDisplay } from "@/components/features/quota-display";
+import { OptimisticQuotaDisplay } from "@/components/features/optimistic-quota-display";
 
 type DocumentOption = {
   id: string;
@@ -58,29 +58,11 @@ export default async function SummariesPage({ searchParams }: SummariesPageProps
   const summaries = (summariesResponse.data as SummaryItem[] | undefined) ?? [];
   const initialPreferences = (userRecord?.userPreferences as OverridePreferences) ?? {};
 
-  // Fetch quota data
-  let quotaData = null;
-  try {
-    const quotaResponse = await apiClient.GET("/api/v1/quota");
-    if (quotaResponse.data) {
-      quotaData = quotaResponse.data;
-    }
-  } catch {
-    // Graceful degradation
-  }
-
   return (
     <div className="space-y-8">
-      {quotaData && (
-        <div className="mb-6">
-          <QuotaDisplay
-            feature="summaries"
-            used={quotaData.summaries_used}
-            limit={quotaData.summaries_limit}
-            resetAt={quotaData.reset_at}
-          />
-        </div>
-      )}
+      <div className="mb-6">
+        <OptimisticQuotaDisplay feature="summaries" />
+      </div>
       <SummariesClient summaries={summaries} />
 
       {/* Creation section */}

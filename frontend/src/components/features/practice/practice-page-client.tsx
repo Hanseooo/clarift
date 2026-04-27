@@ -79,12 +79,19 @@ export function PracticePageClient({ initialWeakAreas }: { initialWeakAreas: Wea
   };
 
   if (state === "drill" && practiceId) {
+    const handlePracticeSubmit = async () => {
+      // Practice drills don't have a backend submission endpoint yet.
+      // Just return to topic selection on completion.
+      handleBackToSelect();
+      return {};
+    };
+
     return (
       <div className="max-w-3xl mx-auto space-y-4">
         <Button variant="outline" size="sm" onClick={handleBackToSelect}>
           Back to Topics
         </Button>
-        <AttemptWizard quizId={practiceId} questions={drills} />
+        <AttemptWizard quizId={practiceId} questions={drills} onSubmit={handlePracticeSubmit} />
       </div>
     );
   }

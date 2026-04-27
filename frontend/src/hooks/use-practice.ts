@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 
 import { createAuthenticatedClient } from "@/lib/api";
+import { useQuota } from "@/contexts/quota-context";
 
 type CreatePracticeInput = {
   weak_topics: string[];
@@ -47,10 +48,12 @@ export function useCreatePractice() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { getToken } = useAuth();
+  const { optimisticallyIncrement } = useQuota();
 
   const mutateAsync = useCallback(async (payload: CreatePracticeInput) => {
     setIsLoading(true);
     setError(null);
+    const rollback = optimisticallyIncrement("practice");
     try {
       const token = await getToken();
       if (!token) {
@@ -65,10 +68,12 @@ export function useCreatePractice() {
         },
       });
       if (apiError || !data) {
+        console.error("[useCreatePractice] API error:", apiError);
         throw new Error("Failed to create practice session");
       }
       return data;
     } catch (caughtError) {
+      rollback();
       const message =
         caughtError instanceof Error ? caughtError.message : "Failed to create practice session";
       setError(message);
@@ -76,7 +81,7 @@ export function useCreatePractice() {
     } finally {
       setIsLoading(false);
     }
-  }, [getToken]);
+  }, [getToken, optimisticallyIncrement]);
 
   return { mutateAsync, isLoading, error };
 }

@@ -7,6 +7,7 @@ import { QuickActionCard } from "./quick-action-card"
 import { DocumentCard } from "@/components/features/documents/document-card"
 import { RecentSummaries } from "./recent-summaries"
 import { DashboardWeakAreas } from "./dashboard-weak-areas"
+import { useQuota } from "@/contexts/quota-context"
 
 interface Document {
   id: string
@@ -30,17 +31,6 @@ interface WeakArea {
 interface DashboardOverviewProps {
   userName: string
   documents: Document[]
-  usage?: {
-    summariesUsed: number
-    summariesLimit: number
-    quizzesUsed: number
-    quizzesLimit: number
-    practiceUsed: number
-    practiceLimit: number
-    chatUsed: number
-    chatLimit: number
-    resetAt: string
-  }
   recentSummaries?: Summary[]
   weakAreas?: WeakArea[]
 }
@@ -48,10 +38,10 @@ interface DashboardOverviewProps {
 export function DashboardOverview({ 
   userName, 
   documents, 
-  usage, 
   recentSummaries = [], 
   weakAreas = [] 
 }: DashboardOverviewProps) {
+  const { quota } = useQuota()
   const recentDocuments = documents.slice(0, 3)
   const hasDocuments = documents.length > 0
 
@@ -77,31 +67,31 @@ export function DashboardOverview({
       </div>
 
       {/* Quota meters - 4 types in 2x2 grid mobile, 4-col desktop */}
-      {usage && (
+      {quota && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <QuotaMeter
             label="Summaries"
-            used={usage.summariesUsed}
-            limit={usage.summariesLimit}
-            resetAt={usage.resetAt}
+            used={quota.summaries_used}
+            limit={quota.summaries_limit}
+            resetAt={quota.reset_at}
           />
           <QuotaMeter
             label="Quizzes"
-            used={usage.quizzesUsed}
-            limit={usage.quizzesLimit}
-            resetAt={usage.resetAt}
+            used={quota.quizzes_used}
+            limit={quota.quizzes_limit}
+            resetAt={quota.reset_at}
           />
           <QuotaMeter
             label="Practice"
-            used={usage.practiceUsed}
-            limit={usage.practiceLimit}
-            resetAt={usage.resetAt}
+            used={quota.practice_used}
+            limit={quota.practice_limit}
+            resetAt={quota.reset_at}
           />
           <QuotaMeter
             label="Chat"
-            used={usage.chatUsed}
-            limit={usage.chatLimit}
-            resetAt={usage.resetAt}
+            used={quota.chat_used}
+            limit={quota.chat_limit}
+            resetAt={quota.reset_at}
           />
         </div>
       )}
