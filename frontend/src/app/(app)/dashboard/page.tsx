@@ -16,32 +16,6 @@ export default async function DashboardPage() {
     status: doc.status as "pending" | "processing" | "ready" | "failed",
   }))
 
-  // Fetch quota data
-  let usage = undefined
-  try {
-    const session = await auth()
-    const token = await session.getToken()
-    if (token) {
-      const apiClient = createAuthenticatedClient(token)
-      const { data: quotaData } = await apiClient.GET("/api/v1/quota")
-      if (quotaData) {
-        usage = {
-          summariesUsed: quotaData.summaries_used,
-          summariesLimit: quotaData.summaries_limit,
-          quizzesUsed: quotaData.quizzes_used,
-          quizzesLimit: quotaData.quizzes_limit,
-          practiceUsed: quotaData.practice_used,
-          practiceLimit: quotaData.practice_limit,
-          chatUsed: quotaData.chat_used,
-          chatLimit: quotaData.chat_limit,
-          resetAt: quotaData.reset_at,
-        }
-      }
-    }
-  } catch {
-    // Graceful degradation - show dashboard without quota
-  }
-
   // Fetch recent summaries
   let recentSummaries: Array<{ id: string; title: string | null; format: string; created_at: string }> = []
   try {
@@ -83,7 +57,6 @@ export default async function DashboardPage() {
     <DashboardOverview
       userName={user.firstName || user.emailAddresses[0]?.emailAddress || "Student"}
       documents={documents}
-      usage={usage}
       recentSummaries={recentSummaries}
       weakAreas={weakAreas}
     />

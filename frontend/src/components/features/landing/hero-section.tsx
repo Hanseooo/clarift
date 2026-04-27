@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ShaderBackground } from "./shader-background"
 import { FloatingBubbles } from "./floating-bubbles"
 import { MockDeviceFrame } from "./mock-device-frame"
-import { MockUploadFrame } from "./mock-upload-frame"
+import { MockChatFrame } from "./mock-chat-frame"
 
 const headlines = [
   "Stop re-reading. Start testing yourself.",
@@ -161,7 +161,7 @@ export function HeroSection() {
           className="mt-16 w-full max-w-lg"
         >
           <MockDeviceFrame>
-            <MockUploadFrame />
+            <MockChatFrame />
           </MockDeviceFrame>
         </motion.div>
       </div>

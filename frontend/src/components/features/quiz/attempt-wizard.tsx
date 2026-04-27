@@ -26,6 +26,7 @@ interface QuizQuestion {
 interface AttemptWizardProps {
   quizId: string;
   questions: QuizQuestion[];
+  onSubmit?: (payload: { quiz_id: string; answers: Record<string, string> }) => Promise<{ attempt_id?: string }>;
 }
 
 function safeJsonParse(value: string): string[] {
@@ -291,7 +292,7 @@ function OrderingQuestion({
   );
 }
 
-export function AttemptWizard({ quizId, questions }: AttemptWizardProps) {
+export function AttemptWizard({ quizId, questions, onSubmit }: AttemptWizardProps) {
   const router = useRouter();
   const { mutateAsync, isLoading, error } = useSubmitAttempt();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -326,11 +327,16 @@ export function AttemptWizard({ quizId, questions }: AttemptWizardProps) {
   };
 
   const handleSubmit = async () => {
-    const response = await mutateAsync({
-      quiz_id: quizId,
-      answers,
-    });
-    router.push(`/quizzes/${quizId}/results?attempt_id=${response.attempt_id}`);
+    const payload = { quiz_id: quizId, answers };
+    if (onSubmit) {
+      const response = await onSubmit(payload);
+      if (response?.attempt_id) {
+        router.push(`/quizzes/${quizId}/results?attempt_id=${response.attempt_id}`);
+      }
+    } else {
+      const response = await mutateAsync(payload);
+      router.push(`/quizzes/${quizId}/results?attempt_id=${response.attempt_id}`);
+    }
   };
 
   const progressPct = ((currentIndex + 1) / totalQuestions) * 100;

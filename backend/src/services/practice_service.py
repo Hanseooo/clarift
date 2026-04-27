@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import logging
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
+from fastapi import HTTPException, status
 from langchain_google_genai import ChatGoogleGenerativeAI
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
@@ -179,4 +181,105 @@ async def generate_mini_lesson(
         "topics": topics,
         "lesson": lesson_content,
         "chunk_count": len(topic_context),
+    }
+
+
+async def submit_practice_session(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    practice_id: str,
+    answers: dict[str, str],
+) -> dict[str, Any]:
+    result = await db.execute(
+        select(PracticeSession).where(
+            PracticeSession.id == uuid.UUID(practice_id),
+            PracticeSession.user_id == user_id,
+        )
+    )
+    session = result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Practice session not found"
+        )
+
+    drills = session.drills if isinstance(session.drills, list) else []
+    drill_by_id = {str(d.get("id")): d for d in drills if isinstance(d, dict)}
+
+    topic_stats: dict[str, dict[str, int]] = {}
+    results: list[dict[str, Any]] = []
+    correct_count = 0
+
+    for drill_id, selected in answers.items():
+        drill = drill_by_id.get(drill_id)
+        if not drill:
+            continue
+        topic = str(drill.get("topic") or "General")
+        expected = str(drill.get("correct_answer") or "")
+        is_correct = selected.strip().lower() == expected.strip().lower()
+        if is_correct:
+            correct_count += 1
+        if topic not in topic_stats:
+            topic_stats[topic] = {"attempts": 0, "correct": 0}
+        topic_stats[topic]["attempts"] += 1
+        topic_stats[topic]["correct"] += int(is_correct)
+        results.append(
+            {
+                "drill_id": drill_id,
+                "is_correct": is_correct,
+                "correct_answer": expected,
+                "explanation": str(drill.get("explanation", "")),
+            }
+        )
+
+    total_count = len(results)
+    score = 0.0 if total_count == 0 else round((correct_count / total_count) * 100, 2)
+
+    performance_entries = []
+    for topic, stats in topic_stats.items():
+        perf_result = await db.execute(
+            select(UserTopicPerformance).where(
+                UserTopicPerformance.user_id == user_id,
+                UserTopicPerformance.topic == topic,
+            )
+        )
+        perf = perf_result.scalar_one_or_none()
+        if perf is None:
+            insert_stmt = (
+                insert(UserTopicPerformance)
+                .values(
+                    user_id=user_id,
+                    topic=topic,
+                    attempts=stats["attempts"],
+                    correct=stats["correct"],
+                    quiz_count=0,
+                    last_updated=func.now(),
+                )
+                .returning(UserTopicPerformance)
+            )
+            new_perf = await db.execute(insert_stmt)
+            perf = new_perf.scalar_one()
+        else:
+            perf.attempts += stats["attempts"]
+            perf.correct += stats["correct"]
+            perf.last_updated = datetime.now(timezone.utc)
+        performance_entries.append(
+            {
+                "id": str(perf.id),
+                "topic": perf.topic,
+                "attempts": perf.attempts,
+                "correct": perf.correct,
+                "accuracy": round((perf.correct / perf.attempts) * 100, 2)
+                if perf.attempts > 0
+                else 0,
+            }
+        )
+
+    await db.commit()
+
+    return {
+        "score": score,
+        "correct_count": correct_count,
+        "total_count": total_count,
+        "results": results,
+        "performance_entries": performance_entries,
     }

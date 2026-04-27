@@ -5,9 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import { MiniLesson } from "@/components/features/practice/mini-lesson";
 import { PracticeCreation } from "@/components/features/practice/practice-creation";
 import { WeakAreasDisplay } from "@/components/features/practice/weak-areas-display";
-import { AttemptWizard } from "@/components/features/quiz/attempt-wizard";
+import { PracticeAttempt } from "@/components/features/practice/practice-attempt";
 import { Button } from "@/components/ui/button";
-import { useCreatePractice, useWeakAreas } from "@/hooks/use-practice";
+import { useCreatePractice, useResetWeakArea, useWeakAreas } from "@/hooks/use-practice";
 
 type WeakAreaItem = {
   topic: string;
@@ -42,6 +42,7 @@ export function PracticePageClient({ initialWeakAreas }: { initialWeakAreas: Wea
 
   const { fetchWeakAreas } = useWeakAreas();
   const { mutateAsync: createPractice, isLoading: isCreating } = useCreatePractice();
+  const { mutateAsync: resetWeakArea, isLoading: isResetting } = useResetWeakArea();
 
   useEffect(() => {
     const run = async () => {
@@ -78,13 +79,19 @@ export function PracticePageClient({ initialWeakAreas }: { initialWeakAreas: Wea
     setPracticeId("");
   };
 
+  const handleResetTopic = async (topic: string) => {
+    await resetWeakArea(topic);
+    setWeakAreas((previous) => previous.filter((area) => area.topic !== topic));
+    setSelectedTopics((previous) => previous.filter((currentTopic) => currentTopic !== topic));
+  };
+
   if (state === "drill" && practiceId) {
     return (
       <div className="max-w-3xl mx-auto space-y-4">
         <Button variant="outline" size="sm" onClick={handleBackToSelect}>
           Back to Topics
         </Button>
-        <AttemptWizard quizId={practiceId} questions={drills} />
+        <PracticeAttempt drills={drills} practiceId={practiceId} onFinish={handleBackToSelect} />
       </div>
     );
   }
@@ -101,6 +108,8 @@ export function PracticePageClient({ initialWeakAreas }: { initialWeakAreas: Wea
               : [...previous, topic]
           );
         }}
+        onResetTopic={handleResetTopic}
+        isResetting={isResetting}
       />
       <div className="space-y-4">
         {state === "select" && (

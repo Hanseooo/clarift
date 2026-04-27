@@ -330,6 +330,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/practice/weak-areas/{topic}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Reset Weak Area
+         * @description Reset performance stats for a specific topic.
+         *     Sets attempts, correct, and quiz_count to 0 so the topic disappears from weak areas.
+         */
+        delete: operations["reset_weak_area_api_v1_practice_weak_areas__topic__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/practice/{practice_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Practice
+         * @description Submit answers for a practice session.
+         *     Computes correctness and updates UserTopicPerformance (attempts/correct only).
+         */
+        post: operations["submit_practice_api_v1_practice__practice_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/chat": {
         parameters: {
             query?: never;
@@ -466,7 +508,10 @@ export interface components {
         };
         /** Body_upload_document_api_v1_documents_upload_post */
         Body_upload_document_api_v1_documents_upload_post: {
-            /** File */
+            /**
+             * File
+             * Format: binary
+             */
             file: string;
         };
         /**
@@ -594,6 +639,17 @@ export interface components {
             /** Created At */
             created_at: string;
         };
+        /** DrillResultItem */
+        DrillResultItem: {
+            /** Drill Id */
+            drill_id: string;
+            /** Is Correct */
+            is_correct: boolean;
+            /** Correct Answer */
+            correct_answer: string;
+            /** Explanation */
+            explanation: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -627,6 +683,19 @@ export interface components {
             explanation_styles?: string[] | null;
             /** Custom Instructions */
             custom_instructions?: string | null;
+        };
+        /** PerformanceEntry */
+        PerformanceEntry: {
+            /** Id */
+            id: string;
+            /** Topic */
+            topic: string;
+            /** Attempts */
+            attempts: number;
+            /** Correct */
+            correct: number;
+            /** Accuracy */
+            accuracy: number;
         };
         /** PracticeDetailResponse */
         PracticeDetailResponse: {
@@ -737,6 +806,26 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** SubmitPracticeRequest */
+        SubmitPracticeRequest: {
+            /** Answers */
+            answers: {
+                [key: string]: string;
+            };
+        };
+        /** SubmitPracticeResponse */
+        SubmitPracticeResponse: {
+            /** Score */
+            score: number;
+            /** Correct Count */
+            correct_count: number;
+            /** Total Count */
+            total_count: number;
+            /** Results */
+            results: components["schemas"]["DrillResultItem"][];
+            /** Performance Entries */
+            performance_entries: components["schemas"]["PerformanceEntry"][];
+        };
         /** SummaryResponse */
         SummaryResponse: {
             /** Id */
@@ -787,10 +876,6 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -1305,6 +1390,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PracticeDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_weak_area_api_v1_practice_weak_areas__topic__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topic: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_practice_api_v1_practice__practice_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                practice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitPracticeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitPracticeResponse"];
                 };
             };
             /** @description Validation Error */
