@@ -419,6 +419,8 @@ class WorkerSettings:
     ]
     on_startup = on_startup
 
+    # Default is 0.5s. Set to 10.0s to stay under 10k daily requests on Upstash.
+    poll_delay = 10.0
 
 # --- FastAPI bridge for enqueueing jobs ---
 
