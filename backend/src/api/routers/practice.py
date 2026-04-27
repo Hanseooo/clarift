@@ -53,6 +53,33 @@ class PracticeDetailResponse(BaseModel):
     created_at: str
 
 
+class SubmitPracticeRequest(BaseModel):
+    answers: dict[str, str]
+
+
+class DrillResultItem(BaseModel):
+    drill_id: str
+    is_correct: bool
+    correct_answer: str
+    explanation: str
+
+
+class PerformanceEntry(BaseModel):
+    id: str
+    topic: str
+    attempts: int
+    correct: int
+    accuracy: float
+
+
+class SubmitPracticeResponse(BaseModel):
+    score: float
+    correct_count: int
+    total_count: int
+    results: list[DrillResultItem]
+    performance_entries: list[PerformanceEntry]
+
+
 @router.post("/lesson", response_model=LessonResponse)
 async def generate_lesson(
     request: LessonRequest,
@@ -167,4 +194,25 @@ async def get_practice_session(
         weak_topics=session.weak_topics,
         drills=session.drills if isinstance(session.drills, list) else [],
         created_at=datetime.fromisoformat(str(session.created_at)).isoformat(),
+    )
+
+
+@router.post("/{practice_id}/submit", response_model=SubmitPracticeResponse)
+async def submit_practice(
+    practice_id: str,
+    request: SubmitPracticeRequest,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Submit answers for a practice session.
+    Computes correctness and updates UserTopicPerformance (attempts/correct only).
+    """
+    from src.services.practice_service import submit_practice_session
+
+    return await submit_practice_session(
+        db,
+        user_id=user.id,
+        practice_id=practice_id,
+        answers=request.answers,
     )
