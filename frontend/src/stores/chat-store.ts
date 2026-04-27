@@ -18,6 +18,7 @@ interface ChatState {
   messages: ChatMessage[]
   selectedDocumentIds: string[]
   addMessage: (message: ChatMessage) => void
+  updateMessage: (id: string, updates: Partial<Omit<ChatMessage, "id">>) => void
   clearMessages: () => void
   setSelectedDocumentIds: (ids: string[]) => void
   getRecentMessages: (count: number) => ChatMessage[]
@@ -31,6 +32,12 @@ export const useChatStore = create<ChatState>()(
       addMessage: (message) =>
         set((state) => ({
           messages: [...state.messages, message],
+        })),
+      updateMessage: (id, updates) =>
+        set((state) => ({
+          messages: state.messages.map((msg) =>
+            msg.id === id ? { ...msg, ...updates } : msg
+          ),
         })),
       clearMessages: () => set({ messages: [] }),
       setSelectedDocumentIds: (ids) => set({ selectedDocumentIds: ids }),

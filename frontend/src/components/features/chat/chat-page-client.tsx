@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { FileText, ChevronDown } from "lucide-react"
 import { ChatInput } from "./chat-input"
 import { ChatMessages } from "./chat-messages"
 import { DocumentSelector } from "./document-selector"
 import { useSendChatMessage } from "@/hooks/use-chat"
-import { useChatStore } from "@/stores/chat-store"
+import { useChatStore, type ChatMessage } from "@/stores/chat-store"
 import {
   Dialog,
   DialogContent,
@@ -35,7 +35,17 @@ export function ChatPageClient({
   } = useChatStore()
   const [isSearching, setIsSearching] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null)
+  const streamIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const { mutateAsync, isLoading, error } = useSendChatMessage()
+
+  useEffect(() => {
+    return () => {
+      if (streamIntervalRef.current) {
+        clearInterval(streamIntervalRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (initialDocumentId && selectedIds.length === 0) {
@@ -46,6 +56,12 @@ export function ChatPageClient({
   const selectedDocumentId = useMemo(() => selectedIds[0], [selectedIds])
 
   const sendMessage = async (message: string) => {
+    if (streamIntervalRef.current) {
+      clearInterval(streamIntervalRef.current)
+      streamIntervalRef.current = null
+      setStreamingMessageId(null)
+    }
+
     addMessage({
       id: crypto.randomUUID(),
       role: "user",
@@ -64,13 +80,40 @@ export function ChatPageClient({
         document_id: selectedDocumentId,
         messages: contextMessages,
       })
+
+      const messageId = crypto.randomUUID()
+      setStreamingMessageId(messageId)
+
       addMessage({
-        id: crypto.randomUUID(),
+        id: messageId,
         role: "assistant",
-        content: response.answer,
-        citations: response.citations as Array<{ chunk_id?: string | null }>,
+        content: "",
         timestamp: Date.now(),
       })
+
+      const words = response.answer.split(/(\s+)/).filter(Boolean)
+      let currentIndex = 0
+
+      streamIntervalRef.current = setInterval(() => {
+        if (currentIndex >= words.length) {
+          if (streamIntervalRef.current) {
+            clearInterval(streamIntervalRef.current)
+            streamIntervalRef.current = null
+          }
+          useChatStore.getState().updateMessage(messageId, {
+            content: response.answer,
+            citations: response.citations as ChatMessage["citations"],
+          })
+          setStreamingMessageId(null)
+          return
+        }
+
+        const partialContent = words.slice(0, currentIndex + 1).join("")
+        useChatStore.getState().updateMessage(messageId, {
+          content: partialContent,
+        })
+        currentIndex++
+      }, 50)
     } finally {
       setIsSearching(false)
     }
@@ -168,6 +211,7 @@ export function ChatPageClient({
           error={error}
           isSearching={isSearching}
           messages={messages}
+          streamingMessageId={streamingMessageId}
         />
 
         {/* Input */}
