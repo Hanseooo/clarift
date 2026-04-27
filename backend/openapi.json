@@ -753,6 +753,64 @@
         }
       }
     },
+    "/api/v1/practice/{practice_id}/submit": {
+      "post": {
+        "tags": [
+          "practice"
+        ],
+        "summary": "Submit Practice",
+        "description": "Submit answers for a practice session.\nComputes correctness and updates UserTopicPerformance (attempts/correct only).",
+        "operationId": "submit_practice_api_v1_practice__practice_id__submit_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "practice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Practice Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitPracticeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitPracticeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/chat": {
       "post": {
         "tags": [
@@ -1054,7 +1112,7 @@
         "properties": {
           "file": {
             "type": "string",
-            "contentMediaType": "application/octet-stream",
+            "format": "binary",
             "title": "File"
           }
         },
@@ -1320,6 +1378,34 @@
         ],
         "title": "DocumentListItem"
       },
+      "DrillResultItem": {
+        "properties": {
+          "drill_id": {
+            "type": "string",
+            "title": "Drill Id"
+          },
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct"
+          },
+          "correct_answer": {
+            "type": "string",
+            "title": "Correct Answer"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "drill_id",
+          "is_correct",
+          "correct_answer",
+          "explanation"
+        ],
+        "title": "DrillResultItem"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1424,6 +1510,39 @@
         },
         "type": "object",
         "title": "OverridePreferences"
+      },
+      "PerformanceEntry": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts"
+          },
+          "correct": {
+            "type": "integer",
+            "title": "Correct"
+          },
+          "accuracy": {
+            "type": "number",
+            "title": "Accuracy"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "topic",
+          "attempts",
+          "correct",
+          "accuracy"
+        ],
+        "title": "PerformanceEntry"
       },
       "PracticeDetailResponse": {
         "properties": {
@@ -1710,6 +1829,61 @@
         "title": "SubmitAttemptResponse",
         "description": "Response after submitting an attempt."
       },
+      "SubmitPracticeRequest": {
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Answers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answers"
+        ],
+        "title": "SubmitPracticeRequest"
+      },
+      "SubmitPracticeResponse": {
+        "properties": {
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "correct_count": {
+            "type": "integer",
+            "title": "Correct Count"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/DrillResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "performance_entries": {
+            "items": {
+              "$ref": "#/components/schemas/PerformanceEntry"
+            },
+            "type": "array",
+            "title": "Performance Entries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score",
+          "correct_count",
+          "total_count",
+          "results",
+          "performance_entries"
+        ],
+        "title": "SubmitPracticeResponse"
+      },
       "SummaryResponse": {
         "properties": {
           "id": {
@@ -1840,13 +2014,6 @@
           "type": {
             "type": "string",
             "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
           }
         },
         "type": "object",
