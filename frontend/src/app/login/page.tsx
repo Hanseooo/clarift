@@ -2,7 +2,8 @@
 
 import { SignIn } from "@clerk/nextjs"
 import { motion, useReducedMotion } from "framer-motion"
-import { BookOpen, CheckSquare, Target } from "lucide-react"
+import { BookOpen, CheckSquare, Target, ArrowLeft } from "lucide-react"
+import Link from "next/link"
 import { ShaderBackground } from "@/components/features/landing/shader-background"
 import { FloatingBubbles } from "@/components/features/landing/floating-bubbles"
 
@@ -119,6 +120,13 @@ export default function LoginPage() {
             </span>
           </h1>
           <p className="mt-1 text-sm text-text-secondary">Your AI-powered study engine</p>
+        </div>
+
+        <div className="w-full max-w-md mb-4">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors">
+            <ArrowLeft className="size-4" strokeWidth={1.5} />
+            Back to Clarift
+          </Link>
         </div>
 
         <motion.div

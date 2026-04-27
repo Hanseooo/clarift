@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { createAuthenticatedClient } from "@/lib/api";
+import { useQuota } from "@/contexts/quota-context";
 
 type SendChatInput = {
   question: string;
@@ -14,10 +15,12 @@ export function useSendChatMessage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { getToken } = useAuth();
+  const { optimisticallyIncrement } = useQuota();
 
   const mutateAsync = useCallback(async (payload: SendChatInput) => {
     setIsLoading(true);
     setError(null);
+    const rollback = optimisticallyIncrement("chat");
     try {
       const token = await getToken();
       if (!token) {
@@ -39,6 +42,7 @@ export function useSendChatMessage() {
       }
       return data;
     } catch (caughtError) {
+      rollback();
       const message =
         caughtError instanceof Error ? caughtError.message : "Failed to send chat message";
       setError(message);
@@ -46,7 +50,7 @@ export function useSendChatMessage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getToken]);
+  }, [getToken, optimisticallyIncrement]);
 
   return { mutateAsync, isLoading, error };
 }

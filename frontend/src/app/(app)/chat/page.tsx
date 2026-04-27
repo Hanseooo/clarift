@@ -4,7 +4,7 @@ import { FileText } from "lucide-react";
 
 import { ChatPageClient } from "@/components/features/chat/chat-page-client";
 import { createAuthenticatedClient } from "@/lib/api";
-import { QuotaDisplay } from "@/components/features/quota-display";
+import { OptimisticQuotaDisplay } from "@/components/features/optimistic-quota-display";
 
 type DocumentOption = {
   id: string;
@@ -32,31 +32,13 @@ export default async function ChatPage(
   const { data } = await apiClient.GET("/api/v1/documents");
   const documents = (data as DocumentOption[] | undefined) ?? [];
 
-  // Fetch quota data
-  let quotaData = null;
-  try {
-    const quotaResponse = await apiClient.GET("/api/v1/quota");
-    if (quotaResponse.data) {
-      quotaData = quotaResponse.data;
-    }
-  } catch {
-    // Graceful degradation
-  }
-
   const initialDocumentId = typeof searchParams.document === 'string' ? searchParams.document : undefined;
 
   return (
     <div className="space-y-6">
-      {quotaData && (
-        <div className="mb-6">
-          <QuotaDisplay
-            feature="chat"
-            used={quotaData.chat_used}
-            limit={quotaData.chat_limit}
-            resetAt={quotaData.reset_at}
-          />
-        </div>
-      )}
+      <div className="mb-6">
+        <OptimisticQuotaDisplay feature="chat" />
+      </div>
       <header className="space-y-1">
         <h1 className="text-xl font-semibold text-text-primary">Grounded Chat</h1>
         <p className="text-sm text-text-secondary">

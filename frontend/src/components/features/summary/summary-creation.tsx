@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { BookOpen } from "lucide-react";
 import { createAuthenticatedClient } from "@/lib/api";
+import { useQuota } from "@/contexts/quota-context";
 import { OverrideSettingsModal } from "@/components/features/generation/override-settings-modal";
 import { OverridePreferences } from "@/types/preferences";
 
@@ -48,6 +49,7 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [overridePreferences, setOverridePreferences] = useState<OverridePreferences | null>(null);
+  const { optimisticallyIncrement } = useQuota();
 
   const startSSE = async (jobId: string, token: string) => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -112,6 +114,7 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
     setIsLoading(true);
     setErrorMessage(null);
     setStatusMessage(null);
+    const rollback = optimisticallyIncrement("summaries");
     try {
       const token = await getToken();
       if (!token) {
@@ -144,6 +147,7 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
       setStatusMessage(createResponse.message);
       await startSSE(createResponse.job_id, token);
     } catch (caughtError) {
+      rollback();
       const message =
         caughtError instanceof Error ? caughtError.message : "Failed to create summary";
       setErrorMessage(message);
