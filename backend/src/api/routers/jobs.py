@@ -5,29 +5,71 @@ Jobs router for streaming job progress via SSE.
 import asyncio
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
+from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps import get_current_user
-from src.db.models import Job
-from src.db.session import get_db
+from auth import verify_clerk_token
+from src.db.models import Job, User
+from src.db.session import get_db as get_db_session
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
+
+
+async def _get_user_from_token(token: str, db: AsyncSession) -> User:
+    """Verify a Clerk JWT token and return the user."""
+    try:
+        payload = verify_clerk_token(token)
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired Clerk token",
+        )
+
+    sub = payload.get("sub")
+    if not sub:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing required claim: clerk_user_id/sub",
+        )
+
+    result = await db.execute(select(User).where(User.clerk_user_id == sub))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    return user
 
 
 @router.get("/{job_id}/stream")
 async def stream_job_progress(
     job_id: str,
-    user=Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    request: Request,
+    token: str | None = None,
+    db: AsyncSession = Depends(get_db_session),
 ):
     """
     Stream Server-Sent Events (SSE) for job status updates.
     Frontend polls this endpoint to show real‑time progress.
     """
-    # Validate job ID format (UUID)
+    # Resolve user from header or query-param token (EventSource cannot set headers)
+    user: User | None = None
+    auth_header = request.headers.get("authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        user = await _get_user_from_token(auth_header.replace("Bearer ", ""), db)
+    elif token:
+        user = await _get_user_from_token(token, db)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing Authorization header or token query param",
+        )
+
     user_id = user.id
 
     # Fetch job ensuring it belongs to the authenticated user

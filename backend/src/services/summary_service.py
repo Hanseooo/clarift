@@ -163,7 +163,11 @@ async def generate_summary_for_document(
         .order_by(DocumentChunk.embedding.cosine_distance(query_embedding))
         .limit(k * 3)
     )
-    raw_candidates = [(row[0], row[1]) for row in candidates_result.all() if row[0] and row[1]]
+    raw_candidates = [
+        (row[0], row[1].tolist() if hasattr(row[1], "tolist") else row[1])
+        for row in candidates_result.all()
+        if row[0] is not None and row[1] is not None
+    ]
 
     chunks: list[str] = []
     if raw_candidates:
