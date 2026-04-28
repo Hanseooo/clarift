@@ -1,6 +1,6 @@
 "use client"
 
-import { SignUp } from "@clerk/nextjs"
+import { SignIn } from "@clerk/nextjs"
 import { motion, useReducedMotion } from "framer-motion"
 import { BookOpen, CheckSquare, Target, ArrowLeft } from "lucide-react"
 import Link from "next/link"
@@ -181,9 +181,10 @@ export function LoginContent() {
               </div>
 
               <div className="pt-2">
-                <SignUp
+                <SignIn
+                  path="/login"
                   fallbackRedirectUrl="/dashboard"
-                  signInUrl="/login"
+                  signUpUrl="/login"
                   appearance={{
                     layout: {
                       hideButtons: false,
