@@ -1,8 +1,11 @@
 import { OnboardingForm } from "@/components/features/onboarding/onboarding-form"
 
-export const metadata = {
-  title: "Onboarding - Clarift",
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Onboarding",
   description: "Set up your study preferences",
+  robots: { index: false },
 }
 
 export default function OnboardingPage() {
