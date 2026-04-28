@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
@@ -14,9 +15,14 @@ export function LandingFooter() {
         {/* Brand Section */}
         <div className="flex flex-col items-center md:items-start gap-2">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="size-8 rounded-lg bg-brand-500 text-white flex items-center justify-center font-bold text-lg transition-transform group-hover:scale-105">
-              C
-            </div>
+            <Image
+              src="/clarift-logo.png"
+              alt="Clarift"
+              width={32}
+              height={32}
+              className="size-8 rounded-lg object-contain transition-transform group-hover:scale-105"
+              priority
+            />
             <span className="font-bold text-lg tracking-tight text-text-primary">
               Clarift
             </span>

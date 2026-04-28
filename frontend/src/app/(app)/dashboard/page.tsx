@@ -1,5 +1,11 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { auth, currentUser } from "@clerk/nextjs/server"
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false },
+}
 import { DashboardOverview } from "@/components/features/dashboard/dashboard-overview"
 import { getDocuments } from "@/app/actions/documents"
 import { createAuthenticatedClient } from "@/lib/api"
