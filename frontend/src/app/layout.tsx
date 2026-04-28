@@ -3,6 +3,8 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
+import { BackendStatusCheck } from "@/components/backend-status-check";
 import "katex/dist/katex.min.css";
 
 const inter = Inter({
@@ -51,6 +53,8 @@ export default function RootLayout({
             }}
           >
             {children}
+            <BackendStatusCheck />
+            <Toaster theme="dark" position="bottom-right" richColors />
           </ClerkProvider>
         </ThemeProvider>
       </body>

@@ -61,6 +61,7 @@
     "remark-math": "^6.0.0",
     "shadcn": "^4.2.0",
     "shiki": "^4.0.2",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.2",
     "tippy.js": "^6.3.7",
