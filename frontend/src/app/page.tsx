@@ -19,7 +19,7 @@ export default function LandingPage() {
     name: "Clarift",
     description:
       "AI-powered study engine for Filipino students. Smart summaries, quizzes, and personalized practice.",
-    url: process.env.NEXT_PUBLIC_APP_URL || "https://clarift.app",
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://clarift.me",
     applicationCategory: "EducationApplication",
     operatingSystem: "Any",
     offers: {

@@ -221,7 +221,7 @@ CREATE INDEX idx_document_chunks_embedding
 
 ### Base URL
 - Development: `http://localhost:8000`
-- Production: `https://api.clarift.app`
+- Production: `https://api.clarift.me`
 
 ### Authentication
 All endpoints except `/api/v1/auth/*` require:

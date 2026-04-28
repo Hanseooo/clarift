@@ -19,7 +19,7 @@ export function MockDeviceFrame({ children, className = "" }: MockDeviceFramePro
         </div>
         <div className="flex-1 mx-4">
           <div className="h-6 rounded-md bg-surface-subtle border border-border-default flex items-center px-3">
-            <span className="text-[10px] text-text-tertiary">clarift.app/dashboard</span>
+            <span className="text-[10px] text-text-tertiary">clarift.me</span>
           </div>
         </div>
       </div>

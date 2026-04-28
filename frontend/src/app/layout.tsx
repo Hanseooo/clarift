@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
   },
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "https://clarift.app"
+    process.env.NEXT_PUBLIC_APP_URL || "https://clarift.me"
   ),
   openGraph: {
     title: "Clarift - AI-Powered Study Engine",

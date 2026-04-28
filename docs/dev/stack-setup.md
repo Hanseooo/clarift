@@ -228,7 +228,7 @@ app = FastAPI(title="Clarift API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://clarift.app"],
+    allow_origins=["http://localhost:3000", "https://clarift.me"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -647,7 +647,7 @@ postgresql+asyncpg://user:pass@direct-host/clarift
 ```json
 [
   {
-    "AllowedOrigins": ["http://localhost:3000", "https://clarift.app"],
+    "AllowedOrigins": ["http://localhost:3000", "https://clarift.me"],
     "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
     "AllowedHeaders": ["*"]
   }

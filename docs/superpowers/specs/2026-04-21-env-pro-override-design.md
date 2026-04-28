@@ -5,7 +5,7 @@ This feature implements a "backdoor" environment variable that grants Pro status
 
 ## Implementation Design
 
-1. A new backend configuration variable `PRO_OVERRIDE_EMAILS` will be added to `config.py` (e.g., `PRO_OVERRIDE_EMAILS="test@example.com,admin@clarift.app"`).
+1. A new backend configuration variable `PRO_OVERRIDE_EMAILS` will be added to `config.py` (e.g., `PRO_OVERRIDE_EMAILS="test@example.com,admin@clarift.me"`).
 2. The `require_pro_user` and `enforce_quota` dependencies in `deps.py` will be updated to check this override.
 3. The logic for determining Pro status will be:
    - Check if `user.tier == "pro"`.
