@@ -1,6 +1,14 @@
+<img width="1897" height="864" alt="image" src="https://github.com/user-attachments/assets/a5d210de-39eb-4dde-897d-7c13d6cb79bb" />
+
+
 # Clarift
 
 Clarift is an AI-powered study engine built specifically for Filipino students and review center learners. It transforms uploaded study material into structured summaries, quizzes, and targeted practice through an active learning loop designed for high-stakes exams.
+
+---
+
+## Try it Live
+https://www.clarift.me/
 
 ---
 
