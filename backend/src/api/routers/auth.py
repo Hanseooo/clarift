@@ -2,7 +2,7 @@
 Auth router for user synchronization and profile.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -115,8 +115,9 @@ async def sync_user(
     user = result.scalar_one()
 
     # Ensure user usage row exists with reset_at = tomorrow
-    tomorrow = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    tomorrow = tomorrow.replace(day=tomorrow.day + 1)
+    tomorrow = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    ) + timedelta(days=1)
     usage_stmt = insert(UserUsage).values(
         user_id=user.id,
         summaries_used=0,
