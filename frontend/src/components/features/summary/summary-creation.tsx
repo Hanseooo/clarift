@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BookOpen } from "lucide-react";
+import { SSEProgress } from "@/components/ui/sse-progress";
 import { createAuthenticatedClient } from "@/lib/api";
 import { useQuota } from "@/contexts/quota-context";
 import { OverrideSettingsModal } from "@/components/features/generation/override-settings-modal";
@@ -46,58 +47,10 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
     return documents[0]?.id ?? "";
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [overridePreferences, setOverridePreferences] = useState<OverridePreferences | null>(null);
   const { optimisticallyIncrement } = useQuota();
-
-  const startSSE = async (jobId: string, token: string) => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const response = await fetch(`${baseUrl}/api/v1/jobs/${jobId}/stream`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok || !response.body) {
-      throw new Error("Failed to stream summary job updates");
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split("\n\n");
-      buffer = parts.pop() || "";
-
-      for (const part of parts) {
-        for (const line of part.split("\n")) {
-          if (!line.startsWith("data: ")) {
-            continue;
-          }
-          const payload = JSON.parse(line.slice(6)) as { status?: string; message?: string };
-          if (payload.status === "timeout") {
-            continue;
-          }
-          if (payload.status === "completed") {
-            setStatusMessage("Summary generated successfully.");
-            router.refresh();
-            onSummaryCreated?.();
-            return;
-          }
-          if (payload.status === "failed") {
-            throw new Error(payload.message || "Summary generation failed");
-          }
-          setStatusMessage("Summary is generating...");
-        }
-      }
-    }
-  };
 
   if (documents.length === 0) {
     return (
@@ -113,7 +66,7 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
   const onCreateSummary = async () => {
     setIsLoading(true);
     setErrorMessage(null);
-    setStatusMessage(null);
+    setActiveJobId(null);
     const rollback = optimisticallyIncrement("summaries");
     try {
       const token = await getToken();
@@ -144,16 +97,27 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
       }
 
       const createResponse = data as CreateSummaryResponse;
-      setStatusMessage(createResponse.message);
-      await startSSE(createResponse.job_id, token);
+      setActiveJobId(createResponse.job_id);
     } catch (caughtError) {
       rollback();
       const message =
         caughtError instanceof Error ? caughtError.message : "Failed to create summary";
       setErrorMessage(message);
-    } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleComplete = () => {
+    setIsLoading(false);
+    setActiveJobId(null);
+    router.refresh();
+    onSummaryCreated?.();
+  };
+
+  const handleError = (error: string) => {
+    setIsLoading(false);
+    setActiveJobId(null);
+    setErrorMessage(error);
   };
 
   return (
@@ -193,7 +157,14 @@ export function SummaryCreation({ documents, initialPreferences, onSummaryCreate
         {isLoading ? "Generating..." : "Generate Summary"}
       </Button>
 
-      {statusMessage ? <p className="text-sm text-muted-foreground">{statusMessage}</p> : null}
+      {activeJobId && (
+        <SSEProgress
+          jobId={activeJobId}
+          getToken={getToken}
+          onComplete={handleComplete}
+          onError={handleError}
+        />
+      )}
       {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
     </section>
   );

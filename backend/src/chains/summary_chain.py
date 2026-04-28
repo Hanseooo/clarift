@@ -47,6 +47,36 @@ def _normalize_llm_text(raw_content: object) -> str:
     return str(raw_content).strip()
 
 
+def _extract_json(text: str) -> dict | None:
+    """Extract a JSON object from LLM output, stripping markdown fences if present."""
+    text = text.strip()
+    # Strip markdown code fences
+    if text.startswith("```"):
+        lines = text.splitlines()
+        # Remove first line if it starts with ```
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        # Remove last line if it starts with ```
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        text = "\n".join(lines).strip()
+
+    # Find the first '{' and last '}' to isolate the JSON object
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return None
+
+    json_str = text[start : end + 1]
+    try:
+        parsed = json.loads(json_str)
+        if isinstance(parsed, dict):
+            return parsed
+    except json.JSONDecodeError:
+        pass
+    return None
+
+
 @retry(
     wait=wait_exponential(min=1, max=8),
     stop=stop_after_attempt(3),
@@ -157,7 +187,13 @@ Evaluate the text and set booleans:
 
         if prefs:
             prefs_str = "; ".join(prefs)
-            summary_prompt += f"\n\nApply these user preferences: {prefs_str}"
+            summary_prompt += (
+                f"\n\nApply these user preferences ONLY if they fit the material: {prefs_str}. "
+                "Do NOT force a preference if the text does not naturally support it "
+                "(e.g., do not create tables if no comparisons exist, do not use analogies if none are appropriate, "
+                "do not change the education level if the text is already clear). "
+                "When in doubt, prioritize accuracy and fidelity to the source text over satisfying the preference."
+            )
 
     llm_output = await _invoke_with_retry(llm, summary_prompt)
 
@@ -165,14 +201,13 @@ Evaluate the text and set booleans:
     title = "Untitled summary"
     summary_content = llm_output
     quiz_type_flags: dict[str, Any] = {}
-    try:
-        parsed = json.loads(llm_output)
-        if isinstance(parsed, dict):
-            title = str(parsed.get("title", title))[:32]
-            summary_content = str(parsed.get("content", llm_output))
-            quiz_type_flags = dict(parsed.get("quiz_type_flags", {}))
-    except json.JSONDecodeError:
-        pass
+    parsed = _extract_json(llm_output)
+    if parsed is not None:
+        title = str(parsed.get("title", title))[:32]
+        summary_content = str(parsed.get("content", llm_output))
+        quiz_type_flags = dict(parsed.get("quiz_type_flags", {}))
+    else:
+        logger.warning("Failed to parse JSON from summary chain output; storing raw response.")
 
     # Throttle between LLM calls to avoid rate limits (similar to embeddings worker)
     await asyncio.sleep(2)

@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { useAuth } from "@clerk/nextjs";
+import { CheckCircle2, AlertCircle } from "lucide-react";
+
 
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QuizSettingsPanel } from "@/components/features/quiz/quiz-settings-panel";
-import { useJobStatus } from "@/hooks/use-job-status";
+import { SSEProgress } from "@/components/ui/sse-progress";
 import { createAuthenticatedClient } from "@/lib/api";
 
 type DocumentOption = {
@@ -28,14 +30,14 @@ type QuizSettings = {
 
 interface QuizGenerationFormProps {
   documents: DocumentOption[];
-  token: string;
   preselectedDocumentId?: string;
 }
 
 type Step = "select" | "settings" | "generating" | "complete" | "error";
 
-export function QuizGenerationForm({ documents, token, preselectedDocumentId }: QuizGenerationFormProps) {
+export function QuizGenerationForm({ documents, preselectedDocumentId }: QuizGenerationFormProps) {
   const router = useRouter();
+  const { getToken } = useAuth();
   const [step, setStep] = useState<Step>("select");
   const [selectedDocId, setSelectedDocId] = useState<string>(() => {
     if (preselectedDocumentId && documents.some((d) => d.id === preselectedDocumentId)) {
@@ -49,28 +51,11 @@ export function QuizGenerationForm({ documents, token, preselectedDocumentId }: 
   const [applicabilityFlags, setApplicabilityFlags] = useState<Record<string, { applicable: boolean; reason: string }> | null>(null);
   const [loadingFlags, setLoadingFlags] = useState(false);
 
-  const handleComplete = (result: Record<string, unknown>) => {
-    if (result.quiz_id) {
-      setQuizId(result.quiz_id as string);
-      setStep("complete");
-    }
-  };
-
-  const handleError = (error: string) => {
-    setErrorMsg(error);
-    setStep("error");
-  };
-
-  const { step: jobStep, message, progress, error: jobError } = useJobStatus({
-    jobId,
-    token,
-    onComplete: handleComplete,
-    onError: handleError,
-  });
-
   const fetchApplicabilityFlags = async (docId: string) => {
     setLoadingFlags(true);
     try {
+      const token = await getToken();
+      if (!token) return;
       const authClient = createAuthenticatedClient(token);
       const { data } = await authClient.GET("/api/v1/summaries");
 
@@ -118,6 +103,12 @@ export function QuizGenerationForm({ documents, token, preselectedDocumentId }: 
         };
 
     try {
+      const token = await getToken();
+      if (!token) {
+        setErrorMsg("Authentication required. Please log in again.");
+        setStep("error");
+        return;
+      }
       const authClient = createAuthenticatedClient(token);
       const { data, error: apiError } = await authClient.POST("/api/v1/quizzes", {
         body: payload,
@@ -190,49 +181,29 @@ export function QuizGenerationForm({ documents, token, preselectedDocumentId }: 
     );
   }
 
-  if (step === "generating") {
+  if (step === "generating" && jobId) {
     return (
       <div className="rounded-xl border border-border bg-card p-6 space-y-5">
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin text-brand-500" />
-            <h3 className="text-sm font-semibold text-foreground">Generating Quiz</h3>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {message || jobStep || "Preparing your quiz..."}
-          </p>
+          <h3 className="text-sm font-semibold text-foreground">Generating Quiz</h3>
         </div>
 
-        {/* Progress steps */}
-        <div className="space-y-3">
-          <ProgressStep
-            label="Retrieving chunks"
-            status={getStepStatus(jobStep, ["retrieving", "chunk"])}
-          />
-          <ProgressStep
-            label="Generating questions"
-            status={getStepStatus(jobStep, ["generating", "question"])}
-          />
-          <ProgressStep
-            label="Validating"
-            status={getStepStatus(jobStep, ["validating", "validate"])}
-          />
-        </div>
-
-        {/* Progress bar */}
-        <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
-          <div
-            className="h-1.5 rounded-full bg-brand-500 transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {jobError && (
-          <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2">
-            <AlertCircle className="h-4 w-4 text-destructive" />
-            <p className="text-xs text-destructive">{jobError}</p>
-          </div>
-        )}
+        <SSEProgress
+          jobId={jobId}
+          getToken={getToken}
+          onComplete={(result) => {
+            if (result.quiz_id) {
+              setQuizId(result.quiz_id as string);
+              setStep("complete");
+            } else {
+              setStep("complete");
+            }
+          }}
+          onError={(error) => {
+            setErrorMsg(error);
+            setStep("error");
+          }}
+        />
       </div>
     );
   }
@@ -278,52 +249,4 @@ export function QuizGenerationForm({ documents, token, preselectedDocumentId }: 
   }
 
   return null;
-}
-
-function ProgressStep({ label, status }: { label: string; status: "pending" | "active" | "done" }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div
-        className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold transition-all ${
-          status === "done"
-            ? "bg-brand-500 text-white"
-            : status === "active"
-              ? "bg-brand-100 text-brand-600 dark:bg-brand-900/40 dark:text-brand-400"
-              : "bg-muted text-muted-foreground"
-        }`}
-      >
-        {status === "done" ? (
-          <CheckCircle2 className="h-3.5 w-3.5" />
-        ) : status === "active" ? (
-          <Loader2 className="h-3 w-3 animate-spin" />
-        ) : (
-          <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
-        )}
-      </div>
-      <span
-        className={`text-xs ${
-          status === "done"
-            ? "text-foreground"
-            : status === "active"
-              ? "text-brand-600 dark:text-brand-400 font-medium"
-              : "text-muted-foreground"
-        }`}
-      >
-        {label}
-      </span>
-    </div>
-  );
-}
-
-function getStepStatus(
-  currentStep: string | undefined,
-  keywords: string[]
-): "pending" | "active" | "done" {
-  if (!currentStep) return "pending";
-  const lower = currentStep.toLowerCase();
-  const isActive = keywords.some((k) => lower.includes(k));
-  if (isActive) return "active";
-  // Simple heuristic: if we're past this step, mark done
-  // This is a simplification — the backend should ideally send step completion events
-  return "pending";
 }

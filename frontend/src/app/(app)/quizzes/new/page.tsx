@@ -47,7 +47,7 @@ export default async function QuizNewPage({ searchParams }: QuizNewPageProps) {
         </p>
       </header>
 
-      <QuizGenerationForm documents={documents} token={token} preselectedDocumentId={document_id} />
+      <QuizGenerationForm documents={documents} preselectedDocumentId={document_id} />
     </div>
   );
 }

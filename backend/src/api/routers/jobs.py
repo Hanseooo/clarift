@@ -22,10 +22,15 @@ async def _get_user_from_token(token: str, db: AsyncSession) -> User:
     """Verify a Clerk JWT token and return the user."""
     try:
         payload = verify_clerk_token(token)
-    except JWTError:
+    except JWTError as exc:
+        # Log specific validation failure to help diagnose config mismatches
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.warning("Clerk JWT validation failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired Clerk token",
+            detail=f"Invalid or expired Clerk token: {exc}",
         )
 
     sub = payload.get("sub")

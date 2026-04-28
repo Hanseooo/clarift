@@ -27,11 +27,6 @@ export function DocumentsClient({ documents }: DocumentsClientProps) {
   const { getToken } = useAuth()
   const [search, setSearch] = useState("")
   const [activeJobs, setActiveJobs] = useState<Record<string, ActiveJob>>({})
-  const [accessToken, setAccessToken] = useState<string | null>(null)
-
-  useEffect(() => {
-    getToken().then(setAccessToken)
-  }, [getToken])
 
   const filtered = documents.filter((doc) =>
     doc.title.toLowerCase().includes(search.toLowerCase())
@@ -66,13 +61,13 @@ export function DocumentsClient({ documents }: DocumentsClientProps) {
       <UploadDropzone onUploadSuccess={handleUploadSuccess} />
 
       {/* Active jobs */}
-      {Object.keys(activeJobs).length > 0 && accessToken && (
+      {Object.keys(activeJobs).length > 0 && (
         <div className="space-y-3">
           {Object.entries(activeJobs).map(([jobId]) => (
             <SSEProgress
               key={jobId}
               jobId={jobId}
-              accessToken={accessToken}
+              getToken={getToken}
               onComplete={() => handleJobComplete(jobId)}
               onError={() => handleJobComplete(jobId)}
             />

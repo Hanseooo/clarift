@@ -8,7 +8,7 @@ import { RefreshCw } from "lucide-react"
 
 export interface JobEvent {
   id: string
-  type: "document_upload" | "quiz" | "summary"
+  type: "document_upload" | "quiz" | "summary" | "summary_generation"
   status: "pending" | "processing" | "completed" | "failed" | "timeout"
   progress: number
   result: Record<string, unknown> | null
@@ -18,7 +18,7 @@ export interface JobEvent {
 
 interface SSEProgressProps {
   jobId: string
-  accessToken: string
+  getToken: () => Promise<string | null>
   onComplete?: (result: Record<string, unknown>) => void
   onError?: (error: string) => void
   stepLabel?: string
@@ -47,11 +47,18 @@ const STATUS_LABELS: Record<string, Record<string, string>> = {
     failed: "Summary generation failed",
     timeout: "Connection timed out",
   },
+  summary_generation: {
+    pending: "Queued...",
+    processing: "Creating summary...",
+    completed: "Summary ready!",
+    failed: "Summary generation failed",
+    timeout: "Connection timed out",
+  },
 }
 
 export function SSEProgress({
   jobId,
-  accessToken,
+  getToken,
   onComplete,
   onError,
   stepLabel,
@@ -60,7 +67,7 @@ export function SSEProgress({
   const [status, setStatus] = useState<"pending" | "processing" | "completed" | "failed" | "timeout">("pending")
   const [progress, setProgress] = useState(0)
   const [isReconnecting, setIsReconnecting] = useState(false)
-  const [eventType, setEventType] = useState<"document_upload" | "quiz" | "summary">("document_upload")
+  const [eventType, setEventType] = useState<"document_upload" | "quiz" | "summary" | "summary_generation">("document_upload")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [reconnectTrigger, setReconnectTrigger] = useState(0)
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -75,15 +82,23 @@ export function SSEProgress({
     onErrorRef.current = onError
   }, [onComplete, onError])
 
-  const createConnection = useCallback(() => {
+  const createConnection = useCallback(async () => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
     }
 
     isReconnectingRef.current = false
 
+    const token = await getToken()
+    if (!token) {
+      setErrorMessage("Authentication required. Please log in again.")
+      setStatus("failed")
+      onErrorRef.current?.("Authentication required.")
+      return
+    }
+
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-    const url = `${baseUrl}/api/v1/jobs/${jobId}/stream?token=${encodeURIComponent(accessToken)}`
+    const url = `${baseUrl}/api/v1/jobs/${jobId}/stream?token=${encodeURIComponent(token)}`
     const es = new EventSource(url)
     eventSourceRef.current = es
 
@@ -141,7 +156,7 @@ export function SSEProgress({
         }
       }, 2000)
     }
-  }, [jobId, accessToken])
+  }, [jobId, getToken])
 
   useEffect(() => {
     createConnection()
