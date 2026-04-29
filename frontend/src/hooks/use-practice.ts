@@ -86,14 +86,6 @@ export function useCreatePractice() {
   return { mutateAsync, isLoading, error };
 }
 
-export function useSubmitPracticeAnswer() {
-  return {
-    mutateAsync: async (_payload: unknown) => ({ ok: true }),
-    isLoading: false,
-    error: null as string | null,
-  };
-}
-
 export function useSubmitPractice() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
