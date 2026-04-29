@@ -137,7 +137,7 @@ async def process_document(ctx, document_id: str, job_id: str):
 
             # 7. Update Document status
             await session.execute(
-                update(Document).where(Document.id == document_id).values(status="completed")
+                update(Document).where(Document.id == document_id).values(status="ready")
             )
 
             # 8. Update Job status
