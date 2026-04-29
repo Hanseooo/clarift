@@ -57,16 +57,16 @@ async def test_run_summary_job_success():
             assert call_kwargs["db"] is mock_session
 
             # Verify Summary update
-            # We should see two session.execute calls: one for Summary, one for Job
-            assert mock_session.execute.call_count == 2
+            # We should see three session.execute calls: one for Job (processing), one for Summary, one for Job (completed)
+            assert mock_session.execute.call_count == 3
 
             # Verify Job update
             # We can inspect the update statements, but for simplicity we just check calls
             # The first call updates Summary, second updates Job
             # We'll trust the function logic
 
-            # Verify commit was called
-            mock_session.commit.assert_called_once()
+            # Verify commit was called twice (once after processing update, once after completion)
+            assert mock_session.commit.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -102,8 +102,8 @@ async def test_run_summary_job_failure():
             mock_generate.assert_called_once()
 
             # Verify error handling: Summary content cleared, Job status failed
-            # Should have two session.execute calls (one for Summary, one for Job)
-            assert mock_session.execute.call_count == 2
+            # Should have three session.execute calls (one for Job processing, one for Summary, one for Job failed)
+            assert mock_session.execute.call_count == 3
 
-            # Verify commit was called
-            mock_session.commit.assert_called_once()
+            # Verify commit was called twice (once after processing update, once after completion)
+            assert mock_session.commit.call_count == 2

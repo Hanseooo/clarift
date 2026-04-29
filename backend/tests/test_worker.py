@@ -1,5 +1,6 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 
 
 @pytest.mark.asyncio
@@ -28,13 +29,13 @@ async def test_process_document_transitions_to_processing():
     mock_session.execute = AsyncMock(side_effect=mock_execute)
 
     with (
-        patch("src.services.s3_service.S3Service") as MockS3,
+        patch("src.services.s3_service.S3Service") as mock_s3_class,
         patch("fitz.open") as mock_fitz,
-        patch("langchain_text_splitters.RecursiveCharacterTextSplitter") as MockSplitter,
+        patch("langchain_text_splitters.RecursiveCharacterTextSplitter") as mock_splitter_class,
         patch("src.worker.process_chunks", new_callable=AsyncMock, return_value=[[0.1] * 768]),
         patch("src.db.session.AsyncSessionLocal", return_value=mock_session),
     ):
-        mock_s3 = MockS3.return_value
+        mock_s3 = mock_s3_class.return_value
         mock_s3.download_file = AsyncMock(return_value=b"pdf bytes")
 
         mock_doc_instance = MagicMock()
@@ -42,7 +43,7 @@ async def test_process_document_transitions_to_processing():
         mock_fitz.return_value.__enter__ = MagicMock(return_value=mock_doc_instance)
         mock_fitz.return_value.__exit__ = MagicMock(return_value=None)
 
-        mock_splitter = MockSplitter.return_value
+        mock_splitter = mock_splitter_class.return_value
         mock_splitter.split_text.return_value = ["chunk1"]
 
         await process_document({}, "doc-123", "12345678-1234-5678-1234-567812345678")
@@ -127,13 +128,13 @@ async def test_process_document_sets_document_ready():
     mock_session.execute.return_value = mock_result
 
     with (
-        patch("src.services.s3_service.S3Service") as MockS3,
+        patch("src.services.s3_service.S3Service") as mock_s3_class,
         patch("fitz.open") as mock_fitz,
-        patch("langchain_text_splitters.RecursiveCharacterTextSplitter") as MockSplitter,
+        patch("langchain_text_splitters.RecursiveCharacterTextSplitter") as mock_splitter_class,
         patch("src.worker.process_chunks", new_callable=AsyncMock, return_value=[[0.1] * 768]),
         patch("src.db.session.AsyncSessionLocal", return_value=mock_session),
     ):
-        mock_s3 = MockS3.return_value
+        mock_s3 = mock_s3_class.return_value
         mock_s3.download_file = AsyncMock(return_value=b"pdf bytes")
 
         mock_doc_instance = MagicMock()
@@ -141,7 +142,7 @@ async def test_process_document_sets_document_ready():
         mock_fitz.return_value.__enter__ = MagicMock(return_value=mock_doc_instance)
         mock_fitz.return_value.__exit__ = MagicMock(return_value=None)
 
-        mock_splitter = MockSplitter.return_value
+        mock_splitter = mock_splitter_class.return_value
         mock_splitter.split_text.return_value = ["c"]
 
         await process_document({}, "doc-123", "12345678-1234-5678-1234-567812345678")
