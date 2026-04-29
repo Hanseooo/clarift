@@ -151,24 +151,24 @@ async def test_create_practice_timeout(monkeypatch):
         await asyncio.sleep(30)
 
     monkeypatch.setattr("src.api.routers.practice.create_practice_session", slow_create)
-
-    async def dummy_check_quota(*args, **kwargs):
-        pass
-
-    monkeypatch.setattr("src.api.deps.check_and_increment_quota", dummy_check_quota)
+    monkeypatch.setattr(
+        "src.api.deps.check_and_increment_quota",
+        AsyncMock(return_value=None),
+    )
 
     mock_user = SimpleNamespace(
-        id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
+        id=uuid.uuid4(),
         clerk_user_id="test_clerk",
         email="test@example.com",
         tier="free",
     )
+    mock_db = AsyncMock()
 
     async def override_get_current_user():
         return mock_user
 
     async def override_get_db():
-        return AsyncMock()
+        return mock_db
 
     app.dependency_overrides[get_current_user] = override_get_current_user
     app.dependency_overrides[get_db] = override_get_db
@@ -178,10 +178,11 @@ async def test_create_practice_timeout(monkeypatch):
             transport=httpx.ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/api/v1/practice", json={"weak_topics": ["A"], "drill_count": 5}
+                "/api/v1/practice",
+                json={"weak_topics": ["A"], "drill_count": 5},
             )
 
-        assert response.status_code == 504
+        assert response.status_code == status.HTTP_504_GATEWAY_TIMEOUT
         assert "too long" in response.json()["detail"]
     finally:
         app.dependency_overrides.clear()

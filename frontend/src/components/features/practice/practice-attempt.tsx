@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle2, XCircle, GripVertical } from "lucide-react";
-
 import {
   DndContext,
   closestCenter,
@@ -23,7 +22,6 @@ import { CSS } from "@dnd-kit/utilities"
 import { Button } from "@/components/ui/button";
 import { RichMarkdown } from "@/components/ui/rich-markdown";
 import { useSubmitPractice } from "@/hooks/use-practice";
-import { cn } from "@/lib/utils";
 
 type DrillType = "mcq" | "true_false" | "identification" | "multi_select" | "ordering";
 
@@ -42,7 +40,7 @@ type PracticeAttemptProps = {
   drills: PracticeDrill[];
   practiceId?: string;
   onFinish?: () => void;
-  submitPractice?: (args: { practiceId: string; answers: Record<string, string> }) => Promise<unknown>;
+  submitPractice?: (params: { practiceId: string; answers: Record<string, string> }) => Promise<void>;
 };
 
 const questionTypeLabel: Record<DrillType, string> = {
@@ -65,9 +63,9 @@ function SortableItem({ id, label }: { id: string; label: string }) {
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 p-3 border border-border-default rounded-lg bg-surface-card"
+      className="flex items-center gap-2 p-3 border border-border rounded-lg bg-background"
     >
-      <button {...attributes} {...listeners} className="text-text-tertiary" aria-label="drag">
+      <button type="button" {...attributes} {...listeners} aria-label="drag" className="text-muted-foreground">
         <GripVertical className="size-4" />
       </button>
       <span className="text-sm">{label}</span>
@@ -125,12 +123,17 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
   const isCorrect = () => {
     if (current.type === "multi_select") {
       const selected = (answers[current.id] ?? "").split(",").filter(Boolean).sort()
-      const correct = Array.isArray(current.correct_answer) ? [...current.correct_answer].sort() : []
+      const correctArr = Array.isArray(current.correct_answer) ? current.correct_answer : []
+      const correct = [...correctArr].sort()
       return JSON.stringify(selected) === JSON.stringify(correct)
     }
-    return normalizeAnswer(answers[current.id]) === normalizeAnswer(String(current.correct_answer ?? ""))
+    if (current.type === "ordering") {
+      const selected = (answers[current.id] ?? "").split(",").filter(Boolean)
+      const correct = Array.isArray(current.correct_answer) ? current.correct_answer : []
+      return JSON.stringify(selected) === JSON.stringify(correct)
+    }
+    return checked && normalizeAnswer(answer) === normalizeAnswer(expected)
   }
-
   const isWrong = checked && !isCorrect();
 
   const handleSelect = (value: string) => {
@@ -163,6 +166,7 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
     }
     setIndex((prev) => prev + 1);
     setChecked(false);
+    setSubmitError(null);
   };
 
   return (
@@ -245,18 +249,19 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
             })}
           </div>
         ) : current.type === "multi_select" ? (
-          <div className="space-y-2">
-            {current.options?.map((option: string) => (
+          <div className="grid gap-2">
+            {current.options?.map((option) => (
               <label
                 key={option}
-                className={cn(
-                  "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                className={`w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-all cursor-pointer ${
                   checked && isCorrectMulti(option)
-                    ? "border-success-500 bg-success-100"
+                    ? "border-green-500 bg-green-50 dark:bg-green-950/20"
                     : checked && isSelectedMulti(option)
-                    ? "border-danger-500 bg-danger-100"
-                    : "border-border-default hover:bg-surface-subtle"
-                )}
+                    ? "border-red-500 bg-red-50 dark:bg-red-950/20"
+                    : answer.split(",").includes(option)
+                    ? "border-brand-500 bg-brand-50/50 dark:bg-brand-950/20"
+                    : "border-border bg-background hover:border-border-strong hover:bg-surface-overlay"
+                } ${checked ? "opacity-70 cursor-not-allowed" : ""}`}
               >
                 <input
                   type="checkbox"
@@ -276,7 +281,7 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
             onDragEnd={(event) => {
               const { active, over } = event
               if (over && active.id !== over.id) {
-                const currentOrder = (answers[current.id] ?? "").split(",").filter(Boolean)
+                const currentOrder = (answers[current.id] ?? current.options?.join(",") ?? "").split(",").filter(Boolean)
                 const oldIndex = currentOrder.indexOf(String(active.id))
                 const newIndex = currentOrder.indexOf(String(over.id))
                 const next = arrayMove(currentOrder, oldIndex, newIndex)
@@ -337,7 +342,7 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
               />
             </div>
             {submitError && (
-              <p className="text-sm text-danger-500 mb-2">{submitError}</p>
+              <p className="text-sm text-red-700 dark:text-red-300">{submitError}</p>
             )}
             <Button
               onClick={handleContinue}

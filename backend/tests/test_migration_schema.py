@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
@@ -28,3 +29,13 @@ async def test_user_topic_performance_has_quiz_count():
         )
     column_names = {c["name"] for c in result}
     assert "quiz_count" in column_names, "quiz_count column missing in user_topic_performance"
+=======
+from pathlib import Path
+
+
+def test_user_topic_performance_has_quiz_count():
+    """Init migration must include quiz_count column definition."""
+    migration_file = Path("alembic/versions/d5d65b3a5669_init_models.py")
+    content = migration_file.read_text()
+    assert 'sa.Column("quiz_count"' in content, "quiz_count column missing in init migration"
+>>>>>>> origin/main

@@ -19,22 +19,22 @@ export function PracticeCreation({ selectedTopics, onStartLesson }: PracticeCrea
   const { create, isLoading, error } = usePracticeCreation();
 
   const handleCountChange = (value: string) => {
-    const num = parseInt(value, 10)
+    const num = parseInt(value, 10);
     if (Number.isNaN(num) || num < 1 || num > 20) {
-      setCountError("Please enter a number between 1 and 20")
+      setCountError("Please enter a number between 1 and 20");
     } else {
-      setCountError(null)
+      setCountError(null);
     }
-    setDrillCount(Number.isNaN(num) ? 0 : num)
-  }
+    setDrillCount(Number.isNaN(num) ? 0 : num);
+  };
 
   const onCreate = async () => {
     if (!selectedTopics.length) {
       return;
     }
     if (drillCount < 1 || drillCount > 20) {
-      setCountError("Please enter a number between 1 and 20")
-      return
+      setCountError("Please enter a number between 1 and 20");
+      return;
     }
     const response = await create(selectedTopics, drillCount);
     router.push(`/practice/${response.practice_id}`);
@@ -56,14 +56,17 @@ export function PracticeCreation({ selectedTopics, onStartLesson }: PracticeCrea
       <label className="block space-y-2">
         <span className="text-sm font-medium text-foreground">Drill count</span>
         <input
-          className={cn("w-full rounded-xl border border-border bg-background px-3 py-2 text-sm", countError && "border-danger-500")}
+          className={cn(
+            "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm",
+            countError && "border-red-500"
+          )}
           max={20}
           min={1}
           type="number"
           value={drillCount}
           onChange={(event) => handleCountChange(event.target.value)}
         />
-        {countError && <p className="text-xs text-danger-500 mt-1">{countError}</p>}
+        {countError && <p className="text-xs text-red-500 mt-1">{countError}</p>}
       </label>
 
       <Button className="w-full" disabled={!selectedTopics.length || isLoading} onClick={onCreate}>

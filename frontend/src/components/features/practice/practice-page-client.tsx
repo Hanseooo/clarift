@@ -44,9 +44,11 @@ export function PracticePageClient({
   const [weakAreas, setWeakAreas] = useState<WeakAreaItem[]>(initialWeakAreas);
   const [selectedTopics, setSelectedTopics] = useState<string[]>(preselectedTopics ?? []);
   const [state, setState] = useState<PageState>("select");
+  const [drills, setDrills] = useState<PracticeDrill[]>([]);
+  const [practiceId, setPracticeId] = useState<string>("");
 
   const { fetchWeakAreas } = useWeakAreas();
-  const { create, practiceId, drills, isLoading: isCreating } = usePracticeCreation();
+  const { create: createPractice, isLoading: isCreating } = usePracticeCreation();
   const { mutateAsync: resetWeakArea, isLoading: isResetting } = useResetWeakArea();
 
   useEffect(() => {
@@ -69,12 +71,16 @@ export function PracticePageClient({
   };
 
   const handleStartDrill = async () => {
-    await create(selected, selected.length * 3);
+    const response = await createPractice(selected, 5);
+    setPracticeId(response.practice_id);
+    setDrills(response.drills as PracticeDrill[]);
     setState("drill");
   };
 
   const handleBackToSelect = () => {
     setState("select");
+    setDrills([]);
+    setPracticeId("");
   };
 
   const handleResetTopic = async (topic: string) => {
@@ -89,11 +95,7 @@ export function PracticePageClient({
         <Button variant="outline" size="sm" onClick={handleBackToSelect}>
           Back to Topics
         </Button>
-        <PracticeAttempt
-          drills={drills as PracticeDrill[]}
-          practiceId={practiceId}
-          onFinish={handleBackToSelect}
-        />
+        <PracticeAttempt drills={drills} practiceId={practiceId} onFinish={handleBackToSelect} />
       </div>
     );
   }

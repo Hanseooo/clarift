@@ -17,8 +17,6 @@ from src.db.session import get_db
 from src.services.practice_service import (
     create_practice_session,
     generate_mini_lesson,
-)
-from src.services.practice_service import (
     get_weak_areas as get_weak_areas_service,
 )
 
@@ -107,13 +105,17 @@ async def generate_lesson(
 
     try:
         result = await asyncio.wait_for(
-            generate_mini_lesson(db, user_id=user.id, topics=request.topics),
+            generate_mini_lesson(
+                db,
+                user_id=user.id,
+                topics=request.topics,
+            ),
             timeout=25.0,
         )
     except asyncio.TimeoutError:
         raise HTTPException(
-            status_code=504,
-            detail="Practice generation is taking too long. Please try again in a moment.",
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Lesson generation is taking too long. Please try again in a moment.",
         )
 
     return LessonResponse(
@@ -154,7 +156,7 @@ async def create_practice(
         )
     except asyncio.TimeoutError:
         raise HTTPException(
-            status_code=504,
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail="Practice generation is taking too long. Please try again in a moment.",
         )
 
