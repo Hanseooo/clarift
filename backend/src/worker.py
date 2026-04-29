@@ -191,6 +191,11 @@ async def run_summary_job(
     try:
         async with AsyncSessionLocal() as session:
             logger.info(f"Database session created for summary {summary_id}")
+            # Update job status to processing
+            await session.execute(
+                update(Job).where(Job.id == uuid.UUID(job_id)).values(status="processing")
+            )
+            await session.commit()
             # Generate summary using service with timeout
             logger.info(f"Calling generate_summary_for_document for document {document_id}")
             try:

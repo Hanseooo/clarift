@@ -60,3 +60,49 @@ async def test_process_document_transitions_to_processing():
     assert "completed" in statuses, (
         f"Job should be updated to 'completed', got statuses: {statuses}"
     )
+
+
+@pytest.mark.asyncio
+async def test_run_summary_job_transitions_to_processing():
+    """Summary job should also move to processing before work begins."""
+    from src.worker import run_summary_job
+
+    mock_session = AsyncMock()
+    mock_result = MagicMock()
+    mock_summary = MagicMock()
+    mock_summary.id = "sum-123"
+    mock_summary.document_id = "doc-123"
+    mock_result.scalar_one_or_none.return_value = mock_summary
+    mock_session.execute.return_value = mock_result
+
+    mock_async_session_local = MagicMock()
+    mock_async_session_local.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_async_session_local.return_value.__aexit__ = AsyncMock(return_value=None)
+
+    with (
+        patch("src.db.session.AsyncSessionLocal", mock_async_session_local),
+        patch(
+            "src.services.summary_service.generate_summary_for_document",
+            new_callable=AsyncMock,
+            return_value={"content": "# Summary", "title": "Summary"},
+        ),
+    ):
+        await run_summary_job(
+            {},
+            "12345678-1234-5678-1234-567812345678",
+            "12345678-1234-5678-1234-567812345679",
+            "12345678-1234-5678-1234-56781234567a",
+            "12345678-1234-5678-1234-56781234567b",
+        )
+
+    statuses = []
+    for call in mock_session.execute.call_args_list:
+        if call.args:
+            stmt = call.args[0]
+            if hasattr(stmt, "_values"):
+                for val in stmt._values.values():
+                    if hasattr(val, "value"):
+                        statuses.append(val.value)
+    assert "processing" in statuses, (
+        f"Job should be updated to 'processing', got statuses: {statuses}"
+    )
