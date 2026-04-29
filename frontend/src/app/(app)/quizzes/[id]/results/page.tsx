@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { ScoreReveal } from "@/components/features/quiz/score-reveal";
 import { WeakTopicsList } from "@/components/features/quiz/weak-topics-list";
-import { MasteryChart } from "@/components/features/quiz/mastery-chart";
+import { MasteryChart } from "@/components/dynamic-imports";
 import { QuestionReview } from "@/components/features/quiz/question-review";
 import { QuizResultsActions } from "@/components/features/quiz/quiz-results-actions";
 import { Button } from "@/components/ui/button";

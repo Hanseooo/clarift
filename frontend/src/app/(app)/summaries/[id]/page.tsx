@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PaginatedReader } from "@/components/features/summary/paginated-reader";
-import { TiptapEditor } from "@/components/features/editor/tiptap-editor";
+import { TiptapEditor } from "@/components/dynamic-imports";
 import { createAuthenticatedClient } from "@/lib/api";
 
 type SummaryDetailPageProps = {
