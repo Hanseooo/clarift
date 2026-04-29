@@ -7,7 +7,7 @@ import { useQuota } from "@/contexts/quota-context";
 
 type SendChatInput = {
   question: string;
-  document_id?: string;
+  document_ids?: string[];
   messages?: Array<{ role: string; content: string }>;
 };
 
@@ -32,7 +32,7 @@ export function useSendChatMessage() {
       const { data, error: apiError } = await authClient.POST("/api/v1/chat", {
         body: {
           question: payload.question,
-          document_id: payload.document_id,
+          document_ids: payload.document_ids ?? [],
           messages: payload.messages ?? [],
         },
       });

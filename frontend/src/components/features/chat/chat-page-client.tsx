@@ -53,7 +53,7 @@ export function ChatPageClient({
     }
   }, [initialDocumentId, selectedIds.length, setSelectedDocumentIds])
 
-  const selectedDocumentId = useMemo(() => selectedIds[0], [selectedIds])
+  const selectedDocumentIds = useMemo(() => selectedIds, [selectedIds])
 
   const sendMessage = async (message: string) => {
     if (streamIntervalRef.current) {
@@ -77,7 +77,7 @@ export function ChatPageClient({
 
       const response = await mutateAsync({
         question: message,
-        document_id: selectedDocumentId,
+        document_ids: selectedDocumentIds,
         messages: contextMessages,
       })
 
@@ -160,9 +160,9 @@ export function ChatPageClient({
           <span className="text-sm font-medium text-text-primary">
             Chat with your notes
           </span>
-          {selectedDocumentId && (
+          {selectedDocumentIds.length > 0 && (
             <span className="hidden lg:inline-flex ml-auto text-[11px] text-text-tertiary bg-surface-subtle border border-border-default rounded-md px-2 py-0.5">
-              {documents.find((d) => d.id === selectedDocumentId)?.title || "Document"}
+              {documents.find((d) => d.id === selectedDocumentIds[0])?.title || "Document"}
             </span>
           )}
 
@@ -172,8 +172,8 @@ export function ChatPageClient({
               <button className="lg:hidden ml-auto inline-flex items-center gap-1.5 text-[11px] text-text-tertiary bg-surface-subtle border border-border-default rounded-md px-2 py-0.5">
                 <FileText className="size-3" />
                 <span className="max-w-[120px] truncate">
-                  {selectedDocumentId
-                    ? documents.find((d) => d.id === selectedDocumentId)?.title || "Document"
+                  {selectedDocumentIds.length > 0
+                    ? documents.find((d) => d.id === selectedDocumentIds[0])?.title || "Document"
                     : "Select context"}
                 </span>
                 <ChevronDown className="size-3" />
