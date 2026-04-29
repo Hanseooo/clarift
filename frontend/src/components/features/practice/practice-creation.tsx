@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { useCreatePractice } from "@/hooks/use-practice";
+import { usePracticeCreation } from "@/hooks/use-practice-creation";
 import { cn } from "@/lib/utils";
 
 type PracticeCreationProps = {
@@ -16,7 +16,7 @@ export function PracticeCreation({ selectedTopics, onStartLesson }: PracticeCrea
   const router = useRouter();
   const [drillCount, setDrillCount] = useState(5);
   const [countError, setCountError] = useState<string | null>(null);
-  const { mutateAsync, isLoading, error } = useCreatePractice();
+  const { create, isLoading, error } = usePracticeCreation();
 
   const handleCountChange = (value: string) => {
     const num = parseInt(value, 10);
@@ -36,10 +36,7 @@ export function PracticeCreation({ selectedTopics, onStartLesson }: PracticeCrea
       setCountError("Please enter a number between 1 and 20");
       return;
     }
-    const response = await mutateAsync({
-      weak_topics: selectedTopics,
-      drill_count: drillCount,
-    });
+    const response = await create(selectedTopics, drillCount);
     router.push(`/practice/${response.practice_id}`);
   };
 
