@@ -180,7 +180,7 @@ export function LoginContent() {
                 </p>
               </div>
 
-              <div className="pt-2">
+              <div className="w-full max-w-full px-4 pt-2">
                 <SignIn
                   path="/login"
                   fallbackRedirectUrl="/dashboard"
@@ -190,6 +190,7 @@ export function LoginContent() {
                       hideButtons: false,
                     },
                     elements: {
+                      card: "w-full max-w-[360px] mx-auto",
                       headerTitle: "hidden",
                       headerSubtitle: "hidden",
                       dividerText:
