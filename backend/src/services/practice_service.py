@@ -59,15 +59,15 @@ async def get_weak_areas(
 ) -> list[dict[str, Any]]:
     """
     Returns topics meeting weak criteria:
-    - attempts >= 5
+    - attempts >= 3
     - accuracy < 70%
-    - quiz_count >= 2
+    - quiz_count >= 1
     """
     result = await db.execute(
         select(UserTopicPerformance).where(
             UserTopicPerformance.user_id == user_id,
-            UserTopicPerformance.attempts >= 5,
-            UserTopicPerformance.quiz_count >= 2,
+            UserTopicPerformance.attempts >= 3,
+            UserTopicPerformance.quiz_count >= 1,
             (UserTopicPerformance.correct * 1.0 / UserTopicPerformance.attempts) < 0.7,
         )
     )
