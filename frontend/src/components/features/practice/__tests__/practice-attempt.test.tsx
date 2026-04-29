@@ -43,4 +43,28 @@ describe("PracticeAttempt", () => {
 
     expect(onFinish).not.toHaveBeenCalled()
   })
+
+  it("renders checkboxes for multi_select type", () => {
+    const multiDrill = {
+      ...mockDrills[0],
+      type: "multi_select",
+      correct_answer: ["4", "5"],
+      options: ["3", "4", "5"],
+    }
+
+    render(<PracticeAttempt drills={[multiDrill]} practiceId="p1" submitPractice={vi.fn()} />)
+    expect(screen.getAllByRole("checkbox")).toHaveLength(3)
+  })
+
+  it("renders sortable list for ordering type", () => {
+    const orderDrill = {
+      ...mockDrills[0],
+      type: "ordering",
+      correct_answer: ["A", "B", "C"],
+      options: ["A", "B", "C"],
+    }
+
+    render(<PracticeAttempt drills={[orderDrill]} practiceId="p1" submitPractice={vi.fn()} />)
+    expect(screen.getAllByRole("button", { name: /drag/i })).toHaveLength(3)
+  })
 })

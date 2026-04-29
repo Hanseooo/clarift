@@ -1,11 +1,29 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, GripVertical } from "lucide-react";
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 
 import { Button } from "@/components/ui/button";
 import { RichMarkdown } from "@/components/ui/rich-markdown";
 import { useSubmitPractice } from "@/hooks/use-practice";
+import { cn } from "@/lib/utils";
 
 type DrillType = "mcq" | "true_false" | "identification" | "multi_select" | "ordering";
 
@@ -39,6 +57,24 @@ function normalizeAnswer(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function SortableItem({ id, label }: { id: string; label: string }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id })
+  const style = { transform: CSS.Transform.toString(transform), transition }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2 p-3 border border-border-default rounded-lg bg-surface-card"
+    >
+      <button {...attributes} {...listeners} className="text-text-tertiary" aria-label="drag">
+        <GripVertical className="size-4" />
+      </button>
+      <span className="text-sm">{label}</span>
+    </div>
+  )
+}
+
 export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: submitPracticeProp }: PracticeAttemptProps) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -47,6 +83,11 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const { mutateAsync: submitPracticeHook } = useSubmitPractice();
   const submitPractice = submitPracticeProp ?? submitPracticeHook;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
 
   const current = drills[index];
   const isLast = index >= drills.length - 1;
@@ -66,8 +107,31 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
   }
 
   const expected = String(current.correct_answer ?? "");
-  const isCorrect = checked && normalizeAnswer(answer) === normalizeAnswer(expected);
-  const isWrong = checked && !isCorrect;
+
+  const isSelectedMulti = (option: string) =>
+    (answers[current.id] ?? "").split(",").includes(option)
+
+  const isCorrectMulti = (option: string) =>
+    Array.isArray(current.correct_answer) && (current.correct_answer as string[]).includes(option)
+
+  const toggleMultiSelect = (option: string) => {
+    const currentAnswers = (answers[current.id] ?? "").split(",").filter(Boolean)
+    const next = currentAnswers.includes(option)
+      ? currentAnswers.filter((a) => a !== option)
+      : [...currentAnswers, option]
+    handleSelect(next.join(","))
+  }
+
+  const isCorrect = () => {
+    if (current.type === "multi_select") {
+      const selected = (answers[current.id] ?? "").split(",").filter(Boolean).sort()
+      const correct = (current.correct_answer as string[]).sort()
+      return JSON.stringify(selected) === JSON.stringify(correct)
+    }
+    return normalizeAnswer(answers[current.id]) === normalizeAnswer(String(current.correct_answer ?? ""))
+  }
+
+  const isWrong = checked && !isCorrect();
 
   const handleSelect = (value: string) => {
     if (checked) return;
@@ -180,6 +244,57 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
               );
             })}
           </div>
+        ) : current.type === "multi_select" ? (
+          <div className="space-y-2">
+            {current.options?.map((option: string) => (
+              <label
+                key={option}
+                className={cn(
+                  "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                  checked && isCorrectMulti(option)
+                    ? "border-success-500 bg-success-100"
+                    : checked && isSelectedMulti(option)
+                    ? "border-danger-500 bg-danger-100"
+                    : "border-border-default hover:bg-surface-subtle"
+                )}
+              >
+                <input
+                  type="checkbox"
+                  disabled={checked}
+                  checked={isSelectedMulti(option)}
+                  onChange={() => toggleMultiSelect(option)}
+                  className="size-4 accent-brand-500"
+                />
+                <span className="text-sm">{option}</span>
+              </label>
+            ))}
+          </div>
+        ) : current.type === "ordering" ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={(event) => {
+              const { active, over } = event
+              if (over && active.id !== over.id) {
+                const currentOrder = (answers[current.id] ?? "").split(",").filter(Boolean)
+                const oldIndex = currentOrder.indexOf(String(active.id))
+                const newIndex = currentOrder.indexOf(String(over.id))
+                const next = arrayMove(currentOrder, oldIndex, newIndex)
+                handleSelect(next.join(","))
+              }
+            }}
+          >
+            <SortableContext
+              items={(answers[current.id] ?? current.options?.join(",") ?? "").split(",").filter(Boolean)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {(answers[current.id] ?? current.options?.join(",") ?? "").split(",").filter(Boolean).map((opt) => (
+                  <SortableItem key={opt} id={opt} label={opt} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         ) : (
           <input
             disabled={checked}
@@ -196,7 +311,7 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
           </Button>
         ) : (
           <div className="space-y-3">
-            {isCorrect && (
+            {isCorrect() && (
               <div className="flex items-center gap-2 rounded-lg bg-[#F0FDF4] px-3 py-2 text-[#166534] dark:bg-[#052E16] dark:text-[#4ADE80]">
                 <CheckCircle2 className="h-4 w-4" />
                 <span className="text-sm font-medium">Correct!</span>
