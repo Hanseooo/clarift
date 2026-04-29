@@ -1,8 +1,6 @@
 "use client"
 
-import Link from "next/link"
 import { AppShellLogo } from "@/components/app-shell-logo"
-import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 export function LandingNavbar() {
@@ -12,15 +10,6 @@ export function LandingNavbar() {
         <AppShellLogo />
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Link href="/login">
-            <Button
-              variant="default"
-              size="sm"
-              className="rounded-lg h-9 px-4"
-            >
-              Get Started
-            </Button>
-          </Link>
         </div>
       </div>
     </nav>

@@ -1,8 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import { useClerk } from "@clerk/nextjs"
 import { OnboardingForm } from "@/components/features/onboarding/onboarding-form"
 import { ThemeSettings } from "@/components/theme-settings"
+import { Button } from "@/components/ui/button"
+import { LogOut } from "lucide-react"
 
 interface SettingsClientProps {
   preferences: {
@@ -15,6 +18,7 @@ interface SettingsClientProps {
 
 export function SettingsClient({ preferences }: SettingsClientProps) {
   const [showSuccess, setShowSuccess] = useState(false)
+  const { signOut } = useClerk()
 
   return (
     <div className="space-y-8 max-w-[640px] mx-auto">
@@ -52,6 +56,17 @@ export function SettingsClient({ preferences }: SettingsClientProps) {
             setTimeout(() => setShowSuccess(false), 3000)
           }}
         />
+      </div>
+
+      <div className="pt-6 border-t border-border-default">
+        <Button
+          variant="destructive"
+          onClick={() => signOut({ redirectUrl: "/login" })}
+          className="w-full"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sign out
+        </Button>
       </div>
     </div>
   )

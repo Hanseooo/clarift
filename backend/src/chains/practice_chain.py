@@ -73,6 +73,55 @@ async def _validate_topics_with_llm(topics: list[str]) -> list[str]:
     return normalized or topics
 
 
+DRILL_GENERATION_PROMPT = (
+    "You are an encouraging tutor for Filipino students. Generate exactly {count} practice drills using ONLY the source material below.\n\n"
+    "## ABSOLUTE RULES\n"
+    "1. Every drill MUST be based strictly on the provided source material.\n"
+    "2. Do NOT use outside knowledge, common sense, or invented scenarios.\n"
+    "3. If the source material cannot support the requested number of drills, generate only as many as the text allows. Never invent questions.\n\n"
+    "## SOURCE MATERIAL\n{context}\n\n"
+    "## TOPICS TO COVER\n{topics}\n\n"
+    "## DIFFICULTY PROGRESSION\n"
+    "Distribute difficulties as evenly as possible across the drills:\n"
+    "- Difficulty 1 (basic recall/definition): ~30-40% of drills\n"
+    "- Difficulty 2 (understanding/application): ~30-40% of drills\n"
+    "- Difficulty 3 (complex analysis/calculation): ~20-40% of drills\n"
+    "Start with difficulty 1 and increase progressively.\n\n"
+    "## DRILL CONSTRAINTS\n"
+    "- `question`: max 200 characters.\n"
+    "- `options`: Exactly 4 strings for mcq/true_false; empty array `[]` for identification.\n"
+    "- `correct_answer`: The exact text of the correct option (for mcq) or the correct term (for identification/true_false). Max 100 characters.\n"
+    "- `explanation`: Why the answer is correct, citing the source material. Max 250 characters.\n"
+    "- `difficulty`: integer 1, 2, or 3.\n"
+    "- `topic`: 1-3 word label matching one of the provided topics.\n\n"
+    "## FORMATTING RULES FOR QUESTION TEXT\n"
+    "- LaTeX (`$...$` or `$$...$$`) is allowed for mathematical expressions, chemical formulas, and equations.\n"
+    "- code blocks (```lang...```) are allowed for programming snippets.\n"
+    "- tables (`| col | col |`) are allowed for structured data.\n"
+    "- Bold/italic and lists are allowed for emphasis and multi-part information.\n\n"
+    "## OUTPUT FORMAT\n"
+    "Return ONLY a valid JSON array. No markdown code fences, no extra text.\n"
+    "\n"
+    "[\n"
+    "  {{\n"
+    '    "question": "string (max 200 chars)",\n'
+    '    "type": "mcq | true_false | identification",\n'
+    '    "options": ["string"] or [],\n'
+    '    "correct_answer": "string (max 100 chars)",\n'
+    '    "explanation": "string (max 250 chars)",\n'
+    '    "difficulty": 1 | 2 | 3,\n'
+    '    "topic": "string (1-3 words)"\n'
+    "  }}\n"
+    "]\n\n"
+    "## SELF-CHECK (perform before outputting)\n"
+    "- [ ] Is every drill derived solely from the source material?\n"
+    "- [ ] Are there exactly the requested number of drills, or fewer only if the text is insufficient?\n"
+    "- [ ] Are difficulties distributed across 1, 2, and 3?\n"
+    "- [ ] Do identification drills have an empty `options` array?\n"
+    "- [ ] Is the output a valid JSON array with no trailing commas?"
+)
+
+
 @retry(
     wait=wait_exponential(min=1, max=8),
     stop=stop_after_attempt(3),
@@ -92,48 +141,7 @@ async def _generate_drills_with_llm(
 
     context = "\n\n".join(chunk.get("content", "") for chunk in chunks[:5])
 
-    prompt = (
-        f"You are an encouraging tutor for Filipino students. Generate exactly {count} practice drills using ONLY the source material below.\n\n"
-        "## ABSOLUTE RULES\n"
-        "1. Every drill MUST be based strictly on the provided source material.\n"
-        "2. Do NOT use outside knowledge, common sense, or invented scenarios.\n"
-        "3. If the source material cannot support the requested number of drills, generate only as many as the text allows. Never invent questions.\n\n"
-        f"## SOURCE MATERIAL\n{context}\n\n"
-        f"## TOPICS TO COVER\n{', '.join(topics)}\n\n"
-        "## DIFFICULTY PROGRESSION\n"
-        "Distribute difficulties as evenly as possible across the drills:\n"
-        "- Difficulty 1 (basic recall/definition): ~30-40% of drills\n"
-        "- Difficulty 2 (understanding/application): ~30-40% of drills\n"
-        "- Difficulty 3 (complex analysis/calculation): ~20-40% of drills\n"
-        "Start with difficulty 1 and increase progressively.\n\n"
-        "## DRILL CONSTRAINTS\n"
-        "- `question`: max 200 characters.\n"
-        "- `options`: Exactly 4 strings for mcq/true_false; empty array `[]` for identification.\n"
-        "- `correct_answer`: The exact text of the correct option (for mcq) or the correct term (for identification/true_false). Max 100 characters.\n"
-        "- `explanation`: Why the answer is correct, citing the source material. Max 250 characters.\n"
-        "- `difficulty`: integer 1, 2, or 3.\n"
-        "- `topic`: 1-3 word label matching one of the provided topics.\n\n"
-        "## OUTPUT FORMAT\n"
-        "Return ONLY a valid JSON array. No markdown code fences, no extra text.\n"
-        "\n"
-        "[\n"
-        "  {\n"
-        '    "question": "string (max 200 chars)",\n'
-        '    "type": "mcq | true_false | identification",\n'
-        '    "options": ["string"] or [],\n'
-        '    "correct_answer": "string (max 100 chars)",\n'
-        '    "explanation": "string (max 250 chars)",\n'
-        '    "difficulty": 1 | 2 | 3,\n'
-        '    "topic": "string (1-3 words)"\n'
-        "  }\n"
-        "]\n\n"
-        "## SELF-CHECK (perform before outputting)\n"
-        "- [ ] Is every drill derived solely from the source material?\n"
-        "- [ ] Are there exactly the requested number of drills, or fewer only if the text is insufficient?\n"
-        "- [ ] Are difficulties distributed across 1, 2, and 3?\n"
-        "- [ ] Do identification drills have an empty `options` array?\n"
-        "- [ ] Is the output a valid JSON array with no trailing commas?"
-    )
+    prompt = DRILL_GENERATION_PROMPT.format(count=count, context=context, topics=", ".join(topics))
 
     response = await llm.ainvoke(prompt)
     raw = response.content

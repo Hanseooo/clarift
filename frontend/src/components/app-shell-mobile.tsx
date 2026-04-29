@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
   FileText,
-  BookOpen,
+  Settings2,
   Target,
   MessageSquare,
 } from "lucide-react"
@@ -14,9 +14,9 @@ import {
 const routes = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { name: "Documents", path: "/documents", icon: FileText },
-  { name: "Summaries", path: "/summaries", icon: BookOpen },
   { name: "Practice", path: "/practice", icon: Target },
   { name: "Chat", path: "/chat", icon: MessageSquare },
+  { name: "Settings", path: "/settings", icon: Settings2 },
 ]
 
 export function AppShellMobile() {
