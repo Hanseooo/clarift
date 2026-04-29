@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
 const socialLinks = [
-  { href: "https://hanseooo.vercel.app/", label: "Portfolio" },
+  { href: "https://hanseoo.vercel.app/", label: "Portfolio" },
   { href: "https://github.com/Hanseooo", label: "GitHub" },
   { href: "https://linkedin.com/in/hanseooo", label: "LinkedIn" },
 ];
