@@ -9,6 +9,7 @@ Create Date: 2026-04-29 23:39:36.059648
 from typing import Sequence, Union
 
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 from alembic import op
 
@@ -20,11 +21,19 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "user_topic_performance",
-        sa.Column("quiz_count", sa.Integer(), server_default=sa.text("0"), nullable=False),
-    )
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    columns = {col["name"] for col in inspector.get_columns("user_topic_performance")}
+    if "quiz_count" not in columns:
+        op.add_column(
+            "user_topic_performance",
+            sa.Column("quiz_count", sa.Integer(), server_default=sa.text("0"), nullable=False),
+        )
 
 
 def downgrade() -> None:
-    op.drop_column("user_topic_performance", "quiz_count")
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    columns = {col["name"] for col in inspector.get_columns("user_topic_performance")}
+    if "quiz_count" in columns:
+        op.drop_column("user_topic_performance", "quiz_count")
