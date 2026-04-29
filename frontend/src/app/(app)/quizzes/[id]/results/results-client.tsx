@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { QuestionReview } from "@/components/features/quiz/question-review";
 import { QuizResultsActions } from "@/components/features/quiz/quiz-results-actions";
+import { QuizResultsDialog } from "@/components/features/quiz/quiz-results-dialog";
 
 type QuizResultQuestion = {
   id: string;
@@ -15,16 +16,33 @@ type QuizResultQuestion = {
   type?: string;
 };
 
+type WeakTopic = {
+  topic: string;
+  accuracy: number;
+};
+
 interface ResultsClientProps {
   quizId: string;
   questions: QuizResultQuestion[];
+  score: number;
+  total: number;
+  weakTopics: WeakTopic[];
 }
 
-export function ResultsClient({ quizId, questions }: ResultsClientProps) {
+export function ResultsClient({ quizId, questions, score, total, weakTopics }: ResultsClientProps) {
   const [showAnswers, setShowAnswers] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(weakTopics.length > 0);
 
   return (
     <section className="space-y-4">
+      <QuizResultsDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        score={score}
+        total={total}
+        weakTopics={weakTopics}
+      />
+
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-text-primary">Question Review</h2>
       </div>

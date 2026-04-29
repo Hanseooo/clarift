@@ -33,9 +33,15 @@ type PracticeDrill = {
 
 type PageState = "select" | "lesson" | "drill";
 
-export function PracticePageClient({ initialWeakAreas }: { initialWeakAreas: WeakAreaItem[] }) {
+export function PracticePageClient({
+  initialWeakAreas,
+  preselectedTopics,
+}: {
+  initialWeakAreas: WeakAreaItem[]
+  preselectedTopics?: string[]
+}) {
   const [weakAreas, setWeakAreas] = useState<WeakAreaItem[]>(initialWeakAreas);
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>(preselectedTopics ?? []);
   const [state, setState] = useState<PageState>("select");
   const [drills, setDrills] = useState<PracticeDrill[]>([]);
   const [practiceId, setPracticeId] = useState<string>("");
