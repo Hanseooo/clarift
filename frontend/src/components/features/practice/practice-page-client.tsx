@@ -7,7 +7,8 @@ import { PracticeCreation } from "@/components/features/practice/practice-creati
 import { WeakAreasDisplay } from "@/components/features/practice/weak-areas-display";
 import { PracticeAttempt } from "@/components/features/practice/practice-attempt";
 import { Button } from "@/components/ui/button";
-import { useCreatePractice, useResetWeakArea, useWeakAreas } from "@/hooks/use-practice";
+import { usePracticeCreation } from "@/hooks/use-practice-creation";
+import { useResetWeakArea, useWeakAreas } from "@/hooks/use-practice";
 
 type WeakAreaItem = {
   topic: string;
@@ -43,11 +44,9 @@ export function PracticePageClient({
   const [weakAreas, setWeakAreas] = useState<WeakAreaItem[]>(initialWeakAreas);
   const [selectedTopics, setSelectedTopics] = useState<string[]>(preselectedTopics ?? []);
   const [state, setState] = useState<PageState>("select");
-  const [drills, setDrills] = useState<PracticeDrill[]>([]);
-  const [practiceId, setPracticeId] = useState<string>("");
 
   const { fetchWeakAreas } = useWeakAreas();
-  const { mutateAsync: createPractice, isLoading: isCreating } = useCreatePractice();
+  const { create, practiceId, drills, isLoading: isCreating } = usePracticeCreation();
   const { mutateAsync: resetWeakArea, isLoading: isResetting } = useResetWeakArea();
 
   useEffect(() => {
@@ -70,19 +69,12 @@ export function PracticePageClient({
   };
 
   const handleStartDrill = async () => {
-    const response = await createPractice({
-      weak_topics: selected,
-      drill_count: 5,
-    });
-    setPracticeId(response.practice_id);
-    setDrills(response.drills as PracticeDrill[]);
+    await create(selected, selected.length * 3);
     setState("drill");
   };
 
   const handleBackToSelect = () => {
     setState("select");
-    setDrills([]);
-    setPracticeId("");
   };
 
   const handleResetTopic = async (topic: string) => {
@@ -97,7 +89,11 @@ export function PracticePageClient({
         <Button variant="outline" size="sm" onClick={handleBackToSelect}>
           Back to Topics
         </Button>
-        <PracticeAttempt drills={drills} practiceId={practiceId} onFinish={handleBackToSelect} />
+        <PracticeAttempt
+          drills={drills as PracticeDrill[]}
+          practiceId={practiceId}
+          onFinish={handleBackToSelect}
+        />
       </div>
     );
   }
