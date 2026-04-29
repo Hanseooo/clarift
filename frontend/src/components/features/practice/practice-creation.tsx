@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useCreatePractice } from "@/hooks/use-practice";
+import { cn } from "@/lib/utils";
 
 type PracticeCreationProps = {
   selectedTopics: string[];
@@ -14,10 +15,25 @@ type PracticeCreationProps = {
 export function PracticeCreation({ selectedTopics, onStartLesson }: PracticeCreationProps) {
   const router = useRouter();
   const [drillCount, setDrillCount] = useState(5);
+  const [countError, setCountError] = useState<string | null>(null);
   const { mutateAsync, isLoading, error } = useCreatePractice();
+
+  const handleCountChange = (value: string) => {
+    const num = parseInt(value, 10);
+    if (Number.isNaN(num) || num < 1 || num > 20) {
+      setCountError("Please enter a number between 1 and 20");
+    } else {
+      setCountError(null);
+    }
+    setDrillCount(Number.isNaN(num) ? 0 : num);
+  };
 
   const onCreate = async () => {
     if (!selectedTopics.length) {
+      return;
+    }
+    if (drillCount < 1 || drillCount > 20) {
+      setCountError("Please enter a number between 1 and 20");
       return;
     }
     const response = await mutateAsync({
@@ -43,13 +59,17 @@ export function PracticeCreation({ selectedTopics, onStartLesson }: PracticeCrea
       <label className="block space-y-2">
         <span className="text-sm font-medium text-foreground">Drill count</span>
         <input
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          className={cn(
+            "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm",
+            countError && "border-red-500"
+          )}
           max={20}
           min={1}
           type="number"
           value={drillCount}
-          onChange={(event) => setDrillCount(Number(event.target.value))}
+          onChange={(event) => handleCountChange(event.target.value)}
         />
+        {countError && <p className="text-xs text-red-500 mt-1">{countError}</p>}
       </label>
 
       <Button className="w-full" disabled={!selectedTopics.length || isLoading} onClick={onCreate}>
