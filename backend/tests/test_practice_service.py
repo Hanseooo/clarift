@@ -14,9 +14,9 @@ os.environ.setdefault("PAYMONGO_SECRET_KEY", "test")
 os.environ.setdefault("PAYMONGO_WEBHOOK_SECRET", "test")
 
 import uuid
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock
 
 from src.services.practice_service import MINI_LESSON_PROMPT, get_weak_areas
 
