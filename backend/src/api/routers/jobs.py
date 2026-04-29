@@ -91,8 +91,8 @@ async def stream_job_progress(
         Yield SSE events until job is no longer pending/processing,
         or a timeout is reached.
         """
-        max_polls = 40  # ~40 secs if polling every second
-        poll_interval = 3.0  # seconds
+        max_polls = 240  # ~2 minutes at 0.5s interval
+        poll_interval = 0.5  # seconds
 
         for _ in range(max_polls):
             # End the current transaction to get fresh data from the database
