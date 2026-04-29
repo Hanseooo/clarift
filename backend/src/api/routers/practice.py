@@ -2,6 +2,7 @@
 Practice router for generating targeted drills based on weak areas.
 """
 
+import asyncio
 import uuid
 from datetime import datetime
 
@@ -98,11 +99,16 @@ async def generate_lesson(
             detail="topics must not be empty",
         )
 
-    result = await generate_mini_lesson(
-        db,
-        user_id=user.id,
-        topics=request.topics,
-    )
+    try:
+        result = await asyncio.wait_for(
+            generate_mini_lesson(db, user_id=user.id, topics=request.topics),
+            timeout=25.0,
+        )
+    except asyncio.TimeoutError:
+        raise HTTPException(
+            status_code=504,
+            detail="Practice generation is taking too long. Please try again in a moment.",
+        )
 
     return LessonResponse(
         lesson=result["lesson"],
@@ -130,12 +136,21 @@ async def create_practice(
             detail="drill_count must be between 1 and 20",
         )
 
-    result = await create_practice_session(
-        db,
-        user.id,
-        weak_topics=request.weak_topics,
-        drill_count=request.drill_count,
-    )
+    try:
+        result = await asyncio.wait_for(
+            create_practice_session(
+                db,
+                user.id,
+                weak_topics=request.weak_topics,
+                drill_count=request.drill_count,
+            ),
+            timeout=25.0,
+        )
+    except asyncio.TimeoutError:
+        raise HTTPException(
+            status_code=504,
+            detail="Practice generation is taking too long. Please try again in a moment.",
+        )
 
     return CreatePracticeResponse(
         practice_id=result["session_id"],
