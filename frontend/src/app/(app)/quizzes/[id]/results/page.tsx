@@ -115,7 +115,13 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
       )}
 
       {/* Question review with client-side reveal */}
-      <ResultsClient quizId={resolvedParams.id} questions={result.questions} />
+      <ResultsClient
+        quizId={resolvedParams.id}
+        questions={result.questions}
+        score={result.score}
+        total={result.questions.length}
+        weakTopics={weakTopics}
+      />
     </div>
   );
 }

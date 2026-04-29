@@ -12,7 +12,11 @@ type WeakAreaItem = {
   quiz_count: number;
 };
 
-export default async function PracticePage() {
+export default async function PracticePage({
+  searchParams,
+}: {
+  searchParams: { topics?: string }
+}) {
   const user = await currentUser();
   if (!user) {
     redirect("/login");
@@ -23,6 +27,9 @@ export default async function PracticePage() {
   if (!token) {
     redirect("/login");
   }
+
+  const topicsParam = searchParams.topics
+  const initialTopics = topicsParam ? topicsParam.split(",") : undefined
 
   const apiClient = createAuthenticatedClient(token);
   const response = await apiClient.GET("/api/v1/practice/weak-areas");
@@ -39,7 +46,7 @@ export default async function PracticePage() {
           Focus on what you need to improve most
         </p>
       </header>
-      <PracticePageClient initialWeakAreas={weakAreas} />
+      <PracticePageClient initialWeakAreas={weakAreas} preselectedTopics={initialTopics} />
     </div>
   );
 }
