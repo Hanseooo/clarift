@@ -24,6 +24,7 @@ type PracticeAttemptProps = {
   drills: PracticeDrill[];
   practiceId?: string;
   onFinish?: () => void;
+  submitPractice?: (args: { practiceId: string; answers: Record<string, string> }) => Promise<unknown>;
 };
 
 const questionTypeLabel: Record<DrillType, string> = {
@@ -38,12 +39,14 @@ function normalizeAnswer(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export function PracticeAttempt({ drills, practiceId, onFinish }: PracticeAttemptProps) {
+export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: submitPracticeProp }: PracticeAttemptProps) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { mutateAsync: submitPractice } = useSubmitPractice();
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { mutateAsync: submitPracticeHook } = useSubmitPractice();
+  const submitPractice = submitPracticeProp ?? submitPracticeHook;
 
   const current = drills[index];
   const isLast = index >= drills.length - 1;
@@ -80,13 +83,18 @@ export function PracticeAttempt({ drills, practiceId, onFinish }: PracticeAttemp
     if (isLast) {
       if (practiceId) {
         setIsSubmitting(true);
+        setSubmitError(null);
         try {
           await submitPractice({ practiceId, answers });
+          onFinish?.();
+        } catch (err) {
+          setSubmitError(err instanceof Error ? err.message : "Failed to submit. Please try again.");
         } finally {
           setIsSubmitting(false);
         }
+      } else {
+        onFinish?.();
       }
-      onFinish?.();
       return;
     }
     setIndex((prev) => prev + 1);
@@ -213,6 +221,9 @@ export function PracticeAttempt({ drills, practiceId, onFinish }: PracticeAttemp
                 className="prose-compact prose-p:inline prose-p:m-0 prose-p:text-sm"
               />
             </div>
+            {submitError && (
+              <p className="text-sm text-danger-500 mb-2">{submitError}</p>
+            )}
             <Button
               onClick={handleContinue}
               disabled={isSubmitting}
