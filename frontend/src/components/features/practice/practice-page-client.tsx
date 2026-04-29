@@ -7,7 +7,8 @@ import { PracticeCreation } from "@/components/features/practice/practice-creati
 import { WeakAreasDisplay } from "@/components/features/practice/weak-areas-display";
 import { PracticeAttempt } from "@/components/features/practice/practice-attempt";
 import { Button } from "@/components/ui/button";
-import { useCreatePractice, useResetWeakArea, useWeakAreas } from "@/hooks/use-practice";
+import { usePracticeCreation } from "@/hooks/use-practice-creation";
+import { useResetWeakArea, useWeakAreas } from "@/hooks/use-practice";
 
 type WeakAreaItem = {
   topic: string;
@@ -41,7 +42,7 @@ export function PracticePageClient({ initialWeakAreas }: { initialWeakAreas: Wea
   const [practiceId, setPracticeId] = useState<string>("");
 
   const { fetchWeakAreas } = useWeakAreas();
-  const { mutateAsync: createPractice, isLoading: isCreating } = useCreatePractice();
+  const { create: createPractice, isLoading: isCreating } = usePracticeCreation();
   const { mutateAsync: resetWeakArea, isLoading: isResetting } = useResetWeakArea();
 
   useEffect(() => {
@@ -64,10 +65,7 @@ export function PracticePageClient({ initialWeakAreas }: { initialWeakAreas: Wea
   };
 
   const handleStartDrill = async () => {
-    const response = await createPractice({
-      weak_topics: selected,
-      drill_count: 5,
-    });
+    const response = await createPractice(selected, 5);
     setPracticeId(response.practice_id);
     setDrills(response.drills as PracticeDrill[]);
     setState("drill");

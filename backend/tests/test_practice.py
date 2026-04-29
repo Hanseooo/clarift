@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import uuid
 from datetime import datetime, timezone
@@ -140,5 +141,48 @@ async def test_submit_practice_answers_success(test_user_id: str) -> None:
 
         mock_db.commit.assert_awaited_once()
 
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_create_practice_timeout(monkeypatch):
+    async def slow_create(*args, **kwargs):
+        await asyncio.sleep(30)
+
+    monkeypatch.setattr("src.api.routers.practice.create_practice_session", slow_create)
+    monkeypatch.setattr(
+        "src.api.deps.check_and_increment_quota",
+        AsyncMock(return_value=None),
+    )
+
+    mock_user = SimpleNamespace(
+        id=uuid.uuid4(),
+        clerk_user_id="test_clerk",
+        email="test@example.com",
+        tier="free",
+    )
+    mock_db = AsyncMock()
+
+    async def override_get_current_user():
+        return mock_user
+
+    async def override_get_db():
+        return mock_db
+
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_db] = override_get_db
+
+    try:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post(
+                "/api/v1/practice",
+                json={"weak_topics": ["A"], "drill_count": 5},
+            )
+
+        assert response.status_code == status.HTTP_504_GATEWAY_TIMEOUT
+        assert "too long" in response.json()["detail"]
     finally:
         app.dependency_overrides.clear()

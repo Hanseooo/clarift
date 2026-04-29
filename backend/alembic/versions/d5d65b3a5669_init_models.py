@@ -109,6 +109,7 @@ def upgrade() -> None:
         sa.Column("topic", sa.Text(), nullable=False),
         sa.Column("attempts", sa.Integer(), server_default=sa.text("0"), nullable=False),
         sa.Column("correct", sa.Integer(), server_default=sa.text("0"), nullable=False),
+        sa.Column("quiz_count", sa.Integer(), server_default=sa.text("0"), nullable=False),
         sa.Column(
             "last_updated",
             postgresql.TIMESTAMP(timezone=True),
