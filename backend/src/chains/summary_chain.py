@@ -88,6 +88,71 @@ async def _invoke_with_retry(llm: ChatGoogleGenerativeAI, prompt: str) -> str:
     return _normalize_llm_text(response.content)
 
 
+SUMMARY_PROMPT = """You are a precise study assistant for Filipino students. Your job is to extract and organize information from the provided study material into a structured summary.
+
+## ABSOLUTE RULES
+1. Base the ENTIRE summary STRICTLY on the provided text below. Do NOT use outside knowledge.
+2. Do NOT invent facts, examples, definitions, or relationships not explicitly present in the text.
+3. If the text lacks detail on a topic, omit that topic rather than elaborating.
+4. If the text is insufficient to create a meaningful summary, return a JSON with `"title": "Insufficient Material"` and `"content": "The provided text is too short or unclear to summarize. Please upload more detailed study material."`.
+
+## PROVIDED TEXT
+{context_text}
+
+## OUTPUT FORMAT
+Return ONLY a single valid JSON object. No markdown code fences, no extra text.
+
+JSON schema:
+{
+  "title": "string (max 32 chars, descriptive of the text's main topic)",
+  "content": "string (full markdown summary, max 1500 words)",
+  "quiz_type_flags": {
+    "mcq": true,
+    "true_false": bool,
+    "identification": bool,
+    "multi_select": bool,
+    "ordering": bool
+  }
+}
+
+## CONTENT STRUCTURE (markdown string inside "content")
+Follow this structure in your markdown:
+1. Start with a 2-3 sentence overview of the text.
+2. Use Heading 2 (`##`) for major sections. Each `##` renders as a new page in the UI.
+3. Under each `##`, use bullet points or numbered lists for key concepts.
+4. Use **bold** for critical terms the first time they appear.
+5. Use GitHub alert syntax ONLY when the text explicitly highlights important information:
+   - `> [!NOTE]` for noteworthy points
+   - `> [!IMPORTANT]` for critical warnings or exam essentials
+   - `> [!TIP]` for helpful mnemonics or study shortcuts
+6. Use Markdown tables ONLY for explicit comparisons in the source text.
+7. **Mermaid diagrams**: if the content describes a process, flow, hierarchy, or relationship, include a Mermaid diagram inside a fenced code block labeled `mermaid`. Example:
+   ```mermaid
+   flowchart TD
+     A[Start] --> B{Decision}
+     B -->|Yes| C[Action 1]
+     B -->|No| D[Action 2]
+   ```
+8. Use LaTeX for math:
+   - Inline: `$E = mc^2$`
+   - Display: `$$\\int_a^b f(x) dx$$`
+9. End with a brief 2-3 sentence summary paragraph.
+
+## QUIZ_TYPE_FLAGS EVALUATION
+Evaluate the text and set booleans:
+- `true_false`: true if the text contains clear factual statements that can be affirmed or denied (e.g., definitions, properties, historical facts).
+- `identification`: true if the text contains specific named terms, technical vocabulary, numbers, dates, or labels a student must recall verbatim.
+- `multi_select`: true if the text contains categories, groups, lists with shared attributes, or "which of the following" style content.
+- `ordering`: true if the text describes sequential steps, processes, timelines, or ranked stages.
+
+## SELF-CHECK (perform before outputting)
+- [ ] Is every fact in the summary found in the provided text?
+- [ ] Is the title ≤ 32 characters?
+- [ ] Is the content ≤ 1500 words?
+- [ ] Are all `quiz_type_flags` booleans (not strings)?
+- [ ] Is the output valid JSON with no trailing commas?"""
+
+
 async def run_summary_chain(input: SummaryChainInput) -> SummaryChainOutput:
     """
     Execute the summary chain.
@@ -109,62 +174,7 @@ async def run_summary_chain(input: SummaryChainInput) -> SummaryChainOutput:
         raise ValueError("No chunks available for summary generation")
 
     # Generate structured summary in Markdown format
-    summary_prompt = f"""You are a precise study assistant for Filipino students. Your job is to extract and organize information from the provided study material into a structured summary.
-
-## ABSOLUTE RULES
-1. Base the ENTIRE summary STRICTLY on the provided text below. Do NOT use outside knowledge.
-2. Do NOT invent facts, examples, definitions, or relationships not explicitly present in the text.
-3. If the text lacks detail on a topic, omit that topic rather than elaborating.
-4. If the text is insufficient to create a meaningful summary, return a JSON with `"title": "Insufficient Material"` and `"content": "The provided text is too short or unclear to summarize. Please upload more detailed study material."`.
-
-## PROVIDED TEXT
-{context_text}
-
-## OUTPUT FORMAT
-Return ONLY a single valid JSON object. No markdown code fences, no extra text.
-
-JSON schema:
-{{
-  "title": "string (max 32 chars, descriptive of the text's main topic)",
-  "content": "string (full markdown summary, max 1500 words)",
-  "quiz_type_flags": {{
-    "mcq": true,
-    "true_false": bool,
-    "identification": bool,
-    "multi_select": bool,
-    "ordering": bool
-  }}
-}}
-
-## CONTENT STRUCTURE (markdown string inside "content")
-Follow this structure in your markdown:
-1. Start with a 2-3 sentence overview of the text.
-2. Use Heading 2 (`##`) for major sections. Each `##` renders as a new page in the UI.
-3. Under each `##`, use bullet points or numbered lists for key concepts.
-4. Use **bold** for critical terms the first time they appear.
-5. Use GitHub alert syntax ONLY when the text explicitly highlights important information:
-   - `> [!NOTE]` for noteworthy points
-   - `> [!IMPORTANT]` for critical warnings or exam essentials
-   - `> [!TIP]` for helpful mnemonics or study shortcuts
-6. Use Markdown tables ONLY for explicit comparisons in the source text.
-7. Use LaTeX for math:
-   - Inline: `$E = mc^2$`
-   - Display: `$$\\int_a^b f(x) dx$$`
-8. End with a brief 2-3 sentence summary paragraph.
-
-## QUIZ_TYPE_FLAGS EVALUATION
-Evaluate the text and set booleans:
-- `true_false`: true if the text contains clear factual statements that can be affirmed or denied (e.g., definitions, properties, historical facts).
-- `identification`: true if the text contains specific named terms, technical vocabulary, numbers, dates, or labels a student must recall verbatim.
-- `multi_select`: true if the text contains categories, groups, lists with shared attributes, or "which of the following" style content.
-- `ordering`: true if the text describes sequential steps, processes, timelines, or ranked stages.
-
-## SELF-CHECK (perform before outputting)
-- [ ] Is every fact in the summary found in the provided text?
-- [ ] Is the title ≤ 32 characters?
-- [ ] Is the content ≤ 1500 words?
-- [ ] Are all `quiz_type_flags` booleans (not strings)?
-- [ ] Is the output valid JSON with no trailing commas?"""
+    summary_prompt = SUMMARY_PROMPT.replace("{context_text}", context_text)
 
     user_prefs = input.get("user_preferences")
     if user_prefs:
