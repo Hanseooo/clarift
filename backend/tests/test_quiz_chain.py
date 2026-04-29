@@ -5,11 +5,11 @@ from __future__ import annotations
 import pytest
 
 from src.chains.quiz_chain import (
+    _build_generation_prompt,
     _fallback_questions,
     _normalize_question,
-    _validate_questions,
     _parse_llm_output,
-    _build_generation_prompt,
+    _validate_questions,
 )
 
 

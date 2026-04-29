@@ -62,6 +62,7 @@ async def get_relevant_chunks(
     user_id: uuid.UUID,
     query: str,
     document_id: uuid.UUID | None = None,
+    document_ids: list[uuid.UUID] | None = None,
     limit: int = 5,
 ) -> list[dict[str, Any]]:
     """Semantic search over the user's document chunks using the given query string."""
@@ -71,8 +72,16 @@ async def get_relevant_chunks(
         DocumentChunk.user_id == user_id,
         DocumentChunk.embedding.is_not(None),
     )
+
+    # Handle both single document_id and list of document_ids for backward compatibility
+    ids = []
     if document_id:
-        stmt = stmt.where(DocumentChunk.document_id == document_id)
+        ids.append(document_id)
+    if document_ids:
+        ids.extend(document_ids)
+
+    if ids:
+        stmt = stmt.where(DocumentChunk.document_id.in_(ids))
 
     stmt = stmt.order_by(DocumentChunk.embedding.cosine_distance(query_embedding)).limit(limit)
     result = await db.execute(stmt)

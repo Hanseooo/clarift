@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
 import { UploadDropzone } from "@/components/upload-dropzone"
 import { SSEProgress } from "@/components/ui/sse-progress"
 import { DocumentList } from "./document-list"
@@ -25,6 +26,7 @@ interface ActiveJob {
 
 export function DocumentsClient({ documents }: DocumentsClientProps) {
   const { getToken } = useAuth()
+  const router = useRouter()
   const [search, setSearch] = useState("")
   const [activeJobs, setActiveJobs] = useState<Record<string, ActiveJob>>({})
 
@@ -45,7 +47,8 @@ export function DocumentsClient({ documents }: DocumentsClientProps) {
       delete next[jobId]
       return next
     })
-  }, [])
+    router.refresh()
+  }, [router])
 
   return (
     <div className="space-y-6">

@@ -94,6 +94,12 @@ async def process_document(ctx, document_id: str, job_id: str):
             if not document:
                 raise ValueError(f"Document {document_id} not found")
 
+            # 1b. Update Job status to processing
+            await session.execute(
+                update(Job).where(Job.id == uuid.UUID(job_id)).values(status="processing")
+            )
+            await session.commit()
+
             # 2. Download from R2
             logger.info(f"Downloading from R2: {document.r2_key}")
             s3_service = S3Service()
@@ -131,7 +137,7 @@ async def process_document(ctx, document_id: str, job_id: str):
 
             # 7. Update Document status
             await session.execute(
-                update(Document).where(Document.id == document_id).values(status="completed")
+                update(Document).where(Document.id == document_id).values(status="ready")
             )
 
             # 8. Update Job status
@@ -185,6 +191,11 @@ async def run_summary_job(
     try:
         async with AsyncSessionLocal() as session:
             logger.info(f"Database session created for summary {summary_id}")
+            # Update job status to processing
+            await session.execute(
+                update(Job).where(Job.id == uuid.UUID(job_id)).values(status="processing")
+            )
+            await session.commit()
             # Generate summary using service with timeout
             logger.info(f"Calling generate_summary_for_document for document {document_id}")
             try:
@@ -421,6 +432,7 @@ class WorkerSettings:
 
     # Default is 0.5s. Set to 10.0s to stay under 10k daily requests on Upstash.
     poll_delay = 10.0
+
 
 # --- FastAPI bridge for enqueueing jobs ---
 

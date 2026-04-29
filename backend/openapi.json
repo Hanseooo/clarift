@@ -912,11 +912,6 @@
         "summary": "Stream Job Progress",
         "description": "Stream Server-Sent Events (SSE) for job status updates.\nFrontend polls this endpoint to show real‑time progress.",
         "operationId": "stream_job_progress_api_v1_jobs__job_id__stream_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "job_id",
@@ -925,6 +920,22 @@
             "schema": {
               "type": "string",
               "title": "Job Id"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Token"
             }
           }
         ],
@@ -1158,7 +1169,7 @@
         "properties": {
           "file": {
             "type": "string",
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File"
           }
         },
@@ -1189,6 +1200,20 @@
       },
       "ChatRequest": {
         "properties": {
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
           "document_id": {
             "anyOf": [
               {
@@ -2060,6 +2085,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",

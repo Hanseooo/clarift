@@ -136,8 +136,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
   const isProcessing =
     document.status === "pending" || document.status === "processing";
 
-  const isViewable =
-    document.status === "ready" || document.status === "completed";
+  const isViewable = document.status === "ready";
 
   let documentUrl: string | undefined;
   if (isViewable) {

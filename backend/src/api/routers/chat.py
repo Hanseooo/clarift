@@ -28,7 +28,8 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     """Request body for chat endpoint."""
 
-    document_id: str | None = None
+    document_ids: list[str] | None = None
+    document_id: str | None = None  # deprecated, use document_ids
     question: str
     messages: list[ChatMessage] = []
 
@@ -60,12 +61,21 @@ async def chat(
             detail="Question cannot be empty",
         )
 
-    doc_id = uuid.UUID(request.document_id) if request.document_id else None
+    # Collect document IDs from both new and old fields
+    doc_ids = []
+    if request.document_ids:
+        doc_ids.extend(request.document_ids)
+    if request.document_id:
+        doc_ids.append(request.document_id)
+
+    # Convert to UUID objects
+    doc_id_uuids = [uuid.UUID(did) for did in doc_ids] if doc_ids else None
+
     chunks = await get_relevant_chunks(
         db,
         user_id=user.id,
         query=request.question,
-        document_id=doc_id,
+        document_ids=doc_id_uuids,  # pass list instead of single
         limit=5,
     )
 
@@ -79,7 +89,8 @@ async def chat(
 
     chain_input = ChatChainInput(
         user_id=str(user.id),
-        document_id=request.document_id,
+        document_id=request.document_id
+        or (request.document_ids[0] if request.document_ids else None),
         question=request.question,
         chunks=chunks,
         messages=[m.model_dump() for m in request.messages],
