@@ -28,7 +28,6 @@ os.environ.setdefault("PAYMONGO_WEBHOOK_SECRET", "test")
 from main import app
 from src.api.deps import get_current_user
 from src.db.session import get_db
-from src.services.quota_service import check_and_increment_quota
 
 
 @pytest.mark.asyncio
