@@ -508,10 +508,7 @@ export interface components {
         };
         /** Body_upload_document_api_v1_documents_upload_post */
         Body_upload_document_api_v1_documents_upload_post: {
-            /**
-             * File
-             * Format: binary
-             */
+            /** File */
             file: string;
         };
         /**
@@ -529,6 +526,8 @@ export interface components {
          * @description Request body for chat endpoint.
          */
         ChatRequest: {
+            /** Document Ids */
+            document_ids?: string[] | null;
             /** Document Id */
             document_id?: string | null;
             /** Question */
@@ -876,6 +875,10 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -1504,7 +1507,9 @@ export interface operations {
     };
     stream_job_progress_api_v1_jobs__job_id__stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 job_id: string;
