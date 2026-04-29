@@ -11,7 +11,7 @@ const mockDrills = [
   {
     id: "drill-1",
     question: "What is 2+2?",
-    type: "mcq",
+    type: "mcq" as const,
     options: ["3", "4", "5"],
     correct_answer: "4",
     explanation: "Basic math",
@@ -47,7 +47,7 @@ describe("PracticeAttempt", () => {
   it("renders checkboxes for multi_select type", () => {
     const multiDrill = {
       ...mockDrills[0],
-      type: "multi_select",
+      type: "multi_select" as const,
       correct_answer: ["4", "5"],
       options: ["3", "4", "5"],
     }
@@ -59,7 +59,7 @@ describe("PracticeAttempt", () => {
   it("renders sortable list for ordering type", () => {
     const orderDrill = {
       ...mockDrills[0],
-      type: "ordering",
+      type: "ordering" as const,
       correct_answer: ["A", "B", "C"],
       options: ["A", "B", "C"],
     }

@@ -33,7 +33,7 @@ type PracticeDrill = {
   type: DrillType;
   question: string;
   options?: string[];
-  correct_answer?: string | boolean;
+  correct_answer?: string | string[] | boolean;
   explanation?: string;
   difficulty?: number;
 };
@@ -112,7 +112,7 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
     (answers[current.id] ?? "").split(",").includes(option)
 
   const isCorrectMulti = (option: string) =>
-    Array.isArray(current.correct_answer) && (current.correct_answer as string[]).includes(option)
+    Array.isArray(current.correct_answer) && current.correct_answer.includes(option)
 
   const toggleMultiSelect = (option: string) => {
     const currentAnswers = (answers[current.id] ?? "").split(",").filter(Boolean)
@@ -125,7 +125,7 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
   const isCorrect = () => {
     if (current.type === "multi_select") {
       const selected = (answers[current.id] ?? "").split(",").filter(Boolean).sort()
-      const correct = (current.correct_answer as string[]).sort()
+      const correct = Array.isArray(current.correct_answer) ? [...current.correct_answer].sort() : []
       return JSON.stringify(selected) === JSON.stringify(correct)
     }
     return normalizeAnswer(answers[current.id]) === normalizeAnswer(String(current.correct_answer ?? ""))
