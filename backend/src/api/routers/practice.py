@@ -14,7 +14,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.deps import enforce_quota, get_current_user
 from src.db.models import PracticeSession, UserTopicPerformance
 from src.db.session import get_db
-from src.services.practice_service import create_practice_session, generate_mini_lesson
+from src.services.practice_service import (
+    create_practice_session,
+    generate_mini_lesson,
+)
+from src.services.practice_service import (
+    get_weak_areas as get_weak_areas_service,
+)
 
 router = APIRouter(prefix="/api/v1/practice", tags=["practice"])
 
@@ -164,25 +170,7 @@ async def get_weak_areas(
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(UserTopicPerformance).where(
-            UserTopicPerformance.user_id == user.id,
-            UserTopicPerformance.attempts >= 5,
-            UserTopicPerformance.quiz_count >= 2,
-            (UserTopicPerformance.correct * 1.0 / UserTopicPerformance.attempts) < 0.7,
-        )
-    )
-    rows = result.scalars().all()
-
-    weak_topics = [
-        {
-            "topic": row.topic,
-            "attempts": row.attempts,
-            "accuracy": 0 if row.attempts == 0 else round((row.correct / row.attempts) * 100, 2),
-            "quiz_count": row.quiz_count,
-        }
-        for row in rows
-    ]
+    weak_topics = await get_weak_areas_service(db, user.id)
     return {"weak_topics": weak_topics}
 
 
