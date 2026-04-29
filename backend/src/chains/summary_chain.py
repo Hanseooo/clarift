@@ -12,7 +12,7 @@ import asyncio
 import json
 import logging
 from collections.abc import Iterable
-from typing import Any, Optional, TypedDict
+from typing import Any, NotRequired, Optional, TypedDict
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
@@ -29,6 +29,7 @@ class SummaryChainInput(TypedDict):
 
     chunks: list[str]
     user_preferences: Optional[dict]
+    format_hints: NotRequired[Optional[str]]
 
 
 class SummaryChainOutput(TypedDict):
@@ -204,6 +205,10 @@ async def run_summary_chain(input: SummaryChainInput) -> SummaryChainOutput:
                 "do not change the education level if the text is already clear). "
                 "When in doubt, prioritize accuracy and fidelity to the source text over satisfying the preference."
             )
+
+    format_hints = input.get("format_hints")
+    if format_hints:
+        summary_prompt += f"\n\n## FORMAT HINTS\n{format_hints}\n"
 
     llm_output = await _invoke_with_retry(llm, summary_prompt)
 

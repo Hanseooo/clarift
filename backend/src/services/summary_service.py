@@ -68,7 +68,28 @@ OUTPUT_FORMAT_OPTIONS = {
     "examples",
     "tables",
     "step_by_step",
+    "numbered_list",
+    "analogies",
+    "mnemonics",
 }
+
+OUTPUT_FORMAT_HINTS = {
+    "bullet_points": "Use bullet points for key concepts.",
+    "numbered_list": "Use a numbered list for sequential steps.",
+    "paragraphs": "Use concise paragraphs with clear topic sentences.",
+    "tables": "Use markdown tables for comparisons or structured data.",
+    "step_by_step": "Break complex processes into numbered steps.",
+    "q_and_a": 'Use a Q&A format: prefix questions with "> **Q:**" and answers with "> **A:**" or numbered pairs.',
+    "examples": "Include a dedicated '## Examples' section with concrete cases from the source material.",
+    "analogies": "Include helpful analogies where they clarify difficult concepts.",
+    "mnemonics": "Include memory aids or mnemonics where appropriate.",
+}
+
+
+def _build_format_hints(formats: list[str]) -> str:
+    hints = [OUTPUT_FORMAT_HINTS[f] for f in formats if f in OUTPUT_FORMAT_HINTS]
+    return "\n".join(hints)
+
 
 EXPLANATION_STYLE_OPTIONS = {
     "simple_direct",
@@ -199,7 +220,13 @@ async def generate_summary_for_document(
         logger.info(f"Using database preferences for user {user_id}")
 
     validated_prefs = _validate_preferences(preferences_to_use)
-    chain_input = SummaryChainInput(chunks=chunks, user_preferences=validated_prefs)
+    output_formats = validated_prefs.get("output_formats", [])
+    format_hints = _build_format_hints(output_formats) if output_formats else None
+    chain_input = SummaryChainInput(
+        chunks=chunks,
+        user_preferences=validated_prefs,
+        format_hints=format_hints,
+    )
     logger.info(f"Calling run_summary_chain with {len(chunks)} chunks")
     result = await run_summary_chain(chain_input)
     return result
