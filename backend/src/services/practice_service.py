@@ -22,6 +22,36 @@ from src.services.retrieval_service import get_relevant_chunks
 
 logger = logging.getLogger(__name__)
 
+MINI_LESSON_PROMPT = (
+    "You are a supportive tutor for Filipino students. Write a concise mini-lesson on the topic(s) below using ONLY the provided source material.\n\n"
+    "## TOPICS\n{topics}\n\n"
+    "## SOURCE MATERIAL\n{context}\n\n"
+    "## ABSOLUTE RULES\n"
+    "1. Base the ENTIRE lesson strictly on the source material.\n"
+    "2. Do NOT add facts, examples, definitions, or context from outside knowledge.\n"
+    "3. If the source material does not cover the topics sufficiently, output exactly:\n"
+    '   "The provided material does not cover this topic in enough detail. Please review your notes or upload more content about {topics}."\n'
+    "   Do NOT attempt to fill gaps.\n\n"
+    "## LESSON STRUCTURE\n"
+    "Write exactly 2 paragraphs with a total of no more than 300 words.\n\n"
+    "Paragraph 1 — Concept Explanation (max 150 words):\n"
+    "- Define the core concept(s) using only what the source material states.\n"
+    "- Explain the key components or principles mentioned in the text.\n"
+    "- Use **bold** for important terms.\n\n"
+    "Paragraph 2 — Example or Application (max 150 words):\n"
+    "- Provide ONE concrete example, case, or application directly from the source material.\n"
+    "- Explain why the example matters based on the text.\n"
+    "- If the source material has no example, use this paragraph to explain the significance or implications as described in the text.\n\n"
+    "## FORMATTING\n"
+    "- Standard Markdown (bold, italics, bullet lists).\n"
+    "- LaTeX (`$...$` or `$$...$$`) for math or chemical formulas.\n"
+    "- Do NOT use Heading 2 (`##`) — the UI handles the title separately.\n"
+    "- Keep sentences short and clear.\n"
+    "- Maintain an encouraging, supportive tone.\n\n"
+    "## OUTPUT\n"
+    "Return ONLY the lesson text (2 paragraphs). No JSON, no markdown code fences, no meta-commentary."
+)
+
 
 async def get_weak_areas(
     db: AsyncSession,
@@ -118,34 +148,8 @@ async def _generate_lesson_with_llm(topics: list[str], context: str) -> str:
         google_api_key=settings.GOOGLE_API_KEY,
         temperature=0.3,
     )
-    prompt = (
-        f"You are a supportive tutor for Filipino students. Write a concise mini-lesson on the topic(s) below using ONLY the provided source material.\n\n"
-        f"## TOPICS\n{', '.join(topics)}\n\n"
-        f"## SOURCE MATERIAL\n{context}\n\n"
-        "## ABSOLUTE RULES\n"
-        "1. Base the ENTIRE lesson strictly on the source material.\n"
-        "2. Do NOT add facts, examples, definitions, or context from outside knowledge.\n"
-        "3. If the source material does not cover the topics sufficiently, output exactly:\n"
-        f'   "The provided material does not cover this topic in enough detail. Please review your notes or upload more content about {", ".join(topics)}."\n'
-        "   Do NOT attempt to fill gaps.\n\n"
-        "## LESSON STRUCTURE\n"
-        "Write exactly 2 paragraphs with a total of no more than 300 words.\n\n"
-        "Paragraph 1 — Concept Explanation (max 150 words):\n"
-        "- Define the core concept(s) using only what the source material states.\n"
-        "- Explain the key components or principles mentioned in the text.\n"
-        "- Use **bold** for important terms.\n\n"
-        "Paragraph 2 — Example or Application (max 150 words):\n"
-        "- Provide ONE concrete example, case, or application directly from the source material.\n"
-        "- Explain why the example matters based on the text.\n"
-        "- If the source material has no example, use this paragraph to explain the significance or implications as described in the text.\n\n"
-        "## FORMATTING\n"
-        "- Use standard Markdown only (bold, italics).\n"
-        "- Do NOT use Heading 2 (`##`) — the UI handles the lesson title separately.\n"
-        "- Keep sentences short and clear.\n"
-        "- Maintain an encouraging, supportive tone.\n\n"
-        "## OUTPUT\n"
-        "Return ONLY the lesson text (2 paragraphs). No JSON, no markdown code fences, no meta-commentary."
-    )
+    topics_str = ", ".join(topics)
+    prompt = MINI_LESSON_PROMPT.format(topics=topics_str, context=context)
     response = await llm.ainvoke(prompt)
     raw = response.content
     if isinstance(raw, str):
