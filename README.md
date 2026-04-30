@@ -14,14 +14,19 @@ https://www.clarift.me/
 
 ## Core Features
 
-- **Document Ingestion**: Upload PDFs, images, or text files as study material
+- **Document Ingestion**: Upload PDFs as study material
 - **Structured Summaries**: Multi-step AI chain generates comprehensive summaries with MermaidJS diagrams
 - **Quiz Generation**: Auto-generated quizzes strictly from uploaded material to test understanding
 - **Weak Area Diagnosis**: System identifies knowledge gaps based on quiz performance
 - **Targeted Practice**: Personalized practice drills focused on specific weak topics
 - **Grounded RAG Chat**: AI chat that answers exclusively from uploaded notes, never from general knowledge
-- **Quota System**: Daily usage limits with free tier (3 summaries, 3 quizzes, 6 practice, 12 chat per day, 8 document uploads max) and Pro tier (expanded limits)
-- **Subscription Payments**: PayMongo integration for GCash and credit card subscriptions
+- **Quota System**: Daily usage limits with free tier (3 summaries, 3 quizzes, 6 practice, 15 chat per day, 8 document uploads lifetime) and Pro tier (expanded limits)
+- **Onboarding Flow**: Capture user preferences (format, explanation style, custom instructions) on first use
+- **Per-Generation Overrides**: Override global settings per AI generation (summary/quiz/practice)
+- **Quiz Type Flags**: Tracks which question types are applicable to source material via content analysis
+- **Practice Multi-Select**: Select multiple weak topics for combined practice sessions
+- **Drill Ordering**: Drag-and-drop reordering of practice drills
+- **Mastery Charts**: Visual topic accuracy charts in quiz results
 
 ---
 
@@ -57,6 +62,11 @@ Clarift uses a split architecture with two distinct server-side layers sharing a
 - Server Component + Server Action: Direct DB access for CRUD in frontend
 - SSE Job Tracking: Real-time progress for async operations
 
+### Security Rules
+
+- All vector queries MUST filter by `user_id` (tenant isolation)
+- Never pass full document content to LLM (always use retrieved chunks, max 5)
+
 ---
 
 ## Tech Stack
@@ -64,10 +74,13 @@ Clarift uses a split architecture with two distinct server-side layers sharing a
 ### Frontend
 - **Framework**: Next.js 16.2.3 (App Router)
 - **Language**: TypeScript 5.x
-- **UI**: React 19.2.4, Tailwind CSS 4.2.2, shadcn/ui, Radix UI, Lucide React
+- **UI**: React 19.2.4, Tailwind CSS 4.2.2, shadcn/ui, Radix UI, Lucide React, Framer Motion
+- **State**: TanStack React Query v5, Zustand
 - **Database**: Drizzle ORM with @neondatabase/serverless
 - **Auth**: Clerk (Google OAuth)
-- **State**: TanStack React Query v5
+- **Charts**: Recharts
+- **Rich Text**: Tiptap (summary viewing/editing)
+- **Uploads**: React Dropzone
 
 ### Backend
 - **Framework**: FastAPI 0.135.3+
@@ -170,6 +183,9 @@ curl http://localhost:8000/health
 # Backend tests
 cd backend && uv run --python ".venv/Scripts/python.exe" pytest -q
 
+# Frontend tests
+cd frontend && pnpm run test:run
+
 # Frontend linting
 cd frontend && pnpm lint
 
@@ -256,14 +272,13 @@ clarift/
 │   └── package.json
 │
 ├── backend/               # FastAPI application
-│   ├── app/
-│   │   ├── api/v1/       # Routes, schemas
+│   ├── src/
+│   │   ├── api/          # Routes, schemas
 │   │   ├── chains/       # LangChain chain implementations
 │   │   ├── core/         # Config, exceptions
 │   │   ├── db/           # SQLAlchemy models, session
 │   │   ├── services/     # Business logic services
-│   │   ├── storage/      # Cloudflare R2 integration
-│   │   └── workers/     # ARQ job workers
+│   │   └── worker.py     # ARQ job worker
 │   ├── alembic/          # Database migrations
 │   └── pyproject.toml
 │
