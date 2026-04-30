@@ -18,7 +18,7 @@ export function MockUploadFrame() {
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-2">
-          {["PDF", "PNG / JPG", "TXT"].map((type) => (
+          {["PDF"].map((type) => (
             <span
               key={type}
               className="rounded-full border border-brand-500/20 bg-brand-500/8 px-3 py-1 text-xs font-medium text-brand-500"
