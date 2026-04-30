@@ -53,16 +53,27 @@ export function RenameTitle({ id, currentTitle, onSave }: RenameTitleProps) {
   }
 
   return (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setIsEditing(true);
-      }}
-      className="group flex items-center gap-1"
-      type="button"
-    >
-      <span className="font-medium">{currentTitle ?? 'Untitled'}</span>
-      <PencilIcon className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-50" />
-    </button>
+    <span className="flex items-center gap-1 w-full min-w-0">
+      <span className="font-medium truncate">{currentTitle ?? 'Untitled'}</span>
+      <span
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsEditing(true);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsEditing(true);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        className="inline-flex items-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-pointer flex-shrink-0"
+      >
+        <PencilIcon className="h-3.5 w-3.5 text-text-tertiary hover:text-text-primary" />
+      </span>
+    </span>
   );
 }

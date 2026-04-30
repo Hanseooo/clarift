@@ -162,7 +162,9 @@ export function ChatPageClient({
           </span>
           {selectedDocumentIds.length > 0 && (
             <span className="hidden lg:inline-flex ml-auto text-[11px] text-text-tertiary bg-surface-subtle border border-border-default rounded-md px-2 py-0.5">
-              {documents.find((d) => d.id === selectedDocumentIds[0])?.title || "Document"}
+              {selectedDocumentIds.length === 1
+                ? documents.find((d) => d.id === selectedDocumentIds[0])?.title || "Document"
+                : `${selectedDocumentIds.length} documents`}
             </span>
           )}
 
@@ -173,7 +175,9 @@ export function ChatPageClient({
                 <FileText className="size-3" />
                 <span className="max-w-[120px] truncate">
                   {selectedDocumentIds.length > 0
-                    ? documents.find((d) => d.id === selectedDocumentIds[0])?.title || "Document"
+                    ? selectedDocumentIds.length === 1
+                      ? documents.find((d) => d.id === selectedDocumentIds[0])?.title || "1 document"
+                      : `${selectedDocumentIds.length} documents`
                     : "Select context"}
                 </span>
                 <ChevronDown className="size-3" />
@@ -189,18 +193,21 @@ export function ChatPageClient({
                 <div className="p-4 border-b border-border-default">
                   <h3 className="text-sm font-semibold text-text-primary">Select context</h3>
                   <p className="text-[11px] text-text-tertiary mt-1">
-                    Choose a document to chat with
+                    Choose documents to chat with
                   </p>
                 </div>
                 <div className="max-h-[60vh] overflow-y-auto p-2">
                   <DocumentSelector
                     documents={documents}
                     selectedIds={selectedIds}
-                    variant="radio"
+                    variant="checkbox"
                     animated
                     onToggle={(id) => {
-                      setSelectedDocumentIds([id])
-                      setIsDrawerOpen(false)
+                      setSelectedDocumentIds(
+                        selectedIds.includes(id)
+                          ? selectedIds.filter((item) => item !== id)
+                          : [...selectedIds, id]
+                      )
                     }}
                   />
                 </div>
