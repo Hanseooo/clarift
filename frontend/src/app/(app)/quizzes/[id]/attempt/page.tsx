@@ -47,7 +47,7 @@ export default async function QuizAttemptPage({ params }: AttemptPageProps) {
   }>) ?? [];
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <Button variant="outline" size="sm" asChild className="w-fit">
         <Link href="/quizzes">
           <ArrowLeft className="mr-2 h-4 w-4" />
