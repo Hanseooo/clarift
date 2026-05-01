@@ -1,6 +1,6 @@
 "use client"
 
-import { SignIn } from "@clerk/nextjs"
+import { SignUp } from "@clerk/nextjs"
 import { motion, useReducedMotion } from "framer-motion"
 import { BookOpen, CheckSquare, Target, ArrowLeft } from "lucide-react"
 import Link from "next/link"
@@ -181,7 +181,7 @@ export function LoginContent() {
               </div>
 
               <div className="w-full max-w-full px-4 pt-2">
-                <SignIn
+                <SignUp
                   path="/login"
                   routing="path" // Critical for Next.js catch-all routes
                   fallbackRedirectUrl="/dashboard"
