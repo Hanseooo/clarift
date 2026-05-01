@@ -183,8 +183,13 @@ export function LoginContent() {
               <div className="w-full max-w-full px-4 pt-2">
                 <SignIn
                   path="/login"
+                  routing="path" // Critical for Next.js catch-all routes
                   fallbackRedirectUrl="/dashboard"
-                  signUpUrl="/login"
+                  /* 
+     REMOVED: signUpUrl="/login" 
+     By removing this, Clerk will handle new users on this same 
+     screen without trying to "redirect" to a page it's already on.
+  */
                   appearance={{
                     layout: {
                       hideButtons: false,
@@ -195,13 +200,8 @@ export function LoginContent() {
                       headerSubtitle: "hidden",
                       dividerText:
                         "text-text-tertiary uppercase text-[10px] font-bold",
-                      // This is the "God Mode" fix for the footer
-                      footer: {
-                        display: "none",
-                      },
-                      footerAction: {
-                        display: "none",
-                      },
+                      footer: { display: "none" },
+                      footerAction: { display: "none" },
                     },
                   }}
                 />
