@@ -1,6 +1,6 @@
 "use client"
 
-import { SignUp } from "@clerk/nextjs"
+import { SignIn } from "@clerk/nextjs"
 import { motion, useReducedMotion } from "framer-motion"
 import { BookOpen, CheckSquare, Target, ArrowLeft } from "lucide-react"
 import Link from "next/link"
@@ -181,15 +181,10 @@ export function LoginContent() {
               </div>
 
               <div className="w-full max-w-full px-4 pt-2">
-                <SignUp
+                <SignIn
                   path="/login"
-                  routing="path" // Critical for Next.js catch-all routes
+                  routing="path"
                   fallbackRedirectUrl="/dashboard"
-                  /* 
-     REMOVED: signUpUrl="/login" 
-     By removing this, Clerk will handle new users on this same 
-     screen without trying to "redirect" to a page it's already on.
-  */
                   appearance={{
                     layout: {
                       hideButtons: false,

@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { LoginContent } from "./login-content"
+import { LoginContent } from "../login-content"
 
 export const metadata: Metadata = {
   title: "Sign In",
