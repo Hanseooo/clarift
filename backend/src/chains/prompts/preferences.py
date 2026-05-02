@@ -1,5 +1,7 @@
 """Build preference context strings for chain prompts."""
 
+import re
+
 
 def build_preference_context(prefs: dict[str, object] | None) -> str:
     """Build a preference context string from user preferences dict.
@@ -40,5 +42,6 @@ def _sanitize_custom_instructions(text: str) -> str:
     """Strip common prompt injection tokens and truncate."""
     safe = text[:500]
     for token in ["---", "###", "<|", "[/INST]", "<script", "<?xml", "[[", "]]"]:
-        safe = safe.replace(token, "")
+        safe = safe.replace(token, " ")
+    safe = re.sub(r"\s+", " ", safe)
     return safe.strip()
