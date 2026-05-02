@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useEffect, useState } from "react"
-import { X } from "lucide-react"
+import { X, Sparkles } from "lucide-react"
 import { RichMarkdown } from "@/components/ui/rich-markdown"
 import { ThinkingIndicator } from "./thinking-indicator"
 import { cn } from "@/lib/utils"
@@ -27,6 +27,31 @@ interface ChatMessagesProps {
 
 const CONTEXT_WINDOW_SIZE = 8
 const CHAT_NOTICE_KEY = "chat-context-notice-dismissed"
+
+function AssistantMessageContent({ content }: { content: string }) {
+  if (!content.includes("[AI Knowledge]:")) {
+    return <RichMarkdown content={content} />
+  }
+  const parts = content.split("[AI Knowledge]:")
+  return (
+    <>
+      <RichMarkdown content={parts[0]} />
+      {parts.slice(1).map((part, i) => (
+        <div key={i} className="mt-2 rounded-lg border border-accent-200 bg-accent-50 px-3 py-2">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Sparkles className="size-3 text-accent-600" />
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-accent-700">
+              AI Knowledge
+            </span>
+          </div>
+          <div className="text-sm text-text-secondary">
+            <RichMarkdown content={part.trim()} />
+          </div>
+        </div>
+      ))}
+    </>
+  )
+}
 
 export function ChatMessages({ messages, isSearching, error, streamingMessageId }: ChatMessagesProps) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -94,7 +119,7 @@ export function ChatMessages({ messages, isSearching, error, streamingMessageId 
             ) : (
               <div className="max-w-[92%] space-y-1.5">
                 <div className="prose-compact">
-                  <RichMarkdown content={msg.content} />
+                  <AssistantMessageContent content={msg.content} />
                   {streamingMessageId === msg.id && (
                     <span className="inline-block w-[2px] h-[1em] ml-0.5 bg-brand-500 animate-pulse align-text-bottom" />
                   )}

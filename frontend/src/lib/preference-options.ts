@@ -29,3 +29,57 @@ export const EDUCATION_LEVEL_OPTIONS = [
   "Postgraduate",
   "Other",
 ];
+
+export const CHAT_MODE_OPTIONS = [
+  {
+    value: "strict_rag" as const,
+    title: "Strict Notes Only",
+    description: "Answers come only from your uploaded material. No outside knowledge.",
+    preview: "A: Based on your notes [1], photosynthesis occurs in chloroplasts.",
+  },
+  {
+    value: "tutor" as const,
+    title: "Tutor",
+    description: "Uses your notes first, then adds context from general knowledge when helpful.",
+    preview: "A: Your notes state X [1]. Beyond your notes, X also works by...",
+  },
+  {
+    value: "socratic" as const,
+    title: "Socratic",
+    description: "Guides you to the answer with questions instead of giving it directly.",
+    preview: "Q: What do your notes say happens first? Let's work through this...",
+  },
+];
+
+export const CHAT_PERSONA_OPTIONS = [
+  {
+    value: "default" as const,
+    title: "Default",
+    description: "Clear, helpful, and adaptable to your needs.",
+    preview: "A: Here's a clear explanation of the concept...",
+  },
+  {
+    value: "encouraging" as const,
+    title: "Encouraging",
+    description: "Warm and supportive. Celebrates effort and breaks ideas into steps.",
+    preview: "A: Great question! Let's break this down step by step...",
+  },
+  {
+    value: "direct" as const,
+    title: "Direct",
+    description: "Concise and efficient. Gets straight to the point with minimal fluff.",
+    preview: "A: • Point 1\n• Point 2\n• Point 3",
+  },
+  {
+    value: "witty" as const,
+    title: "Witty",
+    description: "Clever and engaging. Uses light humor and memorable analogies.",
+    preview: "A: Think of it like a traffic jam for electrons...",
+  },
+  {
+    value: "patient" as const,
+    title: "Patient",
+    description: "Gentle and never rushed. Asks guiding questions before answering.",
+    preview: "A: What do you think happens first? Let's explore together...",
+  },
+];

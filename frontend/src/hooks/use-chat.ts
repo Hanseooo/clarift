@@ -9,6 +9,8 @@ type SendChatInput = {
   question: string;
   document_ids?: string[];
   messages?: Array<{ role: string; content: string }>;
+  mode_override?: "strict_rag" | "tutor" | "socratic";
+  persona_override?: "default" | "encouraging" | "direct" | "witty" | "patient";
 };
 
 export function useSendChatMessage() {
@@ -34,6 +36,8 @@ export function useSendChatMessage() {
           question: payload.question,
           document_ids: payload.document_ids ?? [],
           messages: payload.messages ?? [],
+          mode_override: payload.mode_override,
+          persona_override: payload.persona_override,
         },
       });
       if (apiError || !data) {

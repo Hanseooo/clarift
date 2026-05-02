@@ -14,14 +14,18 @@ export interface ChatMessage {
   timestamp: number
 }
 
-interface ChatState {
+export interface ChatState {
   messages: ChatMessage[]
   selectedDocumentIds: string[]
+  modeOverride: "strict_rag" | "tutor" | "socratic" | null
+  personaOverride: "default" | "encouraging" | "direct" | "witty" | "patient" | null
   addMessage: (message: ChatMessage) => void
   updateMessage: (id: string, updates: Partial<Omit<ChatMessage, "id">>) => void
   clearMessages: () => void
   setSelectedDocumentIds: (ids: string[]) => void
   getRecentMessages: (count: number) => ChatMessage[]
+  setModeOverride: (mode: ChatState["modeOverride"]) => void
+  setPersonaOverride: (persona: ChatState["personaOverride"]) => void
 }
 
 export const useChatStore = create<ChatState>()(
@@ -29,6 +33,8 @@ export const useChatStore = create<ChatState>()(
     (set, get) => ({
       messages: [],
       selectedDocumentIds: [],
+      modeOverride: null,
+      personaOverride: null,
       addMessage: (message) =>
         set((state) => ({
           messages: [...state.messages, message],
@@ -45,6 +51,8 @@ export const useChatStore = create<ChatState>()(
         const { messages } = get()
         return messages.slice(-count)
       },
+      setModeOverride: (mode) => set({ modeOverride: mode }),
+      setPersonaOverride: (persona) => set({ personaOverride: persona }),
     }),
     {
       name: "chat-storage",

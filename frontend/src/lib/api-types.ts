@@ -497,6 +497,10 @@ export interface components {
             user_answer: string | boolean | string[];
             /** Correct Answer */
             correct_answer: string | boolean | string[];
+            /** Correct Answers */
+            correct_answers?: string[] | null;
+            /** Acceptable Answers */
+            acceptable_answers?: string[] | null;
             /** Is Correct */
             is_correct: boolean;
             /** Topic */
@@ -537,6 +541,10 @@ export interface components {
              * @default []
              */
             messages: components["schemas"]["ChatMessage"][];
+            /** Mode Override */
+            mode_override?: "strict_rag" | "tutor" | "socratic" | null;
+            /** Persona Override */
+            persona_override?: "default" | "encouraging" | "direct" | "witty" | "patient" | null;
         };
         /**
          * ChatResponse

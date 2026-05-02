@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { FileText, ChevronDown } from "lucide-react"
+import { FileText, ChevronDown, Settings2 } from "lucide-react"
 import { ChatInput } from "./chat-input"
 import { ChatMessages } from "./chat-messages"
 import { DocumentSelector } from "./document-selector"
 import { useSendChatMessage } from "@/hooks/use-chat"
-import { useChatStore, type ChatMessage } from "@/stores/chat-store"
+import { useChatStore, type ChatMessage, type ChatState } from "@/stores/chat-store"
+import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,10 @@ export function ChatPageClient({
     selectedDocumentIds: selectedIds,
     setSelectedDocumentIds,
     addMessage,
+    modeOverride,
+    personaOverride,
+    setModeOverride,
+    setPersonaOverride,
   } = useChatStore()
   const [isSearching, setIsSearching] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -79,6 +84,8 @@ export function ChatPageClient({
         question: message,
         document_ids: selectedDocumentIds,
         messages: contextMessages,
+        mode_override: modeOverride ?? undefined,
+        persona_override: personaOverride ?? undefined,
       })
 
       const messageId = crypto.randomUUID()
@@ -167,6 +174,63 @@ export function ChatPageClient({
                 : `${selectedDocumentIds.length} documents`}
             </span>
           )}
+
+          {/* Persona override chip */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <button className="inline-flex items-center gap-1.5 text-[11px] text-text-secondary hover:text-text-primary transition-colors ml-auto lg:ml-0">
+                <Badge variant="secondary" className="font-normal text-[10px] cursor-pointer">
+                  {personaOverride ? personaOverride : modeOverride ? modeOverride.replace("_", " ") : "Default"}
+                </Badge>
+                <Settings2 className="size-3" />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 w-full max-w-none rounded-t-2xl rounded-b-none p-0 gap-0 sm:top-1/2 sm:left-1/2 sm:right-auto sm:bottom-auto sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-w-md sm:rounded-4xl sm:p-6 sm:gap-6">
+              <DialogTitle className="sr-only">Override chat mode and persona</DialogTitle>
+              <div className="p-4 border-b border-border-default">
+                <h3 className="text-sm font-semibold text-text-primary">Chat Settings</h3>
+                <p className="text-[11px] text-text-tertiary mt-1">
+                  Overrides apply only to this session
+                </p>
+              </div>
+              <div className="p-4 space-y-4">
+                <div>
+                  <div className="text-xs font-medium text-text-secondary uppercase tracking-wide mb-2">
+                    Mode
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {["strict_rag", "tutor", "socratic"].map((m) => (
+                      <Badge
+                        key={m}
+                        variant={modeOverride === m ? "default" : "secondary"}
+                        className="cursor-pointer text-xs capitalize"
+                        onClick={() => setModeOverride(modeOverride === m ? null : m as ChatState["modeOverride"])}
+                      >
+                        {m.replace("_", " ")}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-text-secondary uppercase tracking-wide mb-2">
+                    Persona
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {["default", "encouraging", "direct", "witty", "patient"].map((p) => (
+                      <Badge
+                        key={p}
+                        variant={personaOverride === p ? "default" : "secondary"}
+                        className="cursor-pointer text-xs capitalize"
+                        onClick={() => setPersonaOverride(personaOverride === p ? null : p as ChatState["personaOverride"])}
+                      >
+                        {p}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Mobile context selector trigger */}
           <Dialog open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
