@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from difflib import SequenceMatcher
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -24,6 +25,48 @@ from src.db.models import (
 from src.worker import get_arq_pool
 
 logger = logging.getLogger(__name__)
+
+_IDENTIFICATION_SIMILARITY_THRESHOLD = 0.85
+
+
+def _normalize_answer(s: str) -> str:
+    return s.strip().lower().rstrip(".")
+
+
+def _is_similar(a: str, b: str) -> bool:
+    return SequenceMatcher(None, a, b).ratio() >= _IDENTIFICATION_SIMILARITY_THRESHOLD
+
+
+def grade_question(question: dict[str, Any], user_answer: object) -> bool:
+    """Grade a single question answer. Supports all question types."""
+    qtype = str(question.get("type", "mcq"))
+
+    if qtype == "multi_select":
+        expected = set(_normalize_answer(a) for a in question.get("correct_answers") or [])
+        selected_raw = user_answer if isinstance(user_answer, list) else [user_answer]
+        selected = set(_normalize_answer(str(a)) for a in selected_raw if a is not None)
+        return selected == expected
+
+    if qtype == "identification":
+        user = _normalize_answer(str(user_answer))
+        canonical = _normalize_answer(str(question.get("correct_answer", "")))
+        if user == canonical or _is_similar(user, canonical):
+            return True
+        for alias in question.get("acceptable_answers") or []:
+            norm = _normalize_answer(str(alias))
+            if user == norm or _is_similar(user, norm):
+                return True
+        return False
+
+    if qtype == "true_false":
+        expected = question.get("correct_answer")
+        if isinstance(expected, bool):
+            return bool(user_answer) == expected
+        return str(user_answer).strip().lower() == str(expected).strip().lower()
+
+    # mcq, ordering, and fallback
+    expected = str(question.get("correct_answer") or "").strip().lower()
+    return str(user_answer).strip().lower() == expected
 
 
 class QuizTypeSettings(BaseModel):
@@ -366,8 +409,7 @@ async def submit_quiz_attempt(
         if not question:
             continue
         topic = str(question.get("topic") or "General")
-        expected = str(question.get("correct_answer") or "")
-        is_correct = selected.strip().lower() == expected.strip().lower()
+        is_correct = grade_question(question, selected)
         if is_correct:
             correct_answers += 1
 
@@ -507,8 +549,7 @@ async def get_attempt_by_id(
             continue
 
         topic = str(question.get("topic") or "General")
-        expected = str(question.get("correct_answer") or "")
-        is_correct = selected.strip().lower() == expected.strip().lower()
+        is_correct = grade_question(question, selected)
 
         if topic not in topic_stats:
             topic_stats[topic] = {"correct": 0, "total": 0}
@@ -521,6 +562,7 @@ async def get_attempt_by_id(
                 "question": str(question.get("question", "")),
                 "user_answer": selected,
                 "correct_answer": question.get("correct_answer", ""),
+                "acceptable_answers": question.get("acceptable_answers") or [],
                 "is_correct": is_correct,
                 "topic": topic,
                 "explanation": str(question.get("explanation", "")),
