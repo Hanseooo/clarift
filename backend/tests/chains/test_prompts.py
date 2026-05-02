@@ -1,6 +1,4 @@
-import pytest
-
-from src.chains.prompts import build_preference_context, get_persona_description, get_mode_rules
+from src.chains.prompts import build_preference_context, get_mode_rules, get_persona_description
 
 
 class TestBuildPreferenceContext:
