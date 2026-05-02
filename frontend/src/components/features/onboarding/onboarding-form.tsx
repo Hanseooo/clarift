@@ -12,6 +12,11 @@ import {
   Lightbulb,
   Zap,
   MessageCircle,
+  Shield,
+  GraduationCap,
+  Smile,
+  Heart,
+  Laugh,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { OptionCard } from "./option-card"
@@ -20,6 +25,8 @@ import { cn } from "@/lib/utils"
 import {
   OUTPUT_FORMAT_OPTIONS,
   EXPLANATION_STYLE_OPTIONS,
+  CHAT_MODE_OPTIONS,
+  CHAT_PERSONA_OPTIONS,
 } from "@/lib/preference-options"
 
 interface OnboardingFormProps {
@@ -28,6 +35,10 @@ interface OnboardingFormProps {
     output_formats?: string[]
     explanation_styles?: string[]
     custom_instructions?: string
+    chat_settings?: {
+      mode?: "strict_rag" | "tutor" | "socratic"
+      persona?: "default" | "encouraging" | "direct" | "witty" | "patient"
+    }
   }
   onSuccess?: () => void
 }
@@ -105,6 +116,12 @@ export function OnboardingForm({ initialData, onSuccess }: OnboardingFormProps) 
   const [customInstructions, setCustomInstructions] = useState(
     initialData?.custom_instructions || ""
   )
+  const [chatMode, setChatMode] = useState(
+    initialData?.chat_settings?.mode || "tutor"
+  )
+  const [chatPersona, setChatPersona] = useState(
+    initialData?.chat_settings?.persona || "default"
+  )
 
   const toggleArray = (arr: string[], value: string) =>
     arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
@@ -124,6 +141,10 @@ export function OnboardingForm({ initialData, onSuccess }: OnboardingFormProps) 
         output_formats: selectedFormats.length > 0 ? selectedFormats : ["bullet_points"],
         explanation_styles: selectedStyles.length > 0 ? selectedStyles : ["simple_direct"],
         custom_instructions: customInstructions || undefined,
+        chat_settings: {
+          mode: chatMode as "strict_rag" | "tutor" | "socratic",
+          persona: chatPersona as "default" | "encouraging" | "direct" | "witty" | "patient",
+        },
       })
       onSuccess?.()
       router.push("/dashboard")
@@ -202,6 +223,66 @@ export function OnboardingForm({ initialData, onSuccess }: OnboardingFormProps) 
               preview=""
               selected={selectedStyles.includes(option.value)}
               onClick={() => setSelectedStyles((prev) => toggleArray(prev, option.value))}
+            />
+          ))}
+        </div>
+      </fieldset>
+
+      {/* Chat Mode */}
+      <fieldset>
+        <legend className="text-sm font-medium text-text-primary mb-3">
+          Chat Mode
+        </legend>
+        <div className="grid gap-3">
+          {CHAT_MODE_OPTIONS.map((option) => (
+            <OptionCard
+              key={option.value}
+              icon={
+                option.value === "strict_rag" ? (
+                  <Shield className="size-5 text-brand-400" />
+                ) : option.value === "tutor" ? (
+                  <GraduationCap className="size-5 text-brand-400" />
+                ) : (
+                  <HelpCircle className="size-5 text-brand-400" />
+                )
+              }
+              title={option.title}
+              description={option.description}
+              preview={option.preview}
+              selected={chatMode === option.value}
+              onClick={() => setChatMode(option.value)}
+            />
+          ))}
+        </div>
+      </fieldset>
+
+      {/* Chat Persona */}
+      <fieldset>
+        <legend className="text-sm font-medium text-text-primary mb-3">
+          Chat Personality
+        </legend>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {CHAT_PERSONA_OPTIONS.map((option) => (
+            <OptionCard
+              key={option.value}
+              icon={
+                option.value === "default" ? (
+                  <Smile className="size-5 text-brand-400" />
+                ) : option.value === "encouraging" ? (
+                  <Heart className="size-5 text-brand-400" />
+                ) : option.value === "direct" ? (
+                  <Zap className="size-5 text-brand-400" />
+                ) : option.value === "witty" ? (
+                  <Laugh className="size-5 text-brand-400" />
+                ) : (
+                  <MessageCircle className="size-5 text-brand-400" />
+                )
+              }
+              title={option.title}
+              description={option.description}
+              preview={option.preview}
+              selected={chatPersona === option.value}
+              onClick={() => setChatPersona(option.value)}
             />
           ))}
         </div>

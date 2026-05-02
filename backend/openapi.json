@@ -1236,6 +1236,40 @@
             "type": "array",
             "title": "Messages",
             "default": []
+          },
+          "mode_override": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "strict_rag",
+                  "tutor",
+                  "socratic"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode Override"
+          },
+          "persona_override": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "default",
+                  "encouraging",
+                  "direct",
+                  "witty",
+                  "patient"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Override"
           }
         },
         "type": "object",

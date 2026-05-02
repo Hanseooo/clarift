@@ -25,6 +25,10 @@ export default async function SettingsPage() {
     output_formats?: string[]
     explanation_styles?: string[]
     custom_instructions?: string
+    chat_settings?: {
+      mode?: "strict_rag" | "tutor" | "socratic"
+      persona?: "default" | "encouraging" | "direct" | "witty" | "patient"
+    }
   }
 
   return <SettingsClient preferences={preferences} />

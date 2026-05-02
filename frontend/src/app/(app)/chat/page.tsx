@@ -40,9 +40,9 @@ export default async function ChatPage(
         <OptimisticQuotaDisplay feature="chat" />
       </div>
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold text-text-primary">Grounded Chat</h1>
+        <h1 className="text-xl font-semibold text-text-primary">Chat with Clarift</h1>
         <p className="text-sm text-text-secondary">
-          Ask questions using only your uploaded notes and review citations.
+          Ask questions, get explanations, and explore your notes.
         </p>
       </header>
 

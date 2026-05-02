@@ -8,11 +8,17 @@ import { users } from "@/db/schema";
 
 import { z } from "zod";
 
+const chatSettingsSchema = z.object({
+  mode: z.enum(["strict_rag", "tutor", "socratic"]),
+  persona: z.enum(["default", "encouraging", "direct", "witty", "patient"]),
+});
+
 const preferencesSchema = z.object({
   education_level: z.string().optional(),
   output_formats: z.array(z.string()).optional(),
   explanation_styles: z.array(z.string()).optional(),
-  custom_instructions: z.string().optional()
+  custom_instructions: z.string().optional(),
+  chat_settings: chatSettingsSchema.optional(),
 }).strict();
 
 export async function updateUserPreferences(preferences: unknown) {

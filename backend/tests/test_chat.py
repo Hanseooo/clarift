@@ -46,6 +46,7 @@ async def test_chat_accepts_multiple_document_ids() -> None:
     app.dependency_overrides[get_db] = override_get_db
 
     from src.api.routers import chat as chat_module
+    from src.services import chat_service as chat_service_module
 
     original_enforce_quota = chat_module.enforce_quota
 
@@ -65,32 +66,37 @@ async def test_chat_accepts_multiple_document_ids() -> None:
 
     with patch("src.api.deps.check_and_increment_quota", new=AsyncMock()):
         with patch.object(
-            chat_module, "get_relevant_chunks", new=AsyncMock(return_value=[])
+            chat_service_module, "get_relevant_chunks", new=AsyncMock(return_value=[])
         ) as mock_chunks:
             with patch.object(
-                chat_module,
-                "run_chat_chain",
-                new=AsyncMock(
-                    return_value={
-                        "answer": "Test answer",
-                        "citations": [],
-                        "relevant_chunks": [],
-                    }
-                ),
+                chat_service_module,
+                "fetch_chat_preferences",
+                new=AsyncMock(return_value=None),
             ):
-                try:
-                    async with httpx.AsyncClient(
-                        transport=httpx.ASGITransport(app=app), base_url="http://test"
-                    ) as client:
-                        response = await client.post("/api/v1/chat", json=payload)
+                with patch.object(
+                    chat_service_module,
+                    "run_chat_chain",
+                    new=AsyncMock(
+                        return_value={
+                            "answer": "Test answer",
+                            "citations": [],
+                            "relevant_chunks": [],
+                        }
+                    ),
+                ):
+                    try:
+                        async with httpx.AsyncClient(
+                            transport=httpx.ASGITransport(app=app), base_url="http://test"
+                        ) as client:
+                            response = await client.post("/api/v1/chat", json=payload)
 
-                    assert response.status_code in (200, 501)
+                        assert response.status_code in (200, 501)
 
-                    # Verify get_relevant_chunks received the list of document IDs
-                    mock_chunks.assert_awaited_once()
-                    call_kwargs = mock_chunks.call_args.kwargs
-                    assert "document_ids" in call_kwargs
-                    assert len(call_kwargs["document_ids"]) == 2
-                finally:
-                    app.dependency_overrides.clear()
-                    chat_module.enforce_quota = original_enforce_quota
+                        # Verify get_relevant_chunks received the list of document IDs
+                        mock_chunks.assert_awaited_once()
+                        call_kwargs = mock_chunks.call_args.kwargs
+                        assert "document_ids" in call_kwargs
+                        assert len(call_kwargs["document_ids"]) == 2
+                    finally:
+                        app.dependency_overrides.clear()
+                        chat_module.enforce_quota = original_enforce_quota

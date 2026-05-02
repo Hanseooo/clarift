@@ -16,13 +16,5 @@ os.environ.setdefault("PAYMONGO_WEBHOOK_SECRET", "test")
 from src.core.config import settings
 
 
-def test_chat_prompt_allows_latex():
-    assert "LaTeX" in settings.CHAT_SYSTEM_PROMPT or "latex" in settings.CHAT_SYSTEM_PROMPT
-
-
-def test_chat_prompt_allows_code_blocks():
-    assert "code blocks" in settings.CHAT_SYSTEM_PROMPT
-
-
-def test_chat_prompt_allows_tables():
-    assert "tables" in settings.CHAT_SYSTEM_PROMPT
+def test_chat_fallback_message_exists():
+    assert settings.CHAT_FALLBACK_MESSAGE

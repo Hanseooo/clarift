@@ -18,6 +18,7 @@ type QuizResultQuestion = {
   question: string;
   user_answer: string | boolean | string[];
   correct_answer: string | boolean | string[];
+  correct_answers?: string[];
   is_correct: boolean;
   topic: string;
   explanation: string;

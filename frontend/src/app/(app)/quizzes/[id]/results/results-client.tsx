@@ -10,6 +10,7 @@ type QuizResultQuestion = {
   question: string;
   user_answer: string | boolean | string[];
   correct_answer: string | boolean | string[];
+  correct_answers?: string[];
   is_correct: boolean;
   topic: string;
   explanation: string;
@@ -60,7 +61,11 @@ export function ResultsClient({ quizId, questions, score, total, weakTopics }: R
             index={index}
             question={q.question}
             userAnswer={q.user_answer}
-            correctAnswer={q.correct_answer}
+            correctAnswer={
+              q.type === "multi_select"
+                ? q.correct_answers || []
+                : q.correct_answer
+            }
             isCorrect={q.is_correct}
             explanation={q.explanation}
             questionType={q.type || "mcq"}

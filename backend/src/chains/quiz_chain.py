@@ -19,6 +19,7 @@ from typing import Any, TypedDict
 from langchain_google_genai import ChatGoogleGenerativeAI
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
+from src.chains.prompts import build_preference_context
 from src.chains.retry import is_retryable_error
 from src.core.config import settings
 
@@ -82,7 +83,18 @@ TYPE_PROMPTS = {
         "- Question: 'What does git log do?' -> correct_answer: 'Displays a list of all commits' (WRONG: answer is a sentence)\n"
         "- Question: 'The process of cell division is called ____. (1 word)' -> correct_answer: 'The process where a cell divides' (WRONG: answer is a sentence)\n"
         "- Question: '____ discovered penicillin. (2 words)' -> correct_answer: 'Alexander Fleming was a scientist who discovered penicillin in 1928' (WRONG: far too long)"
-        "\n\n"
+        "\n"
+        "MULTI-WORD BLANK RULE:\n"
+        "When creating a fill-in-the-blank for multi-word answers, replace ONLY the first word of the answer phrase with the blank. "
+        "Ensure the sentence reads naturally when the correct answer is inserted.\n"
+        "WRONG: 'The study of ___ behavior (2 words)' -> 'human behavior' -> 'The study of human behavior behavior'\n"
+        "CORRECT: 'The study of ___ (2 words)' -> 'human behavior' -> 'The study of human behavior'\n"
+        "\n"
+        "ACCEPTABLE ANSWERS:\n"
+        "- If the answer has common abbreviations, synonyms, or alternate spellings, include them in `acceptable_answers`.\n"
+        "- Example: 'correct_answer': 'HTTPS', 'acceptable_answers': ['HTTPS', 'Hypertext Transfer Protocol']\n"
+        "- If there are no valid alternatives, omit `acceptable_answers` or set it to [].\n"
+        "\n"
         "Markdown formatting is ALLOWED in question text:\n"
         "Use LaTeX ($...$ or $$...$$) for mathematical expressions, chemical formulas, and equations. "
         "Use code blocks (```lang...```) for programming snippets. "
@@ -137,6 +149,7 @@ class QuizChainInput(TypedDict):
     auto_mode: bool
     question_distribution: dict[str, int]
     chunks: list[str]
+    user_preferences: dict[str, object] | None
 
 
 class QuizQuestion(TypedDict, total=False):
@@ -229,6 +242,7 @@ def _normalize_question(raw_question: dict[str, Any], index: int) -> QuizQuestio
 
     elif question_type == "identification":
         result["correct_answer"] = str(raw_question.get("correct_answer") or "")
+        result["acceptable_answers"] = raw_question.get("acceptable_answers") or []
 
     elif question_type == "multi_select":
         raw_options = raw_question.get("options")
@@ -302,6 +316,14 @@ def _validate_questions(questions: list[QuizQuestion]) -> list[str]:
                     f"Identification question {q['id']} correct_answer contains markdown syntax. "
                     f"It must be plain text only."
                 )
+            # Warn if question text contains the answer after the blank (double-word risk)
+            question_text = str(q.get("question", ""))
+            if answer_str and answer_str.lower() in question_text.lower().replace("___", ""):
+                logger.info(
+                    "Identification question %s may have double-word issue: question contains '%s'",
+                    q["id"],
+                    answer_str,
+                )
         elif qtype == "multi_select":
             correct = q.get("correct_answers", [])
             if len(correct) < 2:
@@ -321,6 +343,7 @@ def _validate_questions(questions: list[QuizQuestion]) -> list[str]:
 def _build_generation_prompt(
     chunks: list[str],
     distribution: dict[str, int],
+    user_preferences: dict[str, object] | None = None,
     error_context: str | None = None,
 ) -> str:
     context = "\n\n".join(chunks) if chunks else "No document context provided."
@@ -333,12 +356,20 @@ def _build_generation_prompt(
         "2. Do NOT use outside knowledge, common sense, or general facts not present in the text.",
         "3. If the source material does not support enough questions for a requested type, generate as many as possible based on the text and omit the rest. Do NOT invent questions.",
         "4. Generate exactly the requested count per type whenever the text supports it.",
+    ]
+
+    pref_context = build_preference_context(user_preferences)
+    if pref_context:
+        instructions.append("")
+        instructions.append(pref_context)
+
+    instructions.extend([
         "",
         "## SOURCE MATERIAL",
         context,
         "",
         "## QUESTION TYPES TO GENERATE",
-    ]
+    ])
 
     for type_id, count in distribution.items():
         if count > 0 and type_id in TYPE_PROMPTS:
@@ -382,6 +413,7 @@ def _build_generation_prompt(
         '      "explanation": "string (max 250 chars)",\n'
         '      "options": ["string"] | null,\n'
         '      "correct_answer": "string or bool",\n'
+        '      "acceptable_answers": ["string"] | null,\n'
         '      "correct_answers": ["string"] | null,\n'
         '      "steps": ["string"] | null,\n'
         '      "correct_order": ["string"] | null\n'
@@ -447,6 +479,7 @@ def _parse_llm_output(raw_content: object) -> tuple[str, list[QuizQuestion]]:
 async def _generate_questions_from_llm(
     chunks: list[str],
     distribution: dict[str, int],
+    user_preferences: dict[str, object] | None = None,
     error_context: str | None = None,
 ) -> tuple[str, list[QuizQuestion]]:
     llm = ChatGoogleGenerativeAI(
@@ -455,7 +488,7 @@ async def _generate_questions_from_llm(
         temperature=0.2,
     )
 
-    prompt = _build_generation_prompt(chunks, distribution, error_context)
+    prompt = _build_generation_prompt(chunks, distribution, user_preferences, error_context)
     response = await llm.ainvoke(prompt)
     await asyncio.sleep(2)
     return _parse_llm_output(response.content)
@@ -482,8 +515,11 @@ async def run_quiz_chain(input: QuizChainInput) -> QuizChainOutput:
     chunks = input.get("chunks", [])
 
     title = "Untitled quiz"
+    user_prefs = input.get("user_preferences")
     try:
-        title, questions = await _generate_questions_from_llm(chunks, distribution)
+        title, questions = await _generate_questions_from_llm(
+            chunks, distribution, user_preferences=user_prefs
+        )
         if not questions:
             questions, question_types = _fallback_questions(question_count)
         else:
@@ -492,7 +528,7 @@ async def run_quiz_chain(input: QuizChainInput) -> QuizChainOutput:
                 logger.warning("Validation errors on first pass: %s", errors)
                 error_ctx = "; ".join(errors)
                 title, questions = await _generate_questions_from_llm(
-                    chunks, distribution, error_context=error_ctx
+                    chunks, distribution, user_preferences=user_prefs, error_context=error_ctx
                 )
                 errors = _validate_questions(questions)
                 if errors:

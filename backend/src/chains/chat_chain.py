@@ -1,4 +1,4 @@
-"""Grounded chat chain with service-layer retrieval and citations."""
+"""Chat chain for generating conversational, persona-aware answers."""
 
 from __future__ import annotations
 
@@ -9,17 +9,25 @@ from typing import Any, TypedDict, cast
 from langchain_google_genai import ChatGoogleGenerativeAI
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from src.chains.prompts import (
+    build_preference_context,
+    fallback_behavior,
+    get_mode_rules,
+    get_persona_description,
+    xml_output_rules,
+)
 from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 
 class ChatChainInput(TypedDict):
-    user_id: str
-    document_id: str | None
     question: str
     chunks: list[dict[str, Any]]
     messages: list[dict[str, Any]] | None
+    mode: str
+    persona: str
+    user_preferences: dict[str, object] | None
 
 
 class ChatChainOutput(TypedDict):
@@ -51,25 +59,46 @@ def _parse_structured_output(text: str) -> tuple[str, list[int]]:
 
 
 @retry(wait=wait_exponential(min=1, max=8), stop=stop_after_attempt(3), reraise=True)
-async def _generate_grounded_answer(
-    question: str, numbered_context: str, messages: list[dict[str, Any]] | None = None
+async def _generate_answer(
+    question: str,
+    numbered_context: str,
+    messages: list[dict[str, Any]] | None,
+    mode: str,
+    persona: str,
+    user_preferences: dict[str, object] | None,
 ) -> str:
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash-lite",
         google_api_key=settings.GOOGLE_API_KEY,
-        temperature=0.1,
+        temperature=0.2 if mode == "tutor" else 0.1,
     )
+
     history = ""
     if messages:
         history = "\n".join(f"{m['role'].capitalize()}: {m['content']}" for m in messages[-8:])
         history = f"Previous conversation:\n{history}\n\n"
+
+    persona_desc = get_persona_description(persona)  # type: ignore[arg-type]
+    mode_rules = get_mode_rules(mode)  # type: ignore[arg-type]
+    pref_context = build_preference_context(user_preferences)
+
     prompt = (
-        f"{settings.CHAT_SYSTEM_PROMPT}\n\n"
+        f"{persona_desc}\n\n"
+        f"{mode_rules}\n\n"
+        f"{xml_output_rules()}\n\n"
+        f"{fallback_behavior(settings.CHAT_FALLBACK_MESSAGE)}\n\n"
+    )
+
+    if pref_context:
+        prompt += f"{pref_context}\n\n"
+
+    prompt += (
         f"{history}"
         f"Context:\n{numbered_context}\n\n"
         f"Question: {question}\n\n"
         f"Fallback message (use exactly if answer not in context): {settings.CHAT_FALLBACK_MESSAGE}"
     )
+
     response = await llm.ainvoke(prompt)
     raw = response.content
     if isinstance(raw, str):
@@ -100,8 +129,13 @@ async def run_chat_chain(input: ChatChainInput) -> ChatChainOutput:
     )
 
     try:
-        raw_output = await _generate_grounded_answer(
-            input["question"], numbered_context, input.get("messages")
+        raw_output = await _generate_answer(
+            input["question"],
+            numbered_context,
+            input.get("messages"),
+            input.get("mode", "tutor"),
+            input.get("persona", "default"),
+            input.get("user_preferences"),
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("Chat chain generation failed: %s", exc)
