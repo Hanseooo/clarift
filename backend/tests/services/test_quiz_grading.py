@@ -1,5 +1,3 @@
-import pytest
-
 from src.services.quiz_service import grade_question
 
 
