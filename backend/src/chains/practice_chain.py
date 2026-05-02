@@ -10,6 +10,7 @@ from typing import Any, TypedDict
 from langchain_google_genai import ChatGoogleGenerativeAI
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
+from src.chains.prompts import build_preference_context, strict_source_only
 from src.chains.retry import is_retryable_error
 from src.core.config import settings
 
@@ -21,6 +22,7 @@ class PracticeChainInput(TypedDict):
     drill_count: int
     user_id: str
     chunks: list[dict[str, Any]]
+    user_preferences: dict[str, object] | None
 
 
 class PracticeChainOutput(TypedDict):
@@ -132,6 +134,7 @@ async def _generate_drills_with_llm(
     topics: list[str],
     chunks: list[dict[str, Any]],
     count: int,
+    user_preferences: dict[str, object] | None = None,
 ) -> list[dict[str, Any]]:
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash-lite",
@@ -141,7 +144,10 @@ async def _generate_drills_with_llm(
 
     context = "\n\n".join(chunk.get("content", "") for chunk in chunks[:5])
 
+    pref_context = build_preference_context(user_preferences)
     prompt = DRILL_GENERATION_PROMPT.format(count=count, context=context, topics=", ".join(topics))
+    if pref_context:
+        prompt = strict_source_only() + "\n\n" + pref_context + "\n\n" + prompt
 
     response = await llm.ainvoke(prompt)
     raw = response.content
@@ -192,7 +198,9 @@ async def run_practice_chain(input: PracticeChainInput) -> PracticeChainOutput:
     chunks = input.get("chunks", [])
 
     try:
-        drills = await _generate_drills_with_llm(topics, chunks, input["drill_count"])
+        drills = await _generate_drills_with_llm(
+            topics, chunks, input["drill_count"], input.get("user_preferences")
+        )
     except Exception:  # noqa: BLE001
         logger.warning("LLM drill generation failed, using fallback drills")
         drills = _fallback_drills(topics, input["drill_count"])
