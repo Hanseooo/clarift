@@ -91,6 +91,7 @@ class Document(Base):
         server_default=text("'pending'"),
     )
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[TIMESTAMP] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,

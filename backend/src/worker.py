@@ -134,9 +134,12 @@ async def process_document(ctx, document_id: str, job_id: str):
                 )
                 session.add(doc_chunk)
 
-            # 7. Update Document status
+            # 7. Update Document status and extracted text
             await session.execute(
-                update(Document).where(Document.id == document_id).values(status="ready")
+                update(Document).where(Document.id == document_id).values(
+                    status="ready",
+                    extracted_text=text,
+                )
             )
 
             # 8. Update Job status
