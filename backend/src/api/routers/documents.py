@@ -70,8 +70,10 @@ async def upload_document(
         "application/pdf",
         "image/jpeg",
         "image/png",
-        "text/plain",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         "text/markdown",
+        "text/plain",
     }
     if file.content_type not in allowed_mime_types:
         raise HTTPException(
