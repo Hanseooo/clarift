@@ -131,6 +131,7 @@ def build_numbered_context(
 
 async def run_chat_chain(input: ChatChainInput) -> ChatChainOutput:
     chunks = input["chunks"][:10]
+    context_parts = [str(item.get("content", "")) for item in chunks if item.get("content")]
     if not chunks:
         return {
             "answer": settings.CHAT_FALLBACK_MESSAGE,

@@ -6,7 +6,6 @@ from typing import Callable
 import fitz  # PyMuPDF
 from markitdown import MarkItDown
 
-
 # Registry of extractors by MIME type
 _EXTRACTORS: dict[str, Callable[[bytes], str]] = {}
 

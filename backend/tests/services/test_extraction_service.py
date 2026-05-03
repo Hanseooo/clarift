@@ -1,4 +1,5 @@
 import pytest
+
 from src.services.extraction_service import extract_text
 
 
@@ -22,24 +23,24 @@ def test_extract_md():
 def test_extract_docx():
     # Requires a real .docx file or mocking MarkItDown
     # For unit test, mock the dependency
-    from unittest.mock import patch, MagicMock
-    with patch("src.services.extraction_service.MarkItDown") as MockMD:
+    from unittest.mock import MagicMock, patch
+    with patch("src.services.extraction_service.MarkItDown") as mock_md:
         mock_instance = MagicMock()
         mock_instance.convert_stream.return_value = MagicMock(text_content="Hello from DOCX")
-        MockMD.return_value = mock_instance
+        mock_md.return_value = mock_instance
 
         text = extract_text(b"fake-docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         assert text == "Hello from DOCX"
 
 
 def test_extract_pptx_preserves_slide_markers():
-    from unittest.mock import patch, MagicMock
-    with patch("src.services.extraction_service.MarkItDown") as MockMD:
+    from unittest.mock import MagicMock, patch
+    with patch("src.services.extraction_service.MarkItDown") as mock_md:
         mock_instance = MagicMock()
         mock_instance.convert_stream.return_value = MagicMock(
             text_content="Slide 1 content\n---\nSlide 2 content"
         )
-        MockMD.return_value = mock_instance
+        mock_md.return_value = mock_instance
 
         text = extract_text(b"fake-pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation")
         assert "--- Slide 1 ---" in text
