@@ -140,6 +140,7 @@ async def test_process_document_sets_document_ready():
         await process_document({}, "doc-123", "12345678-1234-5678-1234-567812345678")
 
     statuses = []
+    extracted_texts = []
     for call in mock_session.execute.call_args_list:
         if call.args:
             stmt = call.args[0]
@@ -147,4 +148,9 @@ async def test_process_document_sets_document_ready():
                 for val in stmt._values.values():
                     if hasattr(val, "value"):
                         statuses.append(val.value)
+                        if isinstance(val.value, str):
+                            extracted_texts.append(val.value)
     assert "ready" in statuses, f"Document status must be 'ready', got statuses: {statuses}"
+    assert "text" in extracted_texts, (
+        f"Document extracted_text must be persisted, got: {extracted_texts}"
+    )
