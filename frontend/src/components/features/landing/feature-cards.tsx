@@ -12,7 +12,7 @@ const features: Feature[] = [
     icon: FileUp,
     title: "Learn smarter, not harder",
     description:
-      "Upload your notes and let AI extract what matters. Chat with AI based on your notes.",
+      "Upload your notes and let AI extract what matters. Chat with AI tutor based on your notes.",
   },
   {
     icon: Target,
