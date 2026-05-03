@@ -50,7 +50,7 @@ async def get_user_chunks(
 async def _embed_query(query: str) -> list[float]:
     embeddings = GoogleGenerativeAIEmbeddings(
         model="models/gemini-embedding-001",
-        task_type="retrieval_document",
+        task_type="retrieval_query",
         output_dimensionality=768,
     )
     return await embeddings.aembed_query(query)
