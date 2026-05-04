@@ -14,11 +14,11 @@ export function MockUploadFrame() {
             Drop your notes here, or click to upload
           </p>
           <p className="mt-1 text-sm text-text-secondary">
-            PDF only up to 50MB
+            upload up to 50MB
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-2">
-          {["PDF"].map((type) => (
+          {["PDF", "PPT", "DOC", "TXT", "MD"].map((type) => (
             <span
               key={type}
               className="rounded-full border border-brand-500/20 bg-brand-500/8 px-3 py-1 text-xs font-medium text-brand-500"

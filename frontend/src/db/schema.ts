@@ -35,6 +35,7 @@ export const documents = pgTable("documents", {
   status: text("status").notNull().default("pending"),
   // "pending" | "processing" | "ready" | "failed"
   error: text("error"),
+  extractedText: text("extracted_text"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 

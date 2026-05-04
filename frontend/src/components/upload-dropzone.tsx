@@ -24,12 +24,6 @@ export function UploadDropzone({ onUploadSuccess, onUploadError }: UploadDropzon
     const file = acceptedFiles[0];
     if (!file) return;
 
-    // Validate file type (PDF only for now)
-    if (file.type !== "application/pdf") {
-      setError("Only PDF files are supported.");
-      return;
-    }
-
     setSelectedFile(file);
     setError(null);
   }, []);
@@ -38,6 +32,10 @@ export function UploadDropzone({ onUploadSuccess, onUploadError }: UploadDropzon
     onDrop,
     accept: {
       "application/pdf": [".pdf"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
+      "text/markdown": [".md"],
+      "text/plain": [".txt"],
     },
     multiple: false,
     maxSize: 50 * 1024 * 1024, // 50 MB
@@ -98,7 +96,7 @@ export function UploadDropzone({ onUploadSuccess, onUploadError }: UploadDropzon
       <div
         {...getRootProps()}
         className={cn(
-          "border-[1.5px] border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-150 ease relative overflow-hidden",
+          "border-[1.5px] border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-150 ease relative overflow-hidden dropzone-radial-glow",
           isDragActive
             ? "border-brand-500 bg-brand-500/[0.06] scale-[1.01]"
             : "border-brand-400 bg-gradient-to-br from-brand-500/[0.04] to-brand-400/[0.02] hover:border-brand-500 hover:bg-brand-500/[0.06]",
@@ -112,11 +110,21 @@ export function UploadDropzone({ onUploadSuccess, onUploadError }: UploadDropzon
           </div>
           <div>
             <p className="text-sm font-medium text-text-primary">
-              {isDragActive ? "Drop your PDF here" : "Drag & drop your study PDF"}
+              {isDragActive ? "Drop your file here" : "Drag & drop your study material"}
             </p>
             <p className="text-xs text-text-tertiary mt-1">
-              or click to browse (PDF only, max 50 MB)
+              or click to browse (max 50 MB)
             </p>
+          </div>
+          <div className="flex justify-center gap-1.5 mt-4">
+            {["PDF", "DOCX", "PPTX", "MD", "TXT"].map((type) => (
+              <span
+                key={type}
+                className="bg-brand-500/[0.08] border border-brand-500/[0.2] rounded-full px-2.5 py-0.5 text-[11px] font-medium text-brand-500"
+              >
+                {type}
+              </span>
+            ))}
           </div>
         </div>
       </div>
@@ -171,7 +179,7 @@ export function UploadDropzone({ onUploadSuccess, onUploadError }: UploadDropzon
           </div>
           <div className="h-2 bg-surface-subtle rounded-full overflow-hidden">
             <div
-              className="h-full bg-brand-500 transition-all duration-300"
+              className="h-full transition-all duration-300 progress-fill progress-glow"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>

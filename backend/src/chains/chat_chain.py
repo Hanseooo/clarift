@@ -21,13 +21,15 @@ from src.core.config import settings
 logger = logging.getLogger(__name__)
 
 
-class ChatChainInput(TypedDict):
+class ChatChainInput(TypedDict, total=False):
     question: str
     chunks: list[dict[str, Any]]
     messages: list[dict[str, Any]] | None
     mode: str
     persona: str
     user_preferences: dict[str, object] | None
+    document_title: str | None
+    total_chunks: int | None
 
 
 class ChatChainOutput(TypedDict):
@@ -107,8 +109,29 @@ async def _generate_answer(
     return "".join(str(part) for part in raw).strip()
 
 
+def build_numbered_context(
+    chunks: list[dict[str, Any]],
+    document_title: str | None = None,
+    total_chunks: int | None = None,
+) -> str:
+    """Build a numbered context string from chunks with optional metadata."""
+    context_parts = [str(item.get("content", "")) for item in chunks if item.get("content")]
+    if not context_parts:
+        return ""
+
+    title = document_title or "your document"
+    count = total_chunks if total_chunks is not None else len(context_parts)
+
+    return (
+        f"The following are relevant excerpts from the document '{title}' "
+        f"(total {count} excerpts available). Use only these excerpts to answer:\n\n"
+        + "\n\n".join(f"[{i + 1}] {content}" for i, content in enumerate(context_parts))
+    )
+
+
 async def run_chat_chain(input: ChatChainInput) -> ChatChainOutput:
-    chunks = input["chunks"][:5]
+    chunks = input["chunks"][:10]
+    context_parts = [str(item.get("content", "")) for item in chunks if item.get("content")]
     if not chunks:
         return {
             "answer": settings.CHAT_FALLBACK_MESSAGE,
@@ -116,17 +139,17 @@ async def run_chat_chain(input: ChatChainInput) -> ChatChainOutput:
             "relevant_chunks": [],
         }
 
-    context_parts = [str(item.get("content", "")) for item in chunks if item.get("content")]
-    if not context_parts:
+    numbered_context = build_numbered_context(
+        chunks,
+        document_title=input.get("document_title"),
+        total_chunks=input.get("total_chunks"),
+    )
+    if not numbered_context:
         return {
             "answer": settings.CHAT_FALLBACK_MESSAGE,
             "citations": [],
             "relevant_chunks": [],
         }
-
-    numbered_context = "\n\n".join(
-        f"[{i + 1}] {content}" for i, content in enumerate(context_parts)
-    )
 
     try:
         raw_output = await _generate_answer(

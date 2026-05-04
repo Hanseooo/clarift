@@ -17,6 +17,8 @@ from src.db.session import get_db
 from src.services.practice_service import (
     create_practice_session,
     generate_mini_lesson,
+)
+from src.services.practice_service import (
     get_weak_areas as get_weak_areas_service,
 )
 

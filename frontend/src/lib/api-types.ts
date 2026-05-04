@@ -497,10 +497,6 @@ export interface components {
             user_answer: string | boolean | string[];
             /** Correct Answer */
             correct_answer: string | boolean | string[];
-            /** Correct Answers */
-            correct_answers?: string[] | null;
-            /** Acceptable Answers */
-            acceptable_answers?: string[] | null;
             /** Is Correct */
             is_correct: boolean;
             /** Topic */
@@ -512,7 +508,10 @@ export interface components {
         };
         /** Body_upload_document_api_v1_documents_upload_post */
         Body_upload_document_api_v1_documents_upload_post: {
-            /** File */
+            /**
+             * File
+             * Format: binary
+             */
             file: string;
         };
         /**
@@ -542,9 +541,9 @@ export interface components {
              */
             messages: components["schemas"]["ChatMessage"][];
             /** Mode Override */
-            mode_override?: "strict_rag" | "tutor" | "socratic" | null;
+            mode_override?: ("strict_rag" | "tutor" | "socratic") | null;
             /** Persona Override */
-            persona_override?: "default" | "encouraging" | "direct" | "witty" | "patient" | null;
+            persona_override?: ("default" | "encouraging" | "direct" | "witty" | "patient") | null;
         };
         /**
          * ChatResponse
@@ -883,10 +882,6 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
         };
     };
     responses: never;

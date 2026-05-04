@@ -18,6 +18,7 @@ async def test_process_document_transitions_to_processing():
     mock_doc.filename = "file.pdf"
     mock_doc.r2_key = "test/file.pdf"
     mock_doc.user_id = "user-123"
+    mock_doc.mime_type = "application/pdf"
     mock_result.scalar_one_or_none.return_value = mock_doc
 
     execute_calls = []
@@ -30,18 +31,13 @@ async def test_process_document_transitions_to_processing():
 
     with (
         patch("src.services.s3_service.S3Service") as mock_s3_class,
-        patch("fitz.open") as mock_fitz,
+        patch("src.services.extraction_service.extract_text", return_value="some text"),
         patch("langchain_text_splitters.RecursiveCharacterTextSplitter") as mock_splitter_class,
         patch("src.worker.process_chunks", new_callable=AsyncMock, return_value=[[0.1] * 768]),
         patch("src.db.session.AsyncSessionLocal", return_value=mock_session),
     ):
         mock_s3 = mock_s3_class.return_value
         mock_s3.download_file = AsyncMock(return_value=b"pdf bytes")
-
-        mock_doc_instance = MagicMock()
-        mock_doc_instance.get_text.return_value = "some text"
-        mock_fitz.return_value.__enter__ = MagicMock(return_value=mock_doc_instance)
-        mock_fitz.return_value.__exit__ = MagicMock(return_value=None)
 
         mock_splitter = mock_splitter_class.return_value
         mock_splitter.split_text.return_value = ["chunk1"]
@@ -124,12 +120,13 @@ async def test_process_document_sets_document_ready():
     mock_doc.filename = "file.pdf"
     mock_doc.r2_key = "test/file.pdf"
     mock_doc.user_id = "user-123"
+    mock_doc.mime_type = "application/pdf"
     mock_result.scalar_one_or_none.return_value = mock_doc
     mock_session.execute.return_value = mock_result
 
     with (
         patch("src.services.s3_service.S3Service") as mock_s3_class,
-        patch("fitz.open") as mock_fitz,
+        patch("src.services.extraction_service.extract_text", return_value="text"),
         patch("langchain_text_splitters.RecursiveCharacterTextSplitter") as mock_splitter_class,
         patch("src.worker.process_chunks", new_callable=AsyncMock, return_value=[[0.1] * 768]),
         patch("src.db.session.AsyncSessionLocal", return_value=mock_session),
@@ -137,17 +134,13 @@ async def test_process_document_sets_document_ready():
         mock_s3 = mock_s3_class.return_value
         mock_s3.download_file = AsyncMock(return_value=b"pdf bytes")
 
-        mock_doc_instance = MagicMock()
-        mock_doc_instance.get_text.return_value = "text"
-        mock_fitz.return_value.__enter__ = MagicMock(return_value=mock_doc_instance)
-        mock_fitz.return_value.__exit__ = MagicMock(return_value=None)
-
         mock_splitter = mock_splitter_class.return_value
         mock_splitter.split_text.return_value = ["c"]
 
         await process_document({}, "doc-123", "12345678-1234-5678-1234-567812345678")
 
     statuses = []
+    extracted_texts = []
     for call in mock_session.execute.call_args_list:
         if call.args:
             stmt = call.args[0]
@@ -155,4 +148,9 @@ async def test_process_document_sets_document_ready():
                 for val in stmt._values.values():
                     if hasattr(val, "value"):
                         statuses.append(val.value)
+                        if isinstance(val.value, str):
+                            extracted_texts.append(val.value)
     assert "ready" in statuses, f"Document status must be 'ready', got statuses: {statuses}"
+    assert "text" in extracted_texts, (
+        f"Document extracted_text must be persisted, got: {extracted_texts}"
+    )

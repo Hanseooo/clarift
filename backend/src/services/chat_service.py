@@ -40,7 +40,7 @@ async def run_chat(
         user_id=user_id,
         query=question,
         document_ids=document_ids,
-        limit=5,
+        limit=10,
     )
 
     if chunks:
@@ -59,6 +59,11 @@ async def run_chat(
     mode = mode_override or chat_settings.get("mode", "tutor")  # type: ignore[union-attr]
     persona = persona_override or chat_settings.get("persona", "default")  # type: ignore[union-attr]
 
+    document_title = "your notes"
+    if chunks:
+        first_doc_id = chunks[0]["document_id"]
+        document_title = doc_map.get(first_doc_id, "your notes")
+
     chain_input = ChatChainInput(
         question=question,
         chunks=chunks,
@@ -66,5 +71,7 @@ async def run_chat(
         mode=str(mode),
         persona=str(persona),
         user_preferences=user_prefs,
+        document_title=document_title,
+        total_chunks=len(chunks),
     )
     return await run_chat_chain(chain_input)

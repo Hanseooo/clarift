@@ -75,7 +75,6 @@ async def process_document(ctx, document_id: str, job_id: str):
     """
     Process document: Download from R2, extract text, chunk, embed, and save to DB.
     """
-    import fitz
     from langchain_text_splitters import RecursiveCharacterTextSplitter
     from sqlalchemy import update
     from sqlalchemy.future import select
@@ -103,12 +102,12 @@ async def process_document(ctx, document_id: str, job_id: str):
             # 2. Download from R2
             logger.info(f"Downloading from R2: {document.r2_key}")
             s3_service = S3Service()
-            pdf_bytes = await s3_service.download_file(document.r2_key)
+            file_bytes = await s3_service.download_file(document.r2_key)
 
             # 3. Extract text
-            logger.info("Extracting text from PDF...")
-            with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
-                text = "\n".join(page.get_text() for page in doc)
+            logger.info("Extracting text...")
+            from src.services.extraction_service import extract_text
+            text = extract_text(file_bytes, document.mime_type)
 
             # 4. Chunk text
             logger.info("Chunking text...")
@@ -135,9 +134,12 @@ async def process_document(ctx, document_id: str, job_id: str):
                 )
                 session.add(doc_chunk)
 
-            # 7. Update Document status
+            # 7. Update Document status and extracted text
             await session.execute(
-                update(Document).where(Document.id == document_id).values(status="ready")
+                update(Document).where(Document.id == document_id).values(
+                    status="ready",
+                    extracted_text=text,
+                )
             )
 
             # 8. Update Job status

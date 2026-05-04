@@ -658,6 +658,37 @@
   .shake-wrong {
     animation: shake 300ms ease;
   }
+
+  /* Upload dropzone utilities */
+  .progress-fill {
+    background: linear-gradient(90deg, var(--color-brand-500), var(--color-brand-400));
+  }
+
+  .progress-glow {
+    position: relative;
+  }
+  .progress-glow::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: -1px;
+    width: 12px;
+    height: 5px;
+    background: white;
+    opacity: 0.6;
+    filter: blur(2px);
+  }
+
+  .dropzone-radial-glow {
+    position: relative;
+  }
+  .dropzone-radial-glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+  }
 }
 
 /* Respect reduced motion preferences */

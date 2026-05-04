@@ -158,7 +158,7 @@ const showcases = [
   {
     icon: FileText,
     title: "All your materials in one place",
-    description: "Upload PDFs. Track processing status and access everything from your document library.",
+    description: "Upload documents. Track processing status and access everything from your document library.",
     mock: <MockDocuments />,
   },
   {

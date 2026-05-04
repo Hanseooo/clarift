@@ -11,6 +11,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DeleteDocumentButton } from "@/components/features/documents/delete-document-button";
+import { DocumentViewerShell } from "@/components/features/documents/document-viewer-shell";
+import { MarkdownViewer } from "@/components/features/documents/markdown-viewer";
+import { TextViewer } from "@/components/features/documents/text-viewer";
+import { SlideViewer } from "@/components/features/documents/slide-viewer";
 import { r2Client } from "@/lib/r2";
 import { cn } from "@/lib/utils";
 
@@ -58,12 +62,13 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function DocumentViewer({
+  document,
   documentUrl,
-  status,
 }: {
+  document: typeof documents.$inferSelect;
   documentUrl?: string;
-  status: string;
 }) {
+  const { status, mimeType, title, extractedText } = document;
   const isProcessing = status === "pending" || status === "processing";
 
   if (isProcessing) {
@@ -100,13 +105,51 @@ function DocumentViewer({
     );
   }
 
-  return (
-    <iframe
-      src={documentUrl}
-      className="h-full w-full min-h-[400px] md:min-h-[600px]"
-      title="Document preview"
-    />
-  );
+  const shellProps = {
+    title,
+    mimeType,
+    onDownload: documentUrl ? () => window.open(documentUrl, "_blank") : undefined,
+  };
+
+  switch (mimeType) {
+    case "application/pdf":
+      return (
+        <iframe
+          src={documentUrl}
+          className="h-full w-full min-h-[400px] md:min-h-[600px]"
+          title={title}
+        />
+      );
+
+    case "text/markdown":
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      return (
+        <DocumentViewerShell {...shellProps}>
+          <MarkdownViewer content={extractedText || "No content available"} />
+        </DocumentViewerShell>
+      );
+
+    case "text/plain":
+      return (
+        <DocumentViewerShell {...shellProps}>
+          <TextViewer content={extractedText || "No content available"} />
+        </DocumentViewerShell>
+      );
+
+    case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+      return (
+        <DocumentViewerShell {...shellProps}>
+          <SlideViewer content={extractedText || "No content available"} />
+        </DocumentViewerShell>
+      );
+
+    default:
+      return (
+        <DocumentViewerShell {...shellProps}>
+          <p className="text-sm text-text-secondary">Preview not available for this file type.</p>
+        </DocumentViewerShell>
+      );
+  }
 }
 
 export default async function DocumentPage({ params }: DocumentPageProps) {
@@ -236,7 +279,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
 
         {/* Right: document viewer */}
         <div className="bg-surface-card border border-border-default rounded-xl overflow-hidden">
-          <DocumentViewer documentUrl={documentUrl} status={document.status} />
+          <DocumentViewer document={document} documentUrl={documentUrl} />
         </div>
       </div>
 
@@ -283,25 +326,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
         </div>
 
         <div className="bg-surface-card border border-border-default rounded-xl overflow-hidden">
-          {isProcessing || document.status === "failed" ? (
-            <DocumentViewer
-              documentUrl={documentUrl}
-              status={document.status}
-            />
-          ) : (
-            <div className="p-4 space-y-4">
-              <Button className="w-full h-11 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium rounded-xl" asChild>
-                <a
-                  href={documentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="mr-2 size-4" />
-                  View Fullscreen Document
-                </a>
-              </Button>
-            </div>
-          )}
+          <DocumentViewer document={document} documentUrl={documentUrl} />
         </div>
       </div>
     </div>
