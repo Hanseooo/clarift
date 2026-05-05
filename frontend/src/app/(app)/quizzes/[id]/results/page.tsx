@@ -119,7 +119,6 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
       <ResultsClient
         quizId={resolvedParams.id}
         questions={result.questions}
-        score={result.score}
         total={result.questions.length}
         weakTopics={weakTopics}
       />
