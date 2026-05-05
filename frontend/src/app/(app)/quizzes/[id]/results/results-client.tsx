@@ -25,21 +25,22 @@ type WeakTopic = {
 interface ResultsClientProps {
   quizId: string;
   questions: QuizResultQuestion[];
-  score: number;
   total: number;
   weakTopics: WeakTopic[];
 }
 
-export function ResultsClient({ quizId, questions, score, total, weakTopics }: ResultsClientProps) {
+export function ResultsClient({ quizId, questions, total, weakTopics }: ResultsClientProps) {
   const [showAnswers, setShowAnswers] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(weakTopics.length > 0);
+
+  const correctCount = questions.filter((q) => q.is_correct).length;
 
   return (
     <section className="space-y-4">
       <QuizResultsDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        score={score}
+        correctCount={correctCount}
         total={total}
         weakTopics={weakTopics}
       />

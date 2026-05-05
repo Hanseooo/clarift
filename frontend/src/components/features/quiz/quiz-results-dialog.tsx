@@ -20,7 +20,7 @@ interface WeakTopic {
 interface QuizResultsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  score: number
+  correctCount: number
   total: number
   weakTopics: WeakTopic[]
 }
@@ -28,7 +28,7 @@ interface QuizResultsDialogProps {
 export function QuizResultsDialog({
   open,
   onOpenChange,
-  score,
+  correctCount,
   total,
   weakTopics,
 }: QuizResultsDialogProps) {
@@ -44,7 +44,7 @@ export function QuizResultsDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-text-primary">
-            You scored {score}/{total}
+            You scored {correctCount}/{total}
           </DialogTitle>
           <DialogDescription className="text-sm text-text-secondary">
             {weakTopics.length > 0

@@ -54,6 +54,10 @@ class TestGradeQuestion:
         q = {"type": "true_false", "correct_answer": "true"}
         assert grade_question(q, "true") is True
 
+    def test_true_false_string_false(self):
+        q = {"type": "true_false", "correct_answer": False}
+        assert grade_question(q, "False") is True
+
     # --- MCQ ---
     def test_mcq_match(self):
         q = {"type": "mcq", "correct_answer": "A"}
