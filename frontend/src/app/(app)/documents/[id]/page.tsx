@@ -108,7 +108,7 @@ function DocumentViewer({
   const shellProps = {
     title,
     mimeType,
-    onDownload: documentUrl ? () => window.open(documentUrl, "_blank") : undefined,
+    downloadUrl: documentUrl,
   };
 
   switch (mimeType) {

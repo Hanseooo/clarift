@@ -7,7 +7,7 @@ interface DocumentViewerShellProps {
   title: string
   mimeType: string
   children: React.ReactNode
-  onDownload?: () => void
+  downloadUrl?: string
   fullWidth?: boolean
 }
 
@@ -15,7 +15,7 @@ export function DocumentViewerShell({
   title,
   mimeType,
   children,
-  onDownload,
+  downloadUrl,
   fullWidth = false,
 }: DocumentViewerShellProps) {
   return (
@@ -31,14 +31,16 @@ export function DocumentViewerShell({
             <span className="bg-brand-100 border border-brand-200 text-brand-500 text-xs font-medium rounded-full px-2.5 py-0.5">
               {getFileLabel(mimeType)}
             </span>
-            {onDownload && (
-              <button
-                onClick={onDownload}
+            {downloadUrl && (
+              <a
+                href={downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-1.5 rounded-md hover:bg-surface-subtle transition-colors"
                 aria-label="Download original file"
               >
                 <FileDown size={16} className="text-text-secondary" />
-              </button>
+              </a>
             )}
           </div>
         </div>
