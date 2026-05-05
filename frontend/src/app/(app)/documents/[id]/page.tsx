@@ -114,11 +114,44 @@ function DocumentViewer({
   switch (mimeType) {
     case "application/pdf":
       return (
-        <iframe
-          src={documentUrl}
-          className="h-full w-full min-h-[400px] md:min-h-[600px]"
-          title={title}
-        />
+        <>
+          {/* Desktop: iframe inline */}
+          <div className="hidden lg:block h-full">
+            <DocumentViewerShell {...shellProps} fullWidth>
+              <div className="-m-5 md:-m-6">
+                <iframe
+                  src={documentUrl}
+                  className="w-full h-full min-h-[600px]"
+                  title={title}
+                />
+              </div>
+            </DocumentViewerShell>
+          </div>
+          {/* Mobile: open fullscreen button */}
+          <div className="lg:hidden">
+            <DocumentViewerShell {...shellProps}>
+              <div className="flex flex-col items-center justify-center gap-4 min-h-[400px]">
+                <FileText className="size-12 text-brand-400" />
+                <p className="text-sm text-text-secondary text-center">
+                  PDF preview is best viewed in fullscreen
+                </p>
+                <Button
+                  className="w-full h-11 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium rounded-xl"
+                  asChild
+                >
+                  <a
+                    href={documentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="mr-2 size-4" />
+                    View Fullscreen Document
+                  </a>
+                </Button>
+              </div>
+            </DocumentViewerShell>
+          </div>
+        </>
       );
 
     case "text/markdown":

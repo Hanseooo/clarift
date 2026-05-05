@@ -45,7 +45,7 @@ function SlideCard({ slide }: { slide: Slide }) {
           {slide.number}
         </span>
         {slide.title && (
-          <h3 className="text-base font-semibold text-primary">{slide.title}</h3>
+          <h3 className="text-base font-semibold text-text-primary">{slide.title}</h3>
         )}
       </div>
       <div className="prose-brand prose-sm">

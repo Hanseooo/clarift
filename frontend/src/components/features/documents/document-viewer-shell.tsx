@@ -8,6 +8,7 @@ interface DocumentViewerShellProps {
   mimeType: string
   children: React.ReactNode
   onDownload?: () => void
+  fullWidth?: boolean
 }
 
 export function DocumentViewerShell({
@@ -15,15 +16,16 @@ export function DocumentViewerShell({
   mimeType,
   children,
   onDownload,
+  fullWidth = false,
 }: DocumentViewerShellProps) {
   return (
-    <div className="max-w-[640px] mx-auto">
+    <div className={fullWidth ? "w-full" : "max-w-[640px] mx-auto"}>
       <div className="bg-surface-card border border-border-default rounded-2xl overflow-hidden">
         {/* Sticky header */}
         <div className="sticky top-0 z-10 bg-surface-card px-[18px] py-3.5 border-b border-border-default flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
             <FileTypeIcon mimeType={mimeType} size={16} className="text-brand-400 shrink-0" />
-            <span className="text-sm font-medium text-primary truncate">{title}</span>
+            <span className="text-sm font-medium text-text-primary truncate">{title}</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="bg-brand-100 border border-brand-200 text-brand-500 text-xs font-medium rounded-full px-2.5 py-0.5">
