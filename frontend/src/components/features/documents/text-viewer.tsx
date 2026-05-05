@@ -47,7 +47,7 @@ export function TextViewer({ content }: TextViewerProps) {
       {/* Text content */}
       <div className="overflow-x-auto">
         <table
-          className={`font-mono text-sm text-primary leading-relaxed w-full ${
+          className={`font-mono text-sm text-text-primary leading-relaxed w-full ${
             wrap ? "whitespace-pre-wrap break-words" : "whitespace-pre"
           }`}
         >
