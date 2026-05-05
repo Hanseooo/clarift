@@ -234,7 +234,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
             </Link>
           </Button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-medium text-text-primary truncate">
+            <h1 className="text-sm font-medium text-text-primary truncate" title={document.title}>
               {document.title}
             </h1>
           </div>
@@ -252,7 +252,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
                 <div className="size-9 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0">
                   <FileText className="size-[18px] text-brand-400" />
                 </div>
-                <h2 className="text-lg font-semibold text-text-primary leading-tight">
+                <h2 className="text-lg font-semibold text-text-primary leading-tight truncate min-w-0" title={document.title}>
                   {document.title}
                 </h2>
               </div>
@@ -324,7 +324,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
               <div className="size-9 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0">
                 <FileText className="size-[18px] text-brand-400" />
               </div>
-              <h2 className="text-lg font-semibold text-text-primary leading-tight">
+              <h2 className="text-lg font-semibold text-text-primary leading-tight truncate min-w-0" title={document.title}>
                 {document.title}
               </h2>
             </div>
