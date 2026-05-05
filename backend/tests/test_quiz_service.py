@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from src.services.quiz_service import (
     QuizSettings,
-    QuizTypeSettings,
     calculate_question_count,
     distribute_questions,
     resolve_quiz_settings,
@@ -37,8 +36,7 @@ class TestResolveQuizSettings:
             "mcq": {"applicable": True, "reason": "test"},
             "ordering": {"applicable": False, "reason": "test"},
         }
-        type_overrides = QuizTypeSettings(mcq=True, ordering=True)
-        settings = QuizSettings(auto_mode=False, type_overrides=type_overrides)
+        settings = QuizSettings(auto_mode=False, type_overrides=["mcq", "ordering"])
         result = resolve_quiz_settings(settings, flags)
         assert result == ["mcq"]
 
@@ -48,8 +46,7 @@ class TestResolveQuizSettings:
             "true_false": {"applicable": True, "reason": "test"},
             "identification": {"applicable": True, "reason": "test"},
         }
-        type_overrides = QuizTypeSettings(mcq=True, true_false=False, identification=True)
-        settings = QuizSettings(auto_mode=False, type_overrides=type_overrides)
+        settings = QuizSettings(auto_mode=False, type_overrides=["mcq", "identification"])
         result = resolve_quiz_settings(settings, flags)
         assert set(result) == {"mcq", "identification"}
 

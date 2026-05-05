@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import enforce_quota, get_current_user
@@ -25,12 +25,26 @@ from src.services.quiz_service import (
 router = APIRouter(prefix="/api/v1/quizzes", tags=["quizzes"])
 
 
+_VALID_QUESTION_TYPES = {"mcq", "true_false", "identification", "multi_select", "ordering"}
+
+
 class CreateQuizRequest(BaseModel):
     """Request body for creating a quiz."""
 
     document_id: str
     question_count: int = 5
     auto_mode: bool = True
+    type_overrides: list[str] | None = None
+
+    @field_validator("type_overrides")
+    @classmethod
+    def validate_type_overrides(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        invalid = set(v) - _VALID_QUESTION_TYPES
+        if invalid:
+            raise ValueError(f"Invalid question types: {', '.join(sorted(invalid))}")
+        return v
 
 
 class CreateQuizResponse(BaseModel):
@@ -169,9 +183,16 @@ async def create_quiz(
             detail="question_count must be between 1 and 20",
         )
 
+    settings = QuizSettings(
+        auto_mode=request.auto_mode,
+        question_count=request.question_count,
+    )
+    if not request.auto_mode and request.type_overrides:
+        settings.type_overrides = request.type_overrides
+
     service_request = QuizRequest(
         document_id=uuid.UUID(request.document_id),
-        settings=QuizSettings(auto_mode=request.auto_mode),
+        settings=settings,
     )
 
     result = await create_quiz_job(db, user.id, service_request)

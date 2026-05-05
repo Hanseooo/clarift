@@ -94,7 +94,13 @@ export function QuizGenerationForm({ documents, preselectedDocumentId }: QuizGen
           document_id: selectedDocId,
           question_count: 5,
           auto_mode: settings.auto_mode,
-          type_overrides: settings.type_overrides,
+          type_overrides: settings.auto_mode
+            ? undefined
+            : settings.type_overrides
+              ? (Object.entries(settings.type_overrides)
+                  .filter(([, v]) => v)
+                  .map(([k]) => k) as string[])
+              : undefined,
         }
       : {
           document_id: selectedDocId,
@@ -138,7 +144,7 @@ export function QuizGenerationForm({ documents, preselectedDocumentId }: QuizGen
 
   if (step === "select") {
     return (
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+      <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-5 space-y-4">
         <h3 className="text-sm font-semibold text-foreground">Select Document</h3>
 
         {documents.length === 0 ? (
@@ -173,17 +179,19 @@ export function QuizGenerationForm({ documents, preselectedDocumentId }: QuizGen
 
   if (step === "settings") {
     return (
-      <QuizSettingsPanel
-        applicabilityFlags={applicabilityFlags}
-        loadingFlags={loadingFlags}
-        onGenerate={handleGenerate}
-      />
+      <div className="mx-auto max-w-2xl">
+        <QuizSettingsPanel
+          applicabilityFlags={applicabilityFlags}
+          loadingFlags={loadingFlags}
+          onGenerate={handleGenerate}
+        />
+      </div>
     );
   }
 
   if (step === "generating" && jobId) {
     return (
-      <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+      <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-6 space-y-5">
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-foreground">Generating Quiz</h3>
         </div>
@@ -210,7 +218,7 @@ export function QuizGenerationForm({ documents, preselectedDocumentId }: QuizGen
 
   if (step === "complete") {
     return (
-      <div className="rounded-xl border border-border bg-card p-6 space-y-4 text-center">
+      <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-6 space-y-4 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success-100 dark:bg-success-900/20">
           <CheckCircle2 className="h-6 w-6 text-success-500" />
         </div>
@@ -231,7 +239,7 @@ export function QuizGenerationForm({ documents, preselectedDocumentId }: QuizGen
 
   if (step === "error") {
     return (
-      <div className="rounded-xl border border-border bg-card p-6 space-y-4 text-center">
+      <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-6 space-y-4 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
           <AlertCircle className="h-6 w-6 text-destructive" />
         </div>

@@ -300,6 +300,16 @@ export function AttemptWizard({ quizId, questions, onSubmit }: AttemptWizardProp
 
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
+
+  if (questions.length === 0 || !currentQuestion) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          No questions available for this quiz.
+        </p>
+      </div>
+    );
+  }
   const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
   const currentAnswer = answers[currentQuestion?.id] ?? "";
   const isLastQuestion = currentIndex === totalQuestions - 1;

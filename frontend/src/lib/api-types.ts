@@ -508,10 +508,7 @@ export interface components {
         };
         /** Body_upload_document_api_v1_documents_upload_post */
         Body_upload_document_api_v1_documents_upload_post: {
-            /**
-             * File
-             * Format: binary
-             */
+            /** File */
             file: string;
         };
         /**
@@ -603,6 +600,8 @@ export interface components {
              * @default true
              */
             auto_mode: boolean;
+            /** Type Overrides */
+            type_overrides?: string[] | null;
         };
         /**
          * CreateQuizResponse
@@ -882,6 +881,10 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;

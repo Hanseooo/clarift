@@ -46,6 +46,26 @@ export default async function QuizAttemptPage({ params }: AttemptPageProps) {
     explanation: string;
   }>) ?? [];
 
+  if (questions.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <Button variant="outline" size="sm" asChild className="w-fit">
+          <Link href="/quizzes">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Quizzes
+          </Link>
+        </Button>
+
+        <header className="space-y-1">
+          <h1 className="text-xl font-semibold text-foreground">Quiz</h1>
+          <p className="text-sm text-muted-foreground">
+            This quiz is still being generated. Please check back in a moment.
+          </p>
+        </header>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Button variant="outline" size="sm" asChild className="w-fit">

@@ -8,7 +8,7 @@ from difflib import SequenceMatcher
 from typing import Any
 
 from fastapi import HTTPException, status
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,25 +69,10 @@ def grade_question(question: dict[str, Any], user_answer: object) -> bool:
     return str(user_answer).strip().lower() == expected
 
 
-class QuizTypeSettings(BaseModel):
-    mcq: bool = True
-    true_false: bool = True
-    identification: bool = True
-    multi_select: bool = True
-    ordering: bool = True
-
-    @model_validator(mode="after")
-    def at_least_one_type(self):
-        if not any(
-            [self.mcq, self.true_false, self.identification, self.multi_select, self.ordering]
-        ):
-            raise ValueError("At least one question type must be selected")
-        return self
-
-
 class QuizSettings(BaseModel):
     auto_mode: bool = True
-    type_overrides: QuizTypeSettings | None = None
+    question_count: int | None = None
+    type_overrides: list[str] | None = None
 
 
 class QuizRequest(BaseModel):
@@ -123,11 +108,7 @@ def resolve_quiz_settings(
         return list(applicable)
 
     if request_settings.type_overrides:
-        user_selected = {
-            type_id
-            for type_id, enabled in request_settings.type_overrides.model_dump().items()
-            if enabled
-        }
+        user_selected = set(request_settings.type_overrides)
         return list(user_selected & applicable)
 
     return list(applicable)
@@ -229,7 +210,9 @@ async def create_quiz_job(
             detail="No applicable question types for this document.",
         )
 
-    auto_mode = request.settings.auto_mode if request.settings else True
+    settings = request.settings or QuizSettings()
+    auto_mode = settings.auto_mode
+    requested_count = settings.question_count
 
     chunk_count_result = await db.execute(
         select(func.count(DocumentChunk.id)).where(
@@ -238,7 +221,12 @@ async def create_quiz_job(
         )
     )
     chunk_count = chunk_count_result.scalar_one()
-    total_questions = calculate_question_count(chunk_count, len(resolved_types))
+
+    if requested_count and requested_count > 0:
+        total_questions = min(requested_count, 20)
+    else:
+        total_questions = calculate_question_count(chunk_count, len(resolved_types))
+
     distribution = distribute_questions(total_questions, resolved_types)
 
     try:
