@@ -37,6 +37,16 @@ def _is_similar(a: str, b: str) -> bool:
     return SequenceMatcher(None, a, b).ratio() >= _IDENTIFICATION_SIMILARITY_THRESHOLD
 
 
+def _parse_bool(value: object) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in ("true", "false"):
+            return normalized == "true"
+    return None
+
+
 def grade_question(question: dict[str, Any], user_answer: object) -> bool:
     """Grade a single question answer. Supports all question types."""
     qtype = str(question.get("type", "mcq"))
@@ -61,7 +71,8 @@ def grade_question(question: dict[str, Any], user_answer: object) -> bool:
     if qtype == "true_false":
         expected = question.get("correct_answer")
         if isinstance(expected, bool):
-            return bool(user_answer) == expected
+            parsed = _parse_bool(user_answer)
+            return parsed is expected if parsed is not None else False
         return str(user_answer).strip().lower() == str(expected).strip().lower()
 
     # mcq, ordering, and fallback
