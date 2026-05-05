@@ -80,7 +80,7 @@ export function QuestionReview({
       {/* User answer */}
       <div
         className={cn(
-          "rounded-lg px-3 py-2 text-sm",
+          "rounded-lg px-3 py-2 text-sm break-words",
           isCorrect
             ? "bg-success-100 text-success-800"
             : "bg-danger-100 text-danger-800"
@@ -92,7 +92,7 @@ export function QuestionReview({
 
       {/* Correct answer (revealed) */}
       {isRevealed && !isCorrect && (
-        <div className="rounded-lg px-3 py-2 text-sm bg-success-100 text-success-800 animate-in fade-in duration-200">
+        <div className="rounded-lg px-3 py-2 text-sm bg-success-100 text-success-800 break-words animate-in fade-in duration-200">
           <span className="font-medium">Correct answer: </span>
           {formatAnswer(correctAnswer)}
         </div>

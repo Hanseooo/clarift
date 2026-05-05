@@ -68,7 +68,7 @@ function Alert({
         {dismissible && onDismiss && (
           <button
             onClick={onDismiss}
-            className="shrink-0 rounded-md p-1 opacity-60 transition-colors-fast hover:opacity-100"
+            className="shrink-0 rounded-md h-11 w-11 flex items-center justify-center opacity-60 transition-colors-fast hover:opacity-100"
             aria-label="Dismiss alert"
           >
             <X className="size-4" />

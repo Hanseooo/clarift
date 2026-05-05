@@ -30,7 +30,7 @@ export function MiniLesson({ topics, onStartDrill }: MiniLessonProps) {
           Topics: {topics.join(", ") || "None selected"}
         </p>
         <Button
-          className="w-full"
+          className="w-full h-11"
           disabled={!topics.length || isLoading}
           onClick={handleGenerate}
         >
@@ -52,7 +52,7 @@ export function MiniLesson({ topics, onStartDrill }: MiniLessonProps) {
       <div className="prose-brand">
         <RichMarkdown content={lesson} />
       </div>
-      <Button className="w-full" onClick={onStartDrill}>
+      <Button className="w-full h-11" onClick={onStartDrill}>
         Start Drill
       </Button>
     </section>

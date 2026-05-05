@@ -68,7 +68,7 @@ function SortableItem({ id, label }: { id: string; label: string }) {
       <button type="button" {...attributes} {...listeners} aria-label="drag" className="text-muted-foreground">
         <GripVertical className="size-4" />
       </button>
-      <span className="text-sm">{label}</span>
+      <span className="text-sm min-w-0 break-words">{label}</span>
     </div>
   )
 }
@@ -189,7 +189,7 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
           <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {questionTypeLabel[current.type]}
           </span>
-          <span className="text-xs text-muted-foreground">Topic: {current.topic}</span>
+          <span className="text-xs text-muted-foreground min-w-0 truncate ml-2">Topic: {current.topic}</span>
         </div>
 
         <div className="prose-compact max-w-none">
@@ -202,7 +202,7 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
               <button
                 key={option}
                 disabled={checked}
-                className={`w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-all ${
+                className={`w-full flex items-center gap-3 rounded-lg border px-3 min-h-11 text-left text-sm transition-all ${
                   answer === option
                     ? "border-brand-500 bg-brand-50/50 dark:bg-brand-950/20"
                     : "border-border bg-background hover:border-border-strong hover:bg-surface-overlay"
@@ -220,10 +220,12 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
                 >
                   {String.fromCharCode(65 + (current.options?.indexOf(option) ?? 0))}
                 </span>
-                <RichMarkdown
-                  content={option}
-                  className="prose-compact prose-p:inline prose-p:m-0 prose-p:text-sm"
-                />
+                <span className="min-w-0">
+                  <RichMarkdown
+                    content={option}
+                    className="prose-compact prose-p:inline prose-p:m-0 prose-p:text-sm"
+                  />
+                </span>
               </button>
             ))}
           </div>
@@ -253,7 +255,7 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
             {current.options?.map((option) => (
               <label
                 key={option}
-                className={`w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-all cursor-pointer ${
+                className={`w-full flex items-center gap-3 rounded-lg border px-3 min-h-11 text-left text-sm transition-all cursor-pointer ${
                   checked && isCorrectMulti(option)
                     ? "border-green-500 bg-green-50 dark:bg-green-950/20"
                     : checked && isSelectedMulti(option)
@@ -268,9 +270,9 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
                   disabled={checked}
                   checked={isSelectedMulti(option)}
                   onChange={() => toggleMultiSelect(option)}
-                  className="size-4 accent-brand-500"
+                  className="size-4 accent-brand-500 flex-shrink-0"
                 />
-                <span className="text-sm">{option}</span>
+                <span className="text-sm min-w-0 break-words">{option}</span>
               </label>
             ))}
           </div>
@@ -303,7 +305,7 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
         ) : (
           <input
             disabled={checked}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full rounded-lg border border-border bg-background px-3 h-11 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-70 disabled:cursor-not-allowed"
             placeholder="Type your answer..."
             value={answer}
             onChange={(e) => handleSelect(e.target.value)}
@@ -311,7 +313,7 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
         )}
 
         {!checked ? (
-          <Button disabled={!answer} onClick={handleCheck} className="w-full">
+          <Button disabled={!answer} onClick={handleCheck} className="w-full h-11">
             Check Answer
           </Button>
         ) : (
@@ -347,7 +349,7 @@ export function PracticeAttempt({ drills, practiceId, onFinish, submitPractice: 
             <Button
               onClick={handleContinue}
               disabled={isSubmitting}
-              className="w-full"
+              className="w-full h-11"
             >
               {isSubmitting
                 ? "Submitting..."

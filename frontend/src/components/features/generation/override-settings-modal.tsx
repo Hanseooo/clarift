@@ -104,8 +104,8 @@ export function OverrideSettingsModal({
         <div className="space-y-4 py-4">
           {(error ?? saveError) && (
             <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2">
-              <AlertCircle className="h-4 w-4 text-destructive" />
-              <p className="text-xs text-destructive">{error ?? saveError}</p>
+              <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+              <p className="text-xs text-destructive flex-1 min-w-0 break-words">{error ?? saveError}</p>
             </div>
           )}
 
@@ -133,15 +133,15 @@ export function OverrideSettingsModal({
             </label>
             <div className="grid grid-cols-2 gap-2">
               {OUTPUT_FORMAT_OPTIONS.map((option) => (
-                <label key={option.value} className="flex items-center space-x-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={outputFormats.includes(option.value)}
-                    onChange={() => handleFormatChange(option.value)}
-                    className="rounded border-border-default text-text-primary focus:ring-brand-500"
-                  />
-                  <span className="text-text-secondary">{option.label}</span>
-                </label>
+              <label key={option.value} className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={outputFormats.includes(option.value)}
+                  onChange={() => handleFormatChange(option.value)}
+                  className="rounded border-border-default text-text-primary focus:ring-brand-500"
+                />
+                <span className="text-text-secondary min-w-0 break-words">{option.label}</span>
+              </label>
               ))}
             </div>
           </div>
@@ -152,15 +152,15 @@ export function OverrideSettingsModal({
             </label>
             <div className="grid grid-cols-2 gap-2">
               {EXPLANATION_STYLE_OPTIONS.map((option) => (
-                <label key={option.value} className="flex items-center space-x-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={explanationStyles.includes(option.value)}
-                    onChange={() => handleStyleChange(option.value)}
-                    className="rounded border-border-default text-text-primary focus:ring-brand-500"
-                  />
-                  <span className="text-text-secondary">{option.label}</span>
-                </label>
+              <label key={option.value} className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={explanationStyles.includes(option.value)}
+                  onChange={() => handleStyleChange(option.value)}
+                  className="rounded border-border-default text-text-primary focus:ring-brand-500"
+                />
+                <span className="text-text-secondary min-w-0 break-words">{option.label}</span>
+              </label>
               ))}
             </div>
           </div>

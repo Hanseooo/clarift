@@ -49,8 +49,8 @@ export function DashboardOverview({
     <div className="space-y-8">
       {/* Welcome header */}
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-text-primary">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-text-primary truncate">
             Welcome back{userName ? `, ${userName.split(" ")[0]}` : ""}
           </h1>
           <p className="text-sm text-text-secondary mt-1">
@@ -59,7 +59,7 @@ export function DashboardOverview({
         </div>
         <Link
           href="/settings"
-          className="flex items-center justify-center size-9 rounded-lg bg-surface-subtle text-text-secondary hover:text-text-primary hover:bg-surface-overlay transition-colors-fast"
+          className="flex items-center justify-center size-11 rounded-lg bg-surface-subtle text-text-secondary hover:text-text-primary hover:bg-surface-overlay transition-colors-fast"
           aria-label="Settings"
         >
           <Settings className="size-[18px] stroke-[1.5]" />

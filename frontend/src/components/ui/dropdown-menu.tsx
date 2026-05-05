@@ -122,7 +122,7 @@ function DropdownMenuContent({
     <div
       data-slot="dropdown-menu-content"
       className={cn(
-        "absolute z-50 min-w-[8rem] overflow-hidden rounded-xl border border-border-default bg-surface-card p-1 shadow-lg shadow-black/5 animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
+        "absolute z-50 min-w-[8rem] max-w-[95vw] overflow-hidden rounded-xl border border-border-default bg-surface-card p-1 shadow-lg shadow-black/5 animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
         "mt-1",
         alignClasses[align],
         className
@@ -143,7 +143,7 @@ function DropdownMenuItem({ className, inset, ...props }: DropdownMenuItemProps)
     <button
       data-slot="dropdown-menu-item"
       className={cn(
-        "relative flex w-full cursor-pointer select-none items-center rounded-lg px-2.5 py-2 text-sm outline-none transition-colors-fast focus:bg-surface-overlay focus:text-text-primary hover:bg-surface-overlay hover:text-text-primary disabled:pointer-events-none disabled:opacity-50",
+        "relative flex w-full cursor-pointer select-none items-center rounded-lg px-2.5 py-2 text-sm outline-none transition-colors-fast focus:bg-surface-overlay focus:text-text-primary hover:bg-surface-overlay hover:text-text-primary disabled:pointer-events-none disabled:opacity-50 break-words",
         inset && "pl-8",
         className
       )}
@@ -167,7 +167,7 @@ function DropdownMenuLabel({ className, inset, ...props }: React.HTMLAttributes<
     <div
       data-slot="dropdown-menu-label"
       className={cn(
-        "px-2.5 py-1.5 text-xs font-semibold text-text-tertiary",
+        "px-2.5 py-1.5 text-xs font-semibold text-text-tertiary break-words",
         inset && "pl-8",
         className
       )}

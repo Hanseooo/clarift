@@ -65,7 +65,7 @@ export function QuizCreation({ documents }: QuizCreationProps) {
       <div className="space-y-1.5">
         <label htmlFor="quiz-document-select" className="text-sm font-medium text-text-primary">Document</label>
         <Select value={documentId} onValueChange={setDocumentId}>
-          <SelectTrigger id="quiz-document-select" className="w-full h-10 px-3 text-sm bg-surface-subtle border-border-default rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15">
+          <SelectTrigger id="quiz-document-select" className="w-full h-11 px-3 text-sm bg-surface-subtle border-border-default rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15">
             <SelectValue placeholder="Select a document" />
           </SelectTrigger>
           <SelectContent>
@@ -104,7 +104,7 @@ export function QuizCreation({ documents }: QuizCreationProps) {
         variant="default"
         disabled={!documentId || isLoading}
         onClick={onCreateQuiz}
-        className="w-full"
+        className="w-full h-11"
       >
         {isLoading ? "Creating..." : "Create Quiz"}
       </Button>

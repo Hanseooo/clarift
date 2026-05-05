@@ -60,7 +60,7 @@ export function ChatInput({ disabled, isSending, onSend }: ChatInputProps) {
         onClick={handleSubmit}
         disabled={!hasText || isSending || disabled}
         className={cn(
-          "size-[34px] rounded-full border-none flex items-center justify-center transition-colors-fast flex-shrink-0",
+          "size-11 rounded-full border-none flex items-center justify-center transition-colors-fast flex-shrink-0",
           hasText
             ? "bg-brand-500 text-white hover:bg-brand-600"
             : "bg-surface-subtle text-text-tertiary",

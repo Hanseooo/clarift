@@ -87,7 +87,7 @@ export function WeakAreasDisplay({
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-text-primary mb-1">
+                <p className="text-sm font-medium text-text-primary mb-1 truncate">
                   {area.topic}
                 </p>
                 <div className="h-[3px] bg-border-default rounded-full overflow-hidden mb-1">
@@ -123,7 +123,7 @@ export function WeakAreasDisplay({
                       setTopicToReset(area.topic)
                     }}
                     className={cn(
-                      "flex-shrink-0 size-7 rounded-lg flex items-center justify-center transition-all",
+                      "flex-shrink-0 h-11 w-11 rounded-lg flex items-center justify-center transition-all",
                       "text-text-tertiary hover:text-destructive hover:bg-destructive/10",
                       "opacity-0 group-hover:opacity-100 focus:opacity-100",
                       "sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100",

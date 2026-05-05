@@ -64,15 +64,15 @@ export function OptionCard({
 
         {/* Body */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-text-primary mb-0.5">
+          <h3 className="text-sm font-semibold text-text-primary mb-0.5 break-words">
             {title}
           </h3>
-          <p className="text-xs text-text-secondary leading-relaxed mb-2">
+          <p className="text-xs text-text-secondary leading-relaxed mb-2 break-words">
             {description}
           </p>
 
           {/* Preview snippet — REQUIRED per design.md */}
-          <div className="bg-surface-subtle rounded-md p-2 text-[11px] text-text-tertiary leading-relaxed font-mono">
+          <div className="bg-surface-subtle rounded-md p-2 text-[11px] text-text-tertiary leading-relaxed font-mono whitespace-pre-wrap break-words">
             {preview}
           </div>
         </div>

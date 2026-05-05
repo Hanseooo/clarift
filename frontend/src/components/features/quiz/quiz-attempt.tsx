@@ -61,7 +61,7 @@ export function QuizAttempt({ quiz }: QuizAttemptProps) {
             return (
               <button
                 key={`${question.id}-${letter}`}
-                className={`flex items-center gap-3 rounded-xl border px-3 py-2 text-left ${
+                className={`flex items-center gap-3 rounded-xl border px-3 min-h-11 text-left ${
                   selected
                     ? "border-primary bg-primary/10 text-foreground"
                     : "border-border bg-background"
@@ -69,10 +69,10 @@ export function QuizAttempt({ quiz }: QuizAttemptProps) {
                 type="button"
                 onClick={() => setAnswers((prev) => ({ ...prev, [question.id]: option }))}
               >
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-xs font-semibold">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-xs font-semibold shrink-0">
                   {letter}
                 </span>
-                <span className="text-sm">{option}</span>
+                <span className="text-sm min-w-0 break-words">{option}</span>
               </button>
             );
           })}
@@ -88,7 +88,7 @@ export function QuizAttempt({ quiz }: QuizAttemptProps) {
             return (
               <button
                 key={`${question.id}-${option}`}
-                className={`flex items-center gap-3 rounded-xl border px-3 py-2 text-left ${
+                className={`flex items-center gap-3 rounded-xl border px-3 min-h-11 text-left ${
                   selected
                     ? "border-primary bg-primary/10 text-foreground"
                     : "border-border bg-background"
@@ -96,7 +96,7 @@ export function QuizAttempt({ quiz }: QuizAttemptProps) {
                 type="button"
                 onClick={() => setAnswers((prev) => ({ ...prev, [question.id]: option }))}
               >
-                <span className="text-sm">{option}</span>
+                <span className="text-sm break-words">{option}</span>
               </button>
             );
           })}
@@ -106,8 +106,8 @@ export function QuizAttempt({ quiz }: QuizAttemptProps) {
 
     if (qtype === "identification") {
       return (
-        <input
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          <input
+          className="w-full rounded-xl border border-border bg-background px-3 h-11 text-sm"
           placeholder="Type your answer"
           value={(answers[question.id] as string) ?? ""}
           onChange={(event) =>
@@ -130,7 +130,7 @@ export function QuizAttempt({ quiz }: QuizAttemptProps) {
             return (
               <button
                 key={`${question.id}-${letter}`}
-                className={`flex items-center gap-3 rounded-xl border px-3 py-2 text-left ${
+                className={`flex items-center gap-3 rounded-xl border px-3 min-h-11 text-left ${
                   isSelected
                     ? "border-primary bg-primary/10 text-foreground"
                     : "border-border bg-background"
@@ -143,10 +143,10 @@ export function QuizAttempt({ quiz }: QuizAttemptProps) {
                   setAnswers((prev) => ({ ...prev, [question.id]: next }));
                 }}
               >
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-xs font-semibold">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-xs font-semibold shrink-0">
                   {letter}
                 </span>
-                <span className="text-sm">{option}</span>
+                <span className="text-sm min-w-0 break-words">{option}</span>
               </button>
             );
           })}
@@ -205,7 +205,7 @@ export function QuizAttempt({ quiz }: QuizAttemptProps) {
         ))}
       </div>
 
-      <Button className="w-full" disabled={isLoading || answered === 0} onClick={onSubmit}>
+      <Button className="w-full h-11" disabled={isLoading || answered === 0} onClick={onSubmit}>
         {isLoading ? "Submitting..." : "Submit Attempt"}
       </Button>
 

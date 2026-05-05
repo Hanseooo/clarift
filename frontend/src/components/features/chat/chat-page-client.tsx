@@ -179,7 +179,7 @@ export function ChatPageClient({
           <Dialog>
             <DialogTrigger asChild>
               <button className="inline-flex items-center gap-1.5 text-[11px] text-text-secondary hover:text-text-primary transition-colors ml-auto lg:ml-0">
-                <Badge variant="secondary" className="font-normal text-[10px] cursor-pointer">
+                <Badge variant="secondary" className="font-normal text-[10px] cursor-pointer truncate max-w-[100px]">
                   {personaOverride ? personaOverride : modeOverride ? modeOverride.replace("_", " ") : "Default"}
                 </Badge>
                 <Settings2 className="size-3" />

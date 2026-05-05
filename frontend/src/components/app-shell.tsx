@@ -18,11 +18,11 @@ const maxWidthClasses = {
 
 export function AppShell({ children, maxWidth = "default" }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-surface-page">
+    <div className="min-h-dvh bg-surface-page">
       <AppShellDesktop />
       <AppShellMobile />
       {/* Content area */}
-      <main className="md:ml-[240px] md:pb-0 pb-[56px]">
+      <main className="md:ml-[240px] md:pb-0" style={{ paddingBottom: "calc(56px + env(safe-area-inset-bottom))" }}>
         <div className={"mx-auto px-4 md:px-6 py-6 md:py-8 " + maxWidthClasses[maxWidth]}>
           {children}
         </div>

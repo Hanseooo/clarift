@@ -23,9 +23,9 @@ export function QuickActionCard({ href, icon, label, description, className }: Q
         <div className="size-10 rounded-lg bg-brand-500/10 flex items-center justify-center flex-shrink-0">
           {icon}
         </div>
-        <div>
-          <h3 className="text-sm font-medium text-text-primary">{label}</h3>
-          <p className="text-xs text-text-tertiary">{description}</p>
+        <div className="min-w-0">
+          <h3 className="text-sm font-medium text-text-primary truncate">{label}</h3>
+          <p className="text-xs text-text-tertiary truncate">{description}</p>
         </div>
       </div>
     </Link>

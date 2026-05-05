@@ -35,7 +35,7 @@ export function PaginatedReader({ content }: PaginatedReaderProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm text-muted-foreground">
           Page {currentPage + 1} of {totalPages}
         </span>
@@ -44,7 +44,7 @@ export function PaginatedReader({ content }: PaginatedReaderProps) {
             type="button"
             onClick={goPrev}
             disabled={currentPage === 0}
-            className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center gap-1 rounded-lg border border-border px-4 h-11 text-sm transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronLeft className="h-4 w-4" />
             Previous
@@ -53,7 +53,7 @@ export function PaginatedReader({ content }: PaginatedReaderProps) {
             type="button"
             onClick={goNext}
             disabled={currentPage === totalPages - 1}
-            className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center gap-1 rounded-lg border border-border px-4 h-11 text-sm transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
           >
             Next
             <ChevronRight className="h-4 w-4" />
@@ -61,19 +61,19 @@ export function PaginatedReader({ content }: PaginatedReaderProps) {
         </div>
       </div>
 
-      <div className="min-h-[300px] rounded-xl border border-border bg-background p-6">
+      <div className="min-h-[300px] rounded-xl border border-border bg-background p-6 overflow-hidden">
         <div className="prose-brand">
           <RichMarkdown content={pages[currentPage]} />
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-1.5">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         {pages.map((_, index) => (
           <button
             key={index}
             type="button"
             onClick={() => setCurrentPage(index)}
-            className={`h-2 w-2 rounded-full transition-colors ${
+            className={`h-3 w-3 rounded-full transition-colors ${
               index === currentPage
                 ? "bg-primary"
                 : "bg-border hover:bg-muted-foreground/40"

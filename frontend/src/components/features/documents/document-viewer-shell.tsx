@@ -36,7 +36,7 @@ export function DocumentViewerShell({
                 href={downloadUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1.5 rounded-md hover:bg-surface-subtle transition-colors"
+                className="h-11 w-11 inline-flex items-center justify-center rounded-md hover:bg-surface-subtle transition-colors"
                 aria-label="Download original file"
               >
                 <FileDown size={16} className="text-text-secondary" />

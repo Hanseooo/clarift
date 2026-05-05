@@ -25,7 +25,7 @@ export function TextViewer({ content }: TextViewerProps) {
       <div className="flex items-center justify-end gap-2 mb-3">
         <button
           onClick={() => setWrap((w) => !w)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+          className={`flex items-center gap-1.5 h-11 px-3 rounded-md text-xs font-medium transition-colors ${
             wrap
               ? "bg-brand-100 text-brand-700"
               : "bg-surface-subtle text-text-secondary hover:bg-surface-overlay"
@@ -37,7 +37,7 @@ export function TextViewer({ content }: TextViewerProps) {
         </button>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-surface-subtle text-text-secondary hover:bg-surface-overlay transition-colors"
+          className="flex items-center gap-1.5 h-11 px-3 rounded-md text-xs font-medium bg-surface-subtle text-text-secondary hover:bg-surface-overlay transition-colors"
         >
           {copied ? <Check size={14} className="text-success-500" /> : <Copy size={14} />}
           {copied ? "Copied" : "Copy"}

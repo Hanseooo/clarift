@@ -44,7 +44,7 @@ export function AppShellMobile() {
                 <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-brand-500" />
               )}
               <Icon className="size-[22px] stroke-[1.5]" />
-              <span className="text-[11px] font-medium">{route.name}</span>
+              <span className="text-[11px] font-medium truncate max-w-full">{route.name}</span>
             </Link>
           )
         })}

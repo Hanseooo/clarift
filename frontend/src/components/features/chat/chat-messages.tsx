@@ -113,11 +113,11 @@ export function ChatMessages({ messages, isSearching, error, streamingMessageId 
             )}
           >
             {msg.role === "user" ? (
-              <div className="max-w-[78%] bg-brand-500 text-white rounded-[16px_16px_4px_16px] px-3.5 py-2.5 text-[13px] leading-[1.5]">
+              <div className="max-w-[78%] bg-brand-500 text-white rounded-[16px_16px_4px_16px] px-3.5 py-2.5 text-[13px] leading-[1.5] break-words">
                 {msg.content}
               </div>
             ) : (
-              <div className="max-w-[92%] space-y-1.5">
+              <div className="max-w-[92%] space-y-1.5 min-w-0">
                 <div className="prose-compact">
                   <AssistantMessageContent content={msg.content} />
                   {streamingMessageId === msg.id && (
@@ -129,7 +129,7 @@ export function ChatMessages({ messages, isSearching, error, streamingMessageId 
                     {msg.citations.map((citation, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center px-2 py-0.5 rounded text-[11px] bg-surface-subtle text-text-tertiary border border-border-default"
+                        className="inline-flex items-center px-2 py-0.5 rounded text-[11px] bg-surface-subtle text-text-tertiary border border-border-default max-w-full truncate"
                       >
                         [{idx + 1}] {citation.document_name || "Source"}
                       </span>

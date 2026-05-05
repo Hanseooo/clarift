@@ -212,9 +212,9 @@ export function FeatureShowcase() {
                   <div className="size-8 rounded-lg bg-brand-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Icon className="size-4 text-brand-400" />
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-text-primary">{feature.title}</h3>
-                    <p className="text-xs text-text-secondary leading-relaxed mt-0.5">{feature.description}</p>
+                    <p className="text-xs text-text-secondary leading-relaxed mt-0.5 break-words">{feature.description}</p>
                   </div>
                 </div>
               </motion.div>

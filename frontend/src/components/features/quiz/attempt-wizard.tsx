@@ -70,13 +70,13 @@ function OrderItem({
       <span className="flex h-5 w-5 items-center justify-center rounded bg-surface-subtle text-[10px] font-semibold text-muted-foreground">
         {index + 1}
       </span>
-      <span className="flex-1 text-sm text-foreground">{item}</span>
+      <span className="flex-1 text-sm text-foreground min-w-0">{item}</span>
       <div className="flex flex-col gap-0.5">
         <button
           type="button"
           onClick={onMoveUp}
           disabled={index === 0}
-          className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+          className="h-11 w-8 flex items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <ArrowUp className="h-3.5 w-3.5" />
         </button>
@@ -84,7 +84,7 @@ function OrderItem({
           type="button"
           onClick={onMoveDown}
           disabled={index === total - 1}
-          className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+          className="h-11 w-8 flex items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <ArrowDown className="h-3.5 w-3.5" />
         </button>
@@ -113,7 +113,7 @@ function MCQQuestion({
             key={option}
             type="button"
             onClick={() => onChange(option)}
-            className={`w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-all ${
+            className={`w-full flex items-center gap-3 rounded-lg border px-3 min-h-11 text-left transition-all ${
               selected
                 ? "border-brand-500 bg-brand-50/50 dark:bg-brand-950/20"
                 : "border-border bg-background hover:border-border-strong hover:bg-surface-overlay"
@@ -129,7 +129,7 @@ function MCQQuestion({
             >
               {letter}
             </span>
-            <span className="text-sm text-foreground">
+            <span className="text-sm text-foreground min-w-0">
               <RichMarkdown
                 content={option}
                 className="prose-compact prose-p:inline prose-p:m-0 prose-p:text-sm prose-code:text-xs"
@@ -186,7 +186,7 @@ function IdentificationQuestion({
       placeholder="Type your answer..."
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+      className="w-full rounded-lg border border-border bg-background px-3 h-11 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
     />
   );
 }
@@ -220,7 +220,7 @@ function MultiSelectQuestion({
             key={option}
             type="button"
             onClick={() => toggleOption(option)}
-            className={`w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-all ${
+            className={`w-full flex items-center gap-3 rounded-lg border px-3 min-h-11 text-left transition-all ${
               selected
                 ? "border-brand-500 bg-brand-50/50 dark:bg-brand-950/20"
                 : "border-border bg-background hover:border-border-strong hover:bg-surface-overlay"
@@ -236,7 +236,7 @@ function MultiSelectQuestion({
             >
               {letter}
             </span>
-            <span className="text-sm text-foreground">
+            <span className="text-sm text-foreground min-w-0">
               <RichMarkdown
                 content={option}
                 className="prose-compact prose-p:inline prose-p:m-0 prose-p:text-sm prose-code:text-xs"
@@ -368,7 +368,7 @@ export function AttemptWizard({ quizId, questions, onSubmit }: AttemptWizardProp
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${questionTypeBadgeClasses[currentQuestion.type]}`}>
             {currentQuestion.type.replace("_", " ")}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground min-w-0 truncate ml-2">
             Topic: {currentQuestion.topic}
           </span>
         </div>
@@ -422,20 +422,18 @@ export function AttemptWizard({ quizId, questions, onSubmit }: AttemptWizardProp
       <div className="flex items-center gap-3">
         <Button
           variant="outline"
-          size="sm"
           onClick={handlePrevious}
           disabled={currentIndex === 0}
-          className="flex-1"
+          className="flex-1 h-11"
         >
           <ChevronLeft className="mr-1 h-4 w-4" />
           Previous
         </Button>
 
         <Button
-          size="sm"
           onClick={handleNext}
           disabled={!hasAnswer}
-          className="flex-1"
+          className="flex-1 h-11"
         >
           {isLastQuestion ? (
             isLoading ? (

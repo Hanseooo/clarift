@@ -63,7 +63,7 @@ function SheetContent({
       <DialogPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          "fixed z-50 flex flex-col gap-6 bg-popover p-6 text-sm text-popover-foreground shadow-xl ring-1 ring-foreground/5 duration-300 outline-none dark:ring-foreground/10 data-open:animate-in data-closed:animate-out",
+          "fixed z-50 flex flex-col gap-6 overflow-y-auto bg-popover p-6 text-sm text-popover-foreground shadow-xl ring-1 ring-foreground/5 duration-300 outline-none dark:ring-foreground/10 data-open:animate-in data-closed:animate-out",
           side === "right"
             ? "inset-y-0 right-0 h-full w-full max-w-sm data-open:slide-in-from-right data-closed:slide-out-to-right"
             : "inset-y-0 left-0 h-full w-full max-w-sm data-open:slide-in-from-left data-closed:slide-out-to-left",
@@ -76,8 +76,7 @@ function SheetContent({
           <DialogPrimitive.Close data-slot="sheet-close" asChild>
             <Button
               variant="ghost"
-              className="absolute top-4 right-4 bg-secondary"
-              size="icon-sm"
+              className="absolute top-4 right-4 bg-secondary h-11 w-11"
             >
               <XIcon />
               <span className="sr-only">Close</span>
@@ -134,7 +133,7 @@ function SheetTitle({
     <DialogPrimitive.Title
       data-slot="sheet-title"
       className={cn(
-        "font-heading text-base leading-none font-medium",
+        "font-heading text-base leading-none font-medium break-words",
         className
       )}
       {...props}
@@ -150,7 +149,7 @@ function SheetDescription({
     <DialogPrimitive.Description
       data-slot="sheet-description"
       className={cn(
-        "text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+        "text-sm text-muted-foreground break-words *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
         className
       )}
       {...props}

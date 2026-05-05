@@ -70,7 +70,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
-      <body className="min-h-screen bg-surface-page text-text-primary antialiased">
+      <body className="min-h-dvh bg-surface-page text-text-primary antialiased">
         <ThemeProvider>
           <ClerkProvider
             appearance={{

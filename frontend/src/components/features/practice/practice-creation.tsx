@@ -46,7 +46,7 @@ export function PracticeCreation({ selectedTopics, onStartLesson }: PracticeCrea
       <p className="text-sm text-muted-foreground">Selected topics: {selectedTopics.join(", ") || "None"}</p>
 
       <Button
-        className="w-full"
+        className="w-full h-11"
         disabled={!selectedTopics.length}
         onClick={onStartLesson}
       >
@@ -57,7 +57,7 @@ export function PracticeCreation({ selectedTopics, onStartLesson }: PracticeCrea
         <span className="text-sm font-medium text-foreground">Drill count</span>
         <input
           className={cn(
-            "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm",
+            "w-full rounded-xl border border-border bg-background px-3 h-11 text-sm",
             countError && "border-red-500"
           )}
           max={20}
@@ -69,7 +69,7 @@ export function PracticeCreation({ selectedTopics, onStartLesson }: PracticeCrea
         {countError && <p className="text-xs text-red-500 mt-1">{countError}</p>}
       </label>
 
-      <Button className="w-full" disabled={!selectedTopics.length || isLoading} onClick={onCreate}>
+      <Button className="w-full h-11" disabled={!selectedTopics.length || isLoading} onClick={onCreate}>
         {isLoading ? "Creating..." : "Start Practice"}
       </Button>
 

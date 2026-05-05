@@ -39,7 +39,7 @@ export function DashboardWeakAreas({ weakAreas }: DashboardWeakAreasProps) {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm font-medium text-text-primary truncate">
+                  <p className="text-sm font-medium text-text-primary truncate min-w-0">
                     {area.topic}
                   </p>
                   <span className="text-sm font-semibold text-accent-500 flex-shrink-0 ml-2">

@@ -62,9 +62,9 @@ export function QuizResultsDialog({
                   key={wt.topic}
                   className="flex items-center justify-between p-3 rounded-lg border border-border-default bg-surface-subtle"
                 >
-                  <div className="flex items-center gap-2">
-                    <Target className="size-4 text-accent-500" />
-                    <span className="text-sm font-medium text-text-primary">{wt.topic}</span>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Target className="size-4 text-accent-500 flex-shrink-0" />
+                    <span className="text-sm font-medium text-text-primary truncate">{wt.topic}</span>
                   </div>
                   <span className="text-sm font-semibold text-accent-500">
                     {wt.accuracy}%
@@ -79,22 +79,22 @@ export function QuizResultsDialog({
           {weakTopics.length > 0 && (
             <Button
               onClick={() => handlePractice(weakTopics[0].topic)}
-              className="w-full bg-brand-500 text-white hover:bg-brand-600"
+              className="w-full h-11 bg-brand-500 text-white hover:bg-brand-600"
             >
-              <Target className="size-4 mr-2" />
-              Practice {weakTopics[0].topic}
+              <Target className="size-4 mr-2 flex-shrink-0" />
+              <span className="truncate">Practice {weakTopics[0].topic}</span>
             </Button>
           )}
           {weakTopics.length > 1 && (
             <Button
               variant="secondary"
               onClick={() => handlePractice()}
-              className="w-full"
+              className="w-full h-11"
             >
               Practice All Weak Topics
             </Button>
           )}
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full h-11">
             Review Answers
           </Button>
         </DialogFooter>

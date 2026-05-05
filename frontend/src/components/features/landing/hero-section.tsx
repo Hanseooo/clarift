@@ -107,7 +107,7 @@ export function HeroSection() {
           initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.6, delay: 0.5, ease: "easeOut" }}
-          className="mt-4 h-10 flex items-center justify-center"
+          className="mt-4 min-h-10 flex items-center justify-center"
         >
           <AnimatePresence mode="wait">
             <motion.p

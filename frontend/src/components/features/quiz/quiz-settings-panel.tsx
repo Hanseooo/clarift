@@ -144,7 +144,7 @@ export function QuizSettingsPanel({ applicabilityFlags, loadingFlags = false, on
               type="button"
               onClick={() => handleToggleType(type)}
               disabled={isDisabled}
-              className={`w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-all ${
+              className={`w-full flex items-center gap-3 rounded-lg border px-3 min-h-11 text-left transition-all ${
                 isDisabled
                   ? "cursor-not-allowed opacity-60"
                   : "cursor-pointer hover:border-border-strong hover:bg-surface-overlay"
@@ -168,8 +168,8 @@ export function QuizSettingsPanel({ applicabilityFlags, loadingFlags = false, on
                 ) : null}
               </div>
 
-              <div className="flex-1">
-                <span className="text-sm font-medium text-foreground">
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-foreground truncate block">
                   {typeLabels[type]}
                 </span>
               </div>
@@ -195,7 +195,7 @@ export function QuizSettingsPanel({ applicabilityFlags, loadingFlags = false, on
       )}
 
       <Button
-        className="w-full"
+        className="w-full h-11"
         disabled={!hasAnySelected}
         onClick={handleGenerate}
       >

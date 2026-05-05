@@ -57,7 +57,7 @@ export function SummaryList({ summaries, initialSelectedId }: SummaryListProps) 
                   onClick={() => setSelectedSummaryId(summary.id)}
                   type="button"
                 >
-                  <p className="font-medium text-foreground">{summary.title ?? "Untitled summary"}</p>
+                  <p className="font-medium text-foreground truncate">{summary.title ?? "Untitled summary"}</p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(summary.created_at).toLocaleString('en-US', {
                       year: 'numeric',
@@ -71,8 +71,7 @@ export function SummaryList({ summaries, initialSelectedId }: SummaryListProps) 
                 </button>
                 <Button
                   variant="ghost"
-                  size="icon-xs"
-                  className="absolute right-2 top-2"
+                  className="absolute right-2 top-2 h-11 w-11"
                   asChild
                 >
                   <Link href={`/summaries/${summary.id}`}>
@@ -89,14 +88,14 @@ export function SummaryList({ summaries, initialSelectedId }: SummaryListProps) 
             <header className="space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-foreground">Summary Detail</h3>
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" className="h-11 px-4" asChild>
                   <Link href={`/summaries/${selectedSummary.id}`} className="inline-flex items-center gap-1">
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLink className="h-4 w-4" />
                     View Full Details
                   </Link>
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">Document: {selectedSummary.document_id}</p>
+              <p className="text-sm text-muted-foreground break-all">Document: {selectedSummary.document_id}</p>
             </header>
 
             <div className="rounded-xl border border-border bg-background p-4">
@@ -110,7 +109,7 @@ export function SummaryList({ summaries, initialSelectedId }: SummaryListProps) 
             {selectedSummary.quiz_type_flags ? (
               <div className="rounded-xl border border-border bg-background p-4">
                 <p className="text-sm font-medium text-foreground">Quiz Type Flags</p>
-                <pre className="mt-2 text-xs text-muted-foreground">
+                <pre className="mt-2 text-xs text-muted-foreground whitespace-pre-wrap break-words">
                   {JSON.stringify(selectedSummary.quiz_type_flags, null, 2)}
                 </pre>
               </div>

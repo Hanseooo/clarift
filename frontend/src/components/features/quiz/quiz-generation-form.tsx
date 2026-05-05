@@ -162,7 +162,7 @@ export function QuizGenerationForm({ documents, preselectedDocumentId }: QuizGen
               </SelectContent>
             </Select>
 
-            <Button className="w-full" onClick={handleSelectDocument} disabled={!selectedDocId}>
+            <Button className="w-full h-11" onClick={handleSelectDocument} disabled={!selectedDocId}>
               Continue
             </Button>
           </>
@@ -222,7 +222,7 @@ export function QuizGenerationForm({ documents, preselectedDocumentId }: QuizGen
           </p>
         </div>
 
-        <Button className="w-full" onClick={handleGoToQuiz}>
+        <Button className="w-full h-11" onClick={handleGoToQuiz}>
           Start Quiz
         </Button>
       </div>
@@ -241,7 +241,7 @@ export function QuizGenerationForm({ documents, preselectedDocumentId }: QuizGen
           <p className="text-sm text-muted-foreground">{errorMsg}</p>
         </div>
 
-        <Button variant="outline" className="w-full" onClick={() => setStep("select")}>
+        <Button variant="outline" className="w-full h-11" onClick={() => setStep("select")}>
           Try Again
         </Button>
       </div>

@@ -64,7 +64,7 @@ function TabsList({ className, children, ...props }: TabsListProps) {
     <div
       data-slot="tabs-list"
       className={cn(
-        "inline-flex h-10 items-center justify-center rounded-lg bg-surface-subtle p-1 text-text-secondary",
+        "inline-flex h-10 items-center justify-center overflow-x-auto max-w-full rounded-lg bg-surface-subtle p-1 text-text-secondary",
         className
       )}
       {...props}
@@ -89,7 +89,7 @@ function TabsTrigger({ className, value, children, ...props }: TabsTriggerProps)
       data-state={isActive ? "active" : "inactive"}
       onClick={() => onValueChange(value)}
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/20 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-2.5 text-sm font-medium transition-colors-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/20 disabled:pointer-events-none disabled:opacity-50",
         isActive
           ? "bg-surface-card text-text-primary shadow-sm"
           : "text-text-secondary hover:text-text-primary hover:bg-surface-overlay",

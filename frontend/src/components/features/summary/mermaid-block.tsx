@@ -86,5 +86,5 @@ export function MermaidBlock({ chart }: MermaidBlockProps) {
     );
   }
 
-  return <div ref={ref} className="my-4" />;
+  return <div ref={ref} className="my-4 overflow-x-auto" />;
 }
